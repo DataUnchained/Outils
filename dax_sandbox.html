@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Unchained – Bac à sable DAX</title>
+<style>
+  :root{
+    --bg-canvas:#F3F2F1;
+    --bg-surface:#FFFFFF;
+    --bg-dark:#175B36;
+    --bg-dark-2:#1F7A47;
+    --accent:#DDA40D;
+    --accent-dark:#B98C0A;
+    --data-blue:#1D8A57;
+    --brand-yellow:#F3D163;
+    --brand-orange:#B95E01;
+    --text-primary:#333333;
+    --text-secondary:#6B6B6B;
+    --border:#E1DFDD;
+    --border-strong:#C8C6C4;
+    --error:#A80000;
+    --error-bg:#FDF3F3;
+    --success:#1D8A57;
+    --success-bg:#EAF6EF;
+    --radius:4px;
+    --mono: 'Cascadia Code','Consolas','SFMono-Regular',Menlo,monospace;
+    --sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg-canvas); color:var(--text-primary); font-family:var(--sans); }
+
+  /* ---------- En-tête fixe (topbar + onglets) ---------- */
+  .app-header{
+    position:sticky;
+    top:0;
+    z-index:100;
+  }
+  .topbar{
+    background:var(--bg-dark);
+    color:#fff;
+    padding:12px 20px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .topbar .logo-img{
+    width:38px; height:38px; display:block; flex-shrink:0;
+  }
+  .topbar .brand-text{ display:flex; flex-direction:column; gap:1px; }
+  .topbar .brand-name{ font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-yellow); }
+  .topbar h1{ font-size:17px; margin:0; font-weight:600; }
+  .topbar .pbi-badge{
+    display:flex; align-items:center; gap:6px;
+    font-size:11.5px; font-weight:600; color:#CFE8DA;
+    padding:5px 10px 5px 8px; border:1px solid rgba(255,255,255,.25); border-radius:999px;
+    flex-shrink:0;
+  }
+  .topbar .pbi-badge svg{ flex-shrink:0; display:block; }
+  .topbar .sub{ font-size:12.5px; color:#CFE8DA; margin-left:auto; }
+  @media (max-width:640px){ .topbar .sub{ margin-left:0; width:100%; } }
+
+  .scope-note{
+    background:#FFF9E6;
+    border-bottom:1px solid #EEDD9C;
+    color:#5C4A00;
+    font-size:12.5px;
+    padding:8px 20px;
+    line-height:1.5;
+  }
+  .scope-note b{ font-weight:600; }
+
+  /* ---------- Onglets ---------- */
+  .tab-bar{
+    display:flex; gap:2px;
+    background:#fff; border-bottom:1px solid var(--border);
+    padding:0 16px;
+    overflow-x:auto;
+  }
+  .tab-btn{
+    border:none; background:transparent; border-radius:0;
+    padding:12px 16px; font-size:13px; font-weight:600;
+    color:var(--text-secondary); cursor:pointer;
+    border-bottom:3px solid transparent;
+    flex-shrink:0; white-space:nowrap;
+  }
+  .tab-btn.active{ color:var(--data-blue); border-bottom-color:var(--accent); }
+  .tab-btn:hover:not(.active){ background:#FAF9F8; color:var(--text-primary); }
+
+  /* ---------- Layout ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns: 220px 1fr 320px;
+    gap:14px;
+    padding:14px;
+    align-items:start;
+  }
+  @media (max-width: 980px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background:var(--bg-surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+  }
+  .panel-title{
+    font-size:12px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    color:var(--text-secondary);
+    padding:10px 12px;
+    border-bottom:1px solid var(--border);
+  }
+
+  /* ---------- Fields pane ---------- */
+  .fields-body{ padding:8px; }
+  .table-node{ font-size:13px; font-weight:600; padding:6px 4px; display:flex; align-items:center; gap:6px; }
+  .table-node::before{ content:"▾"; font-size:10px; color:var(--text-secondary); }
+  .field-item{
+    display:flex; align-items:center; gap:7px;
+    padding:5px 6px 5px 20px;
+    font-size:12.5px;
+    border-radius:3px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .field-item:hover{ background:#F3F2F1; }
+  .field-icon{
+    width:15px; height:15px; border-radius:2px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; color:#fff; flex-shrink:0;
+  }
+  .field-icon.num{ background:var(--data-blue); }
+  .field-icon.txt{ background:var(--brand-orange); }
+  .field-icon.date{ background:var(--accent); }
+  .field-icon.measure{ background:var(--accent-dark); color:#fff; font-size:9px; }
+
+  .measures-section{ border-top:1px solid var(--border); margin-top:4px; padding-top:6px; }
+  .empty-measures{ font-size:12px; color:var(--text-secondary); padding:4px 6px 8px 20px; font-style:italic; }
+
+  /* ---------- Center canvas ---------- */
+  .center-col{ display:flex; flex-direction:column; gap:14px; }
+
+  .formula-bar{ padding:12px; }
+  .formula-row1{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .formula-row1 input[type=text]{
+    font-family:var(--mono);
+    font-size:13px;
+    padding:7px 9px;
+    border:1px solid var(--border-strong);
+    border-radius:var(--radius);
+    width:220px;
+  }
+  .formula-row1 .eq{ font-family:var(--mono); font-weight:700; color:var(--text-secondary); }
+
+  .fx-row{ display:flex; gap:8px; align-items:flex-start; }
+  .fx-icon{
+    font-family:var(--mono); font-style:italic; font-weight:700; font-size:14px;
+    color:var(--data-blue); padding:8px 6px; user-select:none;
+  }
+  .formula-input-wrap{ flex:1; position:relative; }
+  #formulaInput{
+    width:100%;
+    font-family:var(--mono);
+    font-size:13.5px;
+    padding:8px 10px;
+    border:1.5px solid var(--border-strong);
+    border-radius:var(--radius);
+    min-height:38px;
+    resize:vertical;
+    line-height:1.5;
+  }
+  #formulaInput:focus{ outline:none; border-color:var(--data-blue); }
+  #formulaInput.state-error{ border-color:var(--error); background:var(--error-bg); }
+  #formulaInput.state-success{ border-color:var(--success); }
+
+  /* ---------- Saisie intelligente (autocomplétion) ---------- */
+  .autocomplete-box{
+    display:none;
+    position:absolute;
+    top:100%; left:0; right:0;
+    margin-top:3px;
+    background:#fff;
+    border:1px solid var(--border-strong);
+    border-radius:var(--radius);
+    box-shadow:0 3px 10px rgba(0,0,0,.14);
+    max-height:200px;
+    overflow-y:auto;
+    z-index:30;
+  }
+  .autocomplete-box.show{ display:block; }
+  .ac-item{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 10px;
+    font-size:12.5px;
+    cursor:pointer;
+  }
+  .ac-item.active{ background:#FBF0D9; }
+  .ac-item:hover{ background:#F3F2F1; }
+  .ac-badge{
+    width:16px; height:16px; border-radius:3px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:9px; font-weight:700; color:#fff;
+  }
+  .ac-badge.ac-func{ background:var(--data-blue); font-style:italic; }
+  .ac-badge.ac-col{ background:var(--accent); color:#4A3300; }
+  .ac-badge.ac-measure{ background:var(--accent-dark); }
+  .ac-label{ font-family:var(--mono); }
+  .ac-hint{ margin-left:auto; font-family:var(--sans); font-size:10.5px; color:var(--text-secondary); }
+
+  .formula-actions{ display:flex; gap:8px; margin-top:8px; }
+  button{
+    font-family:var(--sans);
+    font-size:12.5px;
+    font-weight:600;
+    padding:7px 14px;
+    border-radius:var(--radius);
+    border:1px solid var(--border-strong);
+    background:#fff;
+    cursor:pointer;
+    color:var(--text-primary);
+  }
+  button:hover{ background:#F3F2F1; }
+  button.primary{ background:var(--accent); border-color:var(--accent-dark); color:#3B2F00; }
+  button.primary:hover{ background:var(--accent-dark); color:#fff; }
+  button.ghost{ background:transparent; border-color:transparent; color:var(--data-blue); padding:4px 6px; font-weight:600; }
+  button.ghost:hover{ text-decoration:underline; background:transparent; }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+
+  .msg{ font-size:12.5px; margin-top:8px; padding:7px 9px; border-radius:var(--radius); display:none; line-height:1.5; }
+  .msg.show{ display:block; }
+  .msg.error{ background:var(--error-bg); color:var(--error); border:1px solid #F1C0C0; }
+  .msg.success{ background:var(--success-bg); color:var(--success); border:1px solid #C3E6C3; }
+
+  /* ---------- Card visual ---------- */
+  .visual-wrap{ padding:16px; }
+  .card-visual{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:6px;
+    box-shadow:0 1.2px 3.6px rgba(0,0,0,.11), 0 6.4px 14.4px rgba(0,0,0,.09);
+    padding:22px 24px;
+    min-height:110px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:flex-start;
+    transition:box-shadow .15s;
+  }
+  .card-value{
+    font-size:38px;
+    font-weight:600;
+    color:var(--text-primary);
+    line-height:1.1;
+    word-break:break-word;
+  }
+  .card-value.is-blank{ color:var(--text-secondary); font-weight:400; font-size:20px; font-style:italic; }
+  .card-value.is-error{ color:var(--error); font-size:16px; font-weight:400; }
+  .card-label{
+    font-size:12.5px;
+    color:var(--text-secondary);
+    margin-top:6px;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+  }
+  .card-placeholder .card-value{ color:#C8C6C4; }
+  .card-placeholder .card-label{ color:#C8C6C4; }
+
+  /* ---------- Data preview ---------- */
+  .preview-toggle{ padding:10px 12px; font-size:12.5px; color:var(--data-blue); cursor:pointer; user-select:none; font-weight:600; border-top:1px solid var(--border); }
+  .preview-toggle:hover{ background:#F3F2F1; }
+  .preview-table-wrap{ display:none; overflow-x:auto; padding:0 12px 12px; }
+  .preview-table-wrap.open{ display:block; }
+  table.preview{ border-collapse:collapse; width:100%; font-size:12px; }
+  table.preview th{ text-align:left; padding:6px 8px; background:#FAF9F8; border-bottom:2px solid var(--border-strong); font-weight:600; white-space:nowrap; }
+  table.preview td{ padding:6px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  table.preview tr:hover td{ background:#FAF9F8; }
+
+  /* ---------- Right panel ---------- */
+  .right-col{ display:flex; flex-direction:column; gap:14px; }
+  .func-list{ padding:6px; }
+  .func-item{
+    padding:8px 8px;
+    border-radius:3px;
+    cursor:pointer;
+    margin-bottom:2px;
+  }
+  .func-item:hover{ background:#F3F2F1; }
+  .func-name{ font-family:var(--mono); font-size:12.5px; font-weight:700; color:var(--data-blue); }
+  .func-desc{ font-size:11.5px; color:var(--text-secondary); margin-top:2px; line-height:1.4; }
+  .func-group-label{ font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); font-weight:700; padding:10px 8px 2px; }
+  .locked-note{ font-size:11.5px; color:var(--text-secondary); padding:8px 12px 10px; font-style:italic; border-top:1px solid var(--border); }
+
+  /* ---------- Fiche fonction (façon cours) ---------- */
+  .func-detail{
+    display:none;
+    margin:2px 4px 8px;
+    padding:10px 11px;
+    background:#F7FBFF;
+    border:1px solid #D6E9FA;
+    border-left:3px solid var(--data-blue);
+    border-radius:0 3px 3px 0;
+    font-size:12px;
+    line-height:1.55;
+  }
+  .func-detail.open{ display:block; }
+  .func-detail .func-long{ margin:0 0 8px; color:var(--text-primary); }
+  .func-detail .func-example-row{
+    background:#fff; border:1px solid var(--border); border-radius:3px;
+    padding:7px 9px; margin-bottom:8px; font-family:var(--mono); font-size:11.5px;
+  }
+  .func-detail .func-example-row .arrow{ color:var(--text-secondary); margin:0 5px; font-family:var(--sans); }
+  .func-detail .func-example-row .result{ color:var(--success); font-weight:700; }
+  .func-detail .func-example-row .result.err{ color:var(--error); font-weight:600; }
+  .func-detail .func-tip{
+    font-size:11.5px; color:#7A5B00; background:#FFF9E6; border:1px solid #EEDD9C;
+    border-radius:3px; padding:6px 8px; margin-bottom:8px;
+  }
+  .func-detail .func-actions{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .func-detail button.ghost{ padding:5px 8px; font-size:12px; }
+  .func-detail .learn-link{
+    font-size:11.5px; color:var(--data-blue); text-decoration:none; font-weight:600;
+    display:inline-flex; align-items:center; gap:4px;
+  }
+  .func-detail .learn-link:hover{ text-decoration:underline; }
+
+  .exo-block{ border-bottom:1px solid var(--border); }
+  .exo-block:last-child{ border-bottom:none; }
+  .exo-group-title{ font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); font-weight:700; padding:10px 12px 4px; }
+  .exo-item{ padding:8px 12px 10px; }
+  .exo-text{ font-size:12.5px; line-height:1.5; margin-bottom:6px; }
+  .exo-controls{ display:flex; gap:10px; align-items:center; }
+  .exo-sol{
+    display:none;
+    margin-top:7px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    background:#FAF9F8;
+    border:1px dashed var(--border-strong);
+    border-radius:3px;
+    padding:7px 9px;
+    color:var(--text-primary);
+  }
+  .exo-sol.open{ display:block; }
+
+  /* ---------- Sélecteur de visuel ---------- */
+  .visual-controls{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    padding:10px 16px; border-bottom:1px solid var(--border); background:#FAF9F8;
+  }
+  .seg{ display:inline-flex; border:1px solid var(--border-strong); border-radius:var(--radius); overflow:hidden; }
+  .seg button{
+    border:none; border-radius:0; font-size:12px; padding:6px 12px;
+    background:#fff; color:var(--text-secondary); font-weight:600;
+  }
+  .seg button + button{ border-left:1px solid var(--border-strong); }
+  .seg button.active{ background:var(--data-blue); color:#fff; }
+  .seg button:hover:not(.active){ background:#F3F2F1; }
+  .axis-row{ display:none; align-items:center; gap:8px; font-size:12.5px; color:var(--text-secondary); }
+  .axis-row.show{ display:flex; }
+  .axis-row select{
+    font-family:var(--sans); font-size:12.5px; padding:5px 8px;
+    border:1px solid var(--border-strong); border-radius:var(--radius); background:#fff;
+  }
+  .axis-hint{ font-size:11px; color:var(--text-secondary); font-style:italic; }
+
+  /* ---------- Graphique en barres ---------- */
+  .chart-wrap{ display:none; padding:10px 4px 4px; }
+  .chart-wrap.show{ display:block; }
+  .chart-scroll{ overflow-x:auto; padding-bottom:6px; }
+  .chart-bars{
+    display:flex; align-items:flex-end; gap:14px;
+    height:210px; min-width:100%; padding:0 6px;
+  }
+  .chart-col{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; min-width:46px; height:100%; }
+  .chart-bar-value{ font-size:11px; font-weight:600; color:var(--text-primary); margin-bottom:4px; white-space:nowrap; }
+  .chart-bar{
+    width:34px; border-radius:3px 3px 0 0;
+    min-height:2px; transition:height .2s;
+  }
+  .chart-bar.zero{ background:var(--border-strong) !important; }
+  .chart-col-label{
+    font-size:10.5px; color:var(--text-secondary); margin-top:6px;
+    max-width:64px; text-align:center; line-height:1.25;
+    overflow:hidden; text-overflow:ellipsis; display:-webkit-box;
+    -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  .chart-empty{ font-size:12.5px; color:var(--text-secondary); font-style:italic; padding:20px; text-align:center; }
+
+  /* ---------- DAX Quest ---------- */
+  .quest-layout{
+    display:grid;
+    grid-template-columns: 260px 1fr;
+    gap:14px;
+    padding:14px;
+    align-items:start;
+  }
+  @media (max-width:900px){ .quest-layout{ grid-template-columns:1fr; } }
+
+  .quest-score{ padding:14px 12px; border-bottom:1px solid var(--border); }
+  .quest-score-num{ font-size:24px; font-weight:700; color:var(--accent-dark); line-height:1; }
+  .quest-score-label{ font-size:11.5px; color:var(--text-secondary); margin-top:4px; }
+  .quest-progress-bar{ height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:10px; }
+  .quest-progress-fill{ height:100%; background:linear-gradient(90deg,#20A264,#DDA40D); transition:width .3s; }
+
+  .quest-levels{ padding:6px; }
+  .quest-level-item{
+    display:flex; align-items:center; gap:9px;
+    padding:8px 8px; border-radius:3px; font-size:12.5px;
+    cursor:default;
+  }
+  .quest-level-item.clickable{ cursor:pointer; }
+  .quest-level-item.clickable:hover{ background:#F3F2F1; }
+  .quest-level-item.done{ color:var(--success); }
+  .quest-level-item.active{ background:#FBF0D9; font-weight:700; color:var(--text-primary); }
+  .quest-level-item.locked{ color:var(--border-strong); }
+  .quest-level-badge{
+    width:20px; height:20px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10.5px; font-weight:700; border:1.5px solid var(--border-strong);
+    background:#F3F2F1; color:var(--text-secondary);
+  }
+  .quest-level-item.done .quest-level-badge{ background:var(--success); border-color:var(--success); color:#fff; }
+  .quest-level-item.active .quest-level-badge{ background:var(--accent); border-color:var(--accent-dark); color:#4A3300; }
+  .quest-level-pts{ margin-left:auto; font-size:11px; color:var(--text-secondary); }
+
+  .quest-main{ padding:22px 24px; min-height:340px; }
+  .quest-level-eyebrow{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); font-weight:700; margin-bottom:4px; }
+  .quest-level-title{ font-size:19px; font-weight:700; margin:0 0 4px; color:var(--text-primary); }
+  .quest-level-points{ font-size:12px; color:var(--accent-dark); font-weight:700; margin-bottom:14px; }
+  .quest-prompt{
+    background:#FAF9F8; border:1px solid var(--border); border-radius:var(--radius);
+    padding:13px 15px; font-size:13.5px; line-height:1.6; margin-bottom:16px;
+  }
+  .quest-input-row{ display:flex; gap:8px; margin-bottom:10px; }
+  .quest-input-wrap{ flex:1; position:relative; }
+  .quest-input-wrap input{
+    width:100%; font-family:var(--mono); font-size:13.5px;
+    padding:9px 11px; border:1.5px solid var(--border-strong); border-radius:var(--radius);
+  }
+  .quest-input-wrap input:focus{ outline:none; border-color:var(--data-blue); }
+  .quest-input-wrap input.state-error{ border-color:var(--error); background:var(--error-bg); }
+  .quest-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .quest-hint-box{
+    display:none; background:#FFF9E6; border:1px solid #EEDD9C; color:#7A5B00;
+    border-radius:3px; padding:9px 11px; font-size:12.5px; margin-bottom:10px; line-height:1.5;
+  }
+  .quest-hint-box.show{ display:block; }
+  .quest-solution-box{
+    display:none; background:#F7FBFF; border:1px solid #D6E9FA; border-left:3px solid var(--data-blue);
+    border-radius:0 3px 3px 0; padding:9px 11px; font-family:var(--mono); font-size:12.5px; margin-bottom:10px;
+  }
+  .quest-solution-box.show{ display:block; }
+  .quest-complete{ text-align:center; padding:36px 10px; }
+  .quest-complete .medal{ font-size:52px; line-height:1; margin-bottom:10px; }
+  .quest-complete .medal-title{ font-size:19px; font-weight:700; margin-bottom:6px; }
+  .quest-complete .medal-score{ font-size:14px; color:var(--text-secondary); margin-bottom:18px; }
+
+  /* ---------- DAX Learn ---------- */
+  .learn-layout{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px;
+    padding:14px;
+    align-items:start;
+  }
+  @media (max-width:900px){ .learn-layout{ grid-template-columns:1fr; } }
+  .learn-intro{
+    grid-column: 1 / -1;
+    font-size:13px; color:var(--text-secondary); line-height:1.6;
+    padding:2px 4px 4px;
+  }
+  .learn-rules{ padding:10px 12px; display:flex; flex-direction:column; gap:9px; }
+  .rule-card{
+    display:flex; gap:10px; align-items:flex-start;
+    padding:10px 12px; background:#FAF9F8; border:1px solid var(--border); border-radius:var(--radius);
+  }
+  .rule-num{
+    width:22px; height:22px; border-radius:50%; background:var(--accent); color:#4A3300;
+    font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .rule-text{ font-size:12.5px; line-height:1.55; }
+  .rule-text code{
+    font-family:var(--mono); background:#fff; border:1px solid var(--border);
+    border-radius:3px; padding:1px 5px; font-size:12px;
+  }
+  .learn-tips{ padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+  .tip-line{
+    font-size:12.5px; line-height:1.5; background:#FFF9E6; border:1px solid #EEDD9C;
+    color:#5C4A00; border-radius:3px; padding:8px 10px;
+  }
+  .learn-func-panel{ grid-column: 1 / -1; }
+
+  /* Disposition maître-détail : liste des fonctions à gauche, fiche à droite */
+  .learn-func-layout{
+    display:grid;
+    grid-template-columns: 220px 1fr;
+    border-top:1px solid var(--border);
+    min-height:420px;
+  }
+  @media (max-width:760px){ .learn-func-layout{ grid-template-columns:1fr; } }
+
+  .learn-func-nav{
+    border-right:1px solid var(--border);
+    padding:8px;
+    max-height:560px;
+    overflow-y:auto;
+  }
+  @media (max-width:760px){ .learn-func-nav{ border-right:none; border-bottom:1px solid var(--border); max-height:260px; } }
+  .learn-func-group-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:700;
+    color:#0F4A2A; background:#EAF6EF; border-left:3px solid var(--data-blue);
+    padding:6px 9px; margin:12px 0 5px; border-radius:0 3px 3px 0;
+  }
+  .learn-func-group-label:first-child{ margin-top:2px; }
+  .learn-func-nav-item{
+    padding:7px 10px 7px 16px; border-radius:3px; cursor:pointer;
+    font-family:var(--mono); font-size:12.5px; font-weight:600; color:var(--text-primary);
+    border-left:3px solid transparent;
+  }
+  .learn-func-nav-item:hover{ background:#F3F2F1; }
+  .learn-func-nav-item.active{ background:#FBF0D9; border-left-color:var(--accent-dark); color:var(--accent-dark); }
+
+  .learn-func-detail{ padding:20px 24px; }
+  .learn-func-detail .lf-usecase-top{
+    display:flex; gap:8px; align-items:flex-start;
+    font-size:12.5px; line-height:1.55; color:#0F4A2A;
+    background:#EAF6EF; border:1px solid #CFE8DA; border-radius:var(--radius);
+    padding:10px 12px; margin-bottom:16px;
+  }
+  .learn-func-detail .lf-usecase-top b{ color:#0F4A2A; }
+  .learn-func-detail .lf-name{ font-family:var(--mono); font-size:17px; font-weight:700; color:var(--text-primary); margin-bottom:4px; }
+  .learn-func-detail .lf-desc{ font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; }
+  .learn-func-detail .lf-long{ font-size:13.5px; line-height:1.65; color:var(--text-primary); margin:0 0 14px; }
+  .learn-func-detail .lf-example-row{
+    background:#F7FBFF; border:1px solid #D6E9FA; border-left:3px solid var(--data-blue);
+    border-radius:0 3px 3px 0; padding:10px 12px; font-family:var(--mono); font-size:12.5px; margin-bottom:12px;
+  }
+  .learn-func-detail .lf-arrow{ color:var(--text-secondary); margin:0 6px; font-family:var(--sans); }
+  .learn-func-detail .lf-result{ color:var(--success); font-weight:700; }
+  .learn-func-detail .lf-result.err{ color:var(--error); font-weight:600; }
+  .learn-func-detail .lf-tip{
+    font-size:12.5px; color:#7A5B00; background:#FFF9E6; border:1px solid #EEDD9C;
+    border-radius:3px; padding:9px 11px; margin-bottom:14px; line-height:1.5;
+  }
+  .learn-func-detail .lf-section-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary);
+    font-weight:700; margin:16px 0 6px;
+  }
+  .learn-func-detail .lf-excel{
+    font-size:12.5px; line-height:1.6; color:var(--text-primary);
+    background:#F3F2F1; border-radius:3px; padding:9px 11px;
+  }
+  /* Carte de lien vers Microsoft Learn, bien visible */
+  .learn-func-detail .lf-msdocs-card{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; margin:18px 0 4px;
+    background:#fff; border:1.5px solid var(--border-strong); border-radius:8px;
+    text-decoration:none; color:inherit;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  .learn-func-detail .lf-msdocs-card:hover{
+    border-color: var(--data-blue); box-shadow:0 3px 10px rgba(0,0,0,.09); background:#FAFDFF;
+  }
+  .learn-func-detail .lf-msdocs-logo{ flex-shrink:0; line-height:0; }
+  .learn-func-detail .lf-msdocs-text{ flex:1; display:flex; flex-direction:column; }
+  .learn-func-detail .lf-msdocs-title{ font-size:13.5px; font-weight:700; color:var(--text-primary); }
+  .learn-func-detail .lf-msdocs-sub{ font-size:12px; color:var(--text-secondary); margin-top:1px; }
+  .learn-func-detail .lf-msdocs-arrow{ font-size:18px; color:var(--data-blue); flex-shrink:0; }
+  .learn-func-detail .lf-related{ display:flex; flex-wrap:wrap; gap:6px; }
+  .learn-func-detail .lf-related-chip{
+    font-family:var(--mono); font-size:11.5px; font-weight:700;
+    padding:5px 10px; border-radius:999px; border:1px solid var(--border-strong);
+    background:#fff; color:var(--data-blue); cursor:pointer;
+  }
+  .learn-func-detail .lf-related-chip:hover{ background:#F3F2F1; }
+
+  footer{ text-align:center; font-size:11.5px; color:var(--text-secondary); padding:18px; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+<div class="topbar">
+  <img class="logo-img" alt="Data Unchained" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvzbMAAABgWlDQ1BzUkdCIElFQzYxOTY2LTIuMQAAKM+Vkc8rRFEUxz/zQ+PHiGJhYTFpsDHyo8RGGWmoSdMYZbCZeebNqPnxeu9Nkq2ynaLExq8FfwFbZa0UkZK1NbFhes4zaqQs3Ns953O/957TPeeCM5ZVcoa7D3J5U4+Ggr65+LzP84SbOprpZjChGNpYJBLmz/F2i8P21wE7F/8bDUspQwFHrfCooumm8KRweMXUbN4SblUyiSXhE+EeXR4ofGPryQo/2Zyu8IfNeiw6LrU1C/vSPzj5g5WMnhOWyvHnskXl+z12Jd5UfnZGfIesdgyihAjiY4oJxhminxGxQwQYoFd2/BHf9xU/TUFiFbEaq+gskyaDSY+oRcmeEq+KnpKZZdXu/+++GurgQCW7Nwg1j5b10gmeTSiXLOv9wLLKh+B6gPN8Nb6wD8Ovopeqmn8Pmtbh9KKqJbfhbAPa7rWEnviSXLKcqgrPx9AYh5YrqF+o9Oz7nKM7iK3JV13Czi50yf2mxU+Bx2fyqVAuSgAAAAlwSFlzAAAPXwAAD18B14rayQAABbxpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+Cjx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNS4wIj4KIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgIHhtbG5zOmV4aWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vZXhpZi8xLjAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgIHhtcDpDcmVhdGVEYXRlPSIyMDI0LTAzLTMwVDA3OjM3OjE0KzAxMDAiCiAgIHhtcDpNb2RpZnlEYXRlPSIyMDI0LTA0LTA5VDE4OjQyOjQ0KzAyOjAwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI0LTA0LTA5VDE4OjQyOjQ0KzAyOjAwIgogICBwaG90b3Nob3A6RGF0ZUNyZWF0ZWQ9IjIwMjQtMDMtMzBUMDc6Mzc6MTQrMDEwMCIKICAgcGhvdG9zaG9wOkNvbG9yTW9kZT0iMyIKICAgcGhvdG9zaG9wOklDQ1Byb2ZpbGU9InNSR0IgSUVDNjE5NjYtMi4xIgogICBleGlmOlBpeGVsWERpbWVuc2lvbj0iNDAwIgogICBleGlmOlBpeGVsWURpbWVuc2lvbj0iNDAwIgogICBleGlmOkNvbG9yU3BhY2U9IjEiCiAgIHRpZmY6SW1hZ2VXaWR0aD0iNDAwIgogICB0aWZmOkltYWdlTGVuZ3RoPSI0MDAiCiAgIHRpZmY6UmVzb2x1dGlvblVuaXQ9IjIiCiAgIHRpZmY6WFJlc29sdXRpb249IjEwMC8xIgogICB0aWZmOllSZXNvbHV0aW9uPSIxMDAvMSI+CiAgIDxkYzp0aXRsZT4KICAgIDxyZGY6QWx0PgogICAgIDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+bG9nby1zcXVhcmU8L3JkZjpsaT4KICAgIDwvcmRmOkFsdD4KICAgPC9kYzp0aXRsZT4KICAgPHhtcE1NOkhpc3Rvcnk+CiAgICA8cmRmOlNlcT4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0icHJvZHVjZWQiCiAgICAgIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFmZmluaXR5IERlc2lnbmVyIDIgMi40LjAiCiAgICAgIHN0RXZ0OndoZW49IjIw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">
+  <div class="brand-text">
+    <span class="brand-name">Data Unchained</span>
+    <h1>Bac à sable DAX</h1>
+  </div>
+  <span class="pbi-badge">
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2" y="10" width="5" height="12" rx="1" fill="#F2C811"/>
+      <rect x="9.5" y="5" width="5" height="17" rx="1" fill="#F2C811"/>
+      <rect x="17" y="1" width="5" height="21" rx="1" fill="#F2C811"/>
+    </svg>
+    Power BI
+  </span>
+  <span class="sub">Teste tes formules sur une table fictive, comme dans une vraie carte Power BI</span>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="tabBtnSandbox" data-tab="sandbox">🧮 Bac à sable</button>
+  <button class="tab-btn" id="tabBtnLearn" data-tab="learn">📚 DAX Learn</button>
+  <button class="tab-btn" id="tabBtnQuest" data-tab="quest">🏆 DAX Quest</button>
+</div>
+</div>
+
+<div id="tabSandbox" class="tab-panel">
+<div class="scope-note">
+  <b>Comment ça marche :</b> tu écris une formule DAX. En <b>carte</b>, elle est calculée sur toute la table. En <b>graphique</b>, elle est recalculée une fois par catégorie de l'axe choisi, chaque barre filtrant la table sur sa propre catégorie. Fonctions disponibles : SUM, AVERAGE, MIN, MAX, COUNT, COUNTROWS, DISTINCTCOUNT, DIVIDE, IF, AND, OR, NOT, ROUND, ABS, BLANK. La fonction <b>CALCULATE</b> n'est pas encore au programme à ce niveau, on la découvrira plus tard.
+</div>
+<div class="layout">
+
+
+  <!-- LEFT : fields pane -->
+  <div class="panel">
+    <div class="panel-title">Champs</div>
+    <div class="fields-body">
+      <div class="table-node">🗂 Depenses</div>
+      <div id="fieldsList"></div>
+      <div class="measures-section">
+        <div class="table-node" style="font-size:12px;">📐 Mesures</div>
+        <div id="measuresList"><div class="empty-measures">Aucune mesure enregistrée</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER : formula bar + card -->
+  <div class="center-col">
+    <div class="panel formula-bar">
+      <div class="formula-row1">
+        <input type="text" id="measureName" value="Ma Mesure" spellcheck="false">
+        <span class="eq">=</span>
+        <span style="font-size:11.5px;color:var(--text-secondary);">nom de la mesure</span>
+      </div>
+      <div class="fx-row">
+        <span class="fx-icon">fx</span>
+        <div class="formula-input-wrap">
+          <textarea id="formulaInput" spellcheck="false" placeholder="Écris ta formule ici, ex : SUM(Depenses[Montant_EUR])">SUM(Depenses[Montant_EUR])</textarea>
+          <div class="autocomplete-box" id="autocompleteBox"></div>
+        </div>
+      </div>
+      <div class="formula-actions">
+        <button class="primary" id="btnValider">✓ Valider (Entrée)</button>
+        <button id="btnSaveMeasure">💾 Enregistrer comme mesure</button>
+        <button id="btnClear">Nouvelle formule</button>
+      </div>
+      <div class="msg" id="msgBox"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Aperçu visuel</div>
+      <div class="visual-controls">
+        <div class="seg">
+          <button class="active" id="btnTypeCard" data-type="card">Carte</button>
+          <button id="btnTypeChart" data-type="chart">Graphique à barres</button>
+        </div>
+        <div class="axis-row" id="axisRow">
+          <span>Axe :</span>
+          <select id="axisSelect"></select>
+          <span class="axis-hint">chaque barre filtre la table sur sa catégorie</span>
+        </div>
+      </div>
+      <div class="visual-wrap">
+        <div class="card-visual card-placeholder" id="cardVisual">
+          <div class="card-value" id="cardValue">Valide une formule</div>
+          <div class="card-label" id="cardLabel">pour voir le résultat ici</div>
+        </div>
+        <div class="chart-wrap" id="chartWrap">
+          <div class="chart-scroll"><div class="chart-bars" id="chartBars"></div></div>
+        </div>
+      </div>
+      <div class="preview-toggle" id="previewToggle">▸ Afficher les données de la table Depenses</div>
+      <div class="preview-table-wrap" id="previewWrap"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT : functions + exercises -->
+  <div class="right-col">
+    <div class="panel">
+      <div class="panel-title">Fonctions (clic pour l'explication)</div>
+      <div class="func-list" id="funcList"></div>
+      <div class="locked-note">🔒 CALCULATE, SUMX, RELATED... arrivent à un niveau plus avancé.</div>
+    </div>
+
+  </div>
+
+</div>
+</div>
+
+<div id="tabLearn" class="tab-panel" style="display:none;">
+  <div class="learn-layout">
+
+    <div class="learn-intro">
+      <b>DAX Learn</b> rassemble les règles d'écriture de base, quelques astuces générales, et le détail de chaque fonction disponible dans le bac à sable. Une bonne étape avant de te lancer dans DAX Quest.
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Règles d'écriture</div>
+      <div class="learn-rules" id="learnRules"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Astuces générales</div>
+      <div class="learn-tips" id="learnTips"></div>
+    </div>
+
+    <div class="panel learn-func-panel">
+      <div class="panel-title">Les fonctions, en détail</div>
+      <div class="learn-func-layout">
+        <div class="learn-func-nav" id="learnFuncNav"></div>
+        <div class="learn-func-detail" id="learnFuncDetail"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="tabQuest" class="tab-panel" style="display:none;">
+  <div class="quest-layout">
+
+    <div class="panel">
+      <div class="panel-title">Progression</div>
+      <div class="quest-score" id="questScore"></div>
+      <div class="quest-levels" id="questLevels"></div>
+      <div style="padding:6px 12px 12px;">
+        <button class="ghost" id="btnResetQuest">↺ Recommencer la quête</button>
+      </div>
+    </div>
+
+    <div class="panel quest-main" id="questMain"></div>
+
+  </div>
+</div>
+
+<footer>Application 100% locale : aucune donnée n'est envoyée ni réutilisée, tout se calcule dans ton navigateur.</footer>
+
+<script>
+/* =========================================================
+   1. DONNÉES FICTIVES
+   ========================================================= */
+const TABLE_NAME = "Depenses";
+const table = [
+  {Departement:"Operations",    Projet:"Maintenance Site A",      Montant_EUR:45230, Budget_Projet_EUR:50000, Date:"2025-01-15", Region:"Paris"},
+  {Departement:"HSE",           Projet:"Audit Sécurité Q1",       Montant_EUR:12800, Budget_Projet_EUR:15000, Date:"2025-01-22", Region:"Lyon"},
+  {Departement:"IT",            Projet:"Migration ERP",           Montant_EUR:98750, Budget_Projet_EUR:90000, Date:"2025-02-03", Region:"Paris"},
+  {Departement:"Renouvelables", Projet:"Parc Solaire Sud",        Montant_EUR:210400, Budget_Projet_EUR:250000, Date:"2025-02-11", Region:"Toulouse"},
+  {Departement:"Exploration",   Projet:"Étude Sismique Offshore", Montant_EUR:156300, Budget_Projet_EUR:140000, Date:"2025-02-19", Region:"Lyon"},
+  {Departement:"Operations",    Projet:"Rénovation Ligne 2",      Montant_EUR:38900, Budget_Projet_EUR:45000, Date:"2025-03-02", Region:"Paris"},
+  {Departement:"HSE",           Projet:"Formation Incendie",      Montant_EUR:6200,  Budget_Projet_EUR:8000,  Date:"2025-03-10", Region:"Toulouse"},
+  {Departement:"IT",            Projet:"Cybersécurité Phase 2",   Montant_EUR:54000, Budget_Projet_EUR:60000, Date:"2025-03-18", Region:"Lyon"},
+  {Departement:"Renouvelables", Projet:"Éolien Offshore Nord",    Montant_EUR:312000, Budget_Projet_EUR:300000, Date:"2025-03-27", Region:"Paris"},
+  {Departement:"Exploration",   Projet:"Forage Test Bloc 4",      Montant_EUR:87400, Budget_Projet_EUR:95000, Date:"2026-01-05", Region:"Toulouse"},
+  {Departement:"Operations",    Projet:"Optimisation Réseau",     Montant_EUR:29500, Budget_Projet_EUR:28000, Date:"2026-01-14", Region:"Lyon"},
+  {Departement:"IT",            Projet:"Refonte Intranet",        Montant_EUR:21300, Budget_Projet_EUR:25000, Date:"2026-01-20", Region:"Paris"},
+];
+
+const columnTypes = {
+  Departement:"txt", Projet:"txt", Montant_EUR:"num",
+  Budget_Projet_EUR:"num", Date:"date", Region:"txt"
+};
+const columns = Object.keys(columnTypes);
+
+/* =========================================================
+   2. MOTEUR DAX SIMPLIFIÉ (tokenizer + parser + évaluateur)
+   ========================================================= */
+function tokenize(str){
+  const tokens = []; let i = 0; const n = str.length;
+  while(i < n){
+    const c = str[i];
+    if(/\s/.test(c)){ i++; continue; }
+    if(c === '"'){
+      let j = i+1, s='';
+      while(j<n && str[j] !== '"'){ s+=str[j]; j++; }
+      tokens.push({type:'STRING', value:s}); i = j+1; continue;
+    }
+    if(c === '['){
+      let j = i+1, s='';
+      while(j<n && str[j] !== ']'){ s+=str[j]; j++; }
+      tokens.push({type:'BRACKET', value:s.trim()}); i = j+1; continue;
+    }
+    if(/[0-9]/.test(c)){
+      let j=i, s='';
+      while(j<n && /[0-9.]/.test(str[j])){ s+=str[j]; j++; }
+      tokens.push({type:'NUMBER', value:parseFloat(s)}); i=j; continue;
+    }
+    if(/[A-Za-z_]/.test(c)){
+      let j=i, s='';
+      while(j<n && /[A-Za-z0-9_]/.test(str[j])){ s+=str[j]; j++; }
+      tokens.push({type:'IDENT', value:s}); i=j; continue;
+    }
+    const two = str.substr(i,2);
+    if(['<>','<=','>='].includes(two)){ tokens.push({type:'OP', value:two}); i+=2; continue; }
+    if('=<>+-*/(),'.includes(c)){ tokens.push({type:'OP', value:c}); i++; continue; }
+    throw new Error(`Caractère non reconnu : "${c}"`);
+  }
+  return tokens;
+}
+
+function mergeColumns(tokens){
+  const out = [];
+  for(let k=0;k<tokens.length;k++){
+    const t = tokens[k];
+    if(t.type==='IDENT' && tokens[k+1] && tokens[k+1].type==='BRACKET'){
+      out.push({type:'COLUMN', value:tokens[k+1].value}); k++; continue;
+    }
+    if(t.type==='BRACKET'){ out.push({type:'COLUMN', value:t.value}); continue; }
+    out.push(t);
+  }
+  return out;
+}
+
+class Parser{
+  constructor(tokens){ this.tokens = tokens; this.pos = 0; }
+  peek(){ return this.tokens[this.pos]; }
+  next(){ return this.tokens[this.pos++]; }
+  isOp(v){ const t=this.peek(); return t && t.type==='OP' && t.value===v; }
+  expectOp(v){ if(!this.isOp(v)) throw new Error(`"${v}" attendu ici.`); this.next(); }
+
+  parse(){
+    const node = this.parseComparison();
+    if(this.pos < this.tokens.length){
+      throw new Error(`Il y a un souci de syntaxe après ta formule (près de "${this.peek().value}").`);
+    }
+    return node;
+  }
+  parseComparison(){
+    let left = this.parseAdditive();
+    while(this.peek() && this.peek().type==='OP' && ['=','<>','<','>','<=','>='].includes(this.peek().value)){
+      const op = this.next().value;
+      left = {type:'BinOp', op, left, right:this.parseAdditive()};
+    }
+    return left;
+  }
+  parseAdditive(){
+    let left = this.parseTerm();
+    while(this.isOp('+') || this.isOp('-')){
+      const op = this.next().value;
+      left = {type:'BinOp', op, left, right:this.parseTerm()};
+    }
+    return left;
+  }
+  parseTerm(){
+    let left = this.parseUnary();
+    while(this.isOp('*') || this.isOp('/')){
+      const op = this.next().value;
+      left = {type:'BinOp', op, left, right:this.parseUnary()};
+    }
+    return left;
+  }
+  parseUnary(){
+    if(this.isOp('-')){ this.next(); return {type:'Neg', value:this.parseUnary()}; }
+    return this.parsePrimary();
+  }
+  parsePrimary(){
+    const t = this.peek();
+    if(!t) throw new Error("Il manque un morceau à la fin de la formule.");
+    if(t.type==='NUMBER'){ this.next(); return {type:'Number', value:t.value}; }
+    if(t.type==='STRING'){ this.next(); return {type:'String', value:t.value}; }
+    if(t.type==='COLUMN'){ this.next(); return {type:'ColumnOrMeasure', name:t.value}; }
+    if(this.isOp('(')){ this.next(); const inner=this.parseComparison(); this.expectOp(')'); return inner; }
+    if(t.type==='IDENT'){
+      const raw = t.value; const name = raw.toUpperCase(); this.next();
+      if(name==='TRUE') return {type:'Bool', value:true};
+      if(name==='FALSE') return {type:'Bool', value:false};
+      if(name==='BLANK'){ this.expectOp('('); this.expectOp(')'); return {type:'Blank'}; }
+      if(this.isOp('(')){
+        this.next();
+        const args = [];
+        if(!this.isOp(')')){
+          args.push(this.parseComparison());
+          while(this.isOp(',')){ this.next(); args.push(this.parseComparison()); }
+        }
+        this.expectOp(')');
+        return {type:'Call', name, args};
+      }
+      if(raw.toLowerCase() === TABLE_NAME.toLowerCase()){
+        return {type:'TableRef', name: raw};
+      }
+      throw new Error(`"${raw}" n'est pas reconnu. Un nom de colonne ou de mesure doit être entre crochets, par exemple [${raw}].`);
+    }
+    throw new Error("Élément inattendu dans la formule.");
+  }
+}
+
+function num(v, ctx){
+  if(v === null || v === undefined) return 0;
+  if(typeof v !== 'number') throw new Error("Cette opération attend un nombre, pas du texte.");
+  return v;
+}
+
+function colValues(colName, ctx){
+  if(!columns.includes(colName)){
+    throw new Error(`La colonne [${colName}] n'existe pas dans ${TABLE_NAME}. Colonnes disponibles : ${columns.join(', ')}.`);
+  }
+  return ctx.table.map(r => r[colName]).filter(v => v !== null && v !== undefined && v !== '');
+}
+
+function requireColumnArg(node, fnName){
+  if(!node || node.type !== 'ColumnOrMeasure'){
+    throw new Error(`${fnName} attend directement une colonne de table, par exemple ${fnName}([Montant_EUR]).`);
+  }
+  return node.name;
+}
+
+function evalNode(node, ctx){
+  switch(node.type){
+    case 'Number': return node.value;
+    case 'String': return node.value;
+    case 'Bool': return node.value;
+    case 'Blank': return null;
+    case 'Neg': return -num(evalNode(node.value, ctx));
+    case 'BinOp': return evalBinOp(node, ctx);
+    case 'ColumnOrMeasure': return evalColumnOrMeasure(node, ctx);
+    case 'Call': return evalCall(node, ctx);
+    case 'TableRef': throw new Error(`"${node.name}" est le nom d'une table, pas une valeur. Utilise COUNTROWS(${node.name}) pour compter ses lignes.`);
+    default: throw new Error("Formule non reconnue.");
+  }
+}
+
+function evalColumnOrMeasure(node, ctx){
+  const mName = Object.keys(ctx.measures).find(m => m.toLowerCase() === node.name.toLowerCase());
+  if(mName) return evalMeasure(mName, ctx);
+  if(columns.includes(node.name)){
+    throw new Error(`[${node.name}] est une colonne : elle doit passer par une fonction d'agrégation, comme SUM([${node.name}]) ou AVERAGE([${node.name}]). Une mesure renvoie une seule valeur, pas toute une colonne.`);
+  }
+  throw new Error(`"${node.name}" n'existe ni comme colonne de ${TABLE_NAME}, ni comme mesure enregistrée.`);
+}
+
+function evalBinOp(node, ctx){
+  const opsArith = ['+','-','*','/'];
+  const l = evalNode(node.left, ctx), r = evalNode(node.right, ctx);
+  if(opsArith.includes(node.op)){
+    const a = num(l), b = num(r);
+    switch(node.op){
+      case '+': return a+b;
+      case '-': return a-b;
+      case '*': return a*b;
+      case '/':
+        if(b === 0) throw new Error("Division par zéro. Utilise plutôt DIVIDE(numérateur, dénominateur) qui gère ce cas proprement.");
+        return a/b;
+    }
+  }
+  // comparisons
+  const la = (typeof l === 'number') ? l : (l===null?0:l);
+  const ra = (typeof r === 'number') ? r : (r===null?0:r);
+  switch(node.op){
+    case '=': return la === ra;
+    case '<>': return la !== ra;
+    case '<': return la < ra;
+    case '>': return la > ra;
+    case '<=': return la <= ra;
+    case '>=': return la >= ra;
+  }
+}
+
+function evalCall(node, ctx){
+  const {name, args} = node;
+  switch(name){
+    case 'SUM': {
+      const col = requireColumnArg(args[0], 'SUM');
+      const vals = colValues(col, ctx);
+      if(vals.some(v => typeof v !== 'number')) throw new Error(`[${col}] contient du texte : impossible de faire une somme.`);
+      return vals.reduce((a,b)=>a+b, 0);
+    }
+    case 'AVERAGE': {
+      const col = requireColumnArg(args[0], 'AVERAGE');
+      const vals = colValues(col, ctx);
+      if(vals.some(v => typeof v !== 'number')) throw new Error(`[${col}] contient du texte : impossible de calculer une moyenne.`);
+      if(vals.length===0) return null;
+      return vals.reduce((a,b)=>a+b,0) / vals.length;
+    }
+    case 'MIN': {
+      const col = requireColumnArg(args[0], 'MIN');
+      const vals = colValues(col, ctx);
+      if(vals.length===0) return null;
+      return vals.every(v=>typeof v==='number') ? Math.min(...vals) : vals.slice().sort()[0];
+    }
+    case 'MAX': {
+      const col = requireColumnArg(args[0], 'MAX');
+      const vals = colValues(col, ctx);
+      if(vals.length===0) return null;
+      return vals.every(v=>typeof v==='number') ? Math.max(...vals) : vals.slice().sort().slice(-1)[0];
+    }
+    case 'COUNT': {
+      const col = requireColumnArg(args[0], 'COUNT');
+      return colValues(col, ctx).length;
+    }
+    case 'DISTINCTCOUNT': {
+      const col = requireColumnArg(args[0], 'DISTINCTCOUNT');
+      return new Set(colValues(col, ctx)).size;
+    }
+    case 'COUNTROWS': {
+      // le nom de table (s'il est fourni) n'est pas évalué ; on respecte la table courante du contexte
+      // (utile quand une barre du graphique a filtré la table sur une catégorie)
+      return ctx.table.length;
+    }
+    case 'DIVIDE': {
+      if(args.length < 2 || args.length > 3) throw new Error("DIVIDE attend 2 ou 3 arguments : DIVIDE(numérateur, dénominateur, [valeur si vide]).");
+      const a = evalNode(args[0], ctx);
+      const b = evalNode(args[1], ctx);
+      if(b === 0 || b === null){
+        return args.length===3 ? evalNode(args[2], ctx) : null;
+      }
+      return num(a) / num(b);
+    }
+    case 'IF': {
+      if(args.length < 2 || args.length > 3) throw new Error("IF attend 2 ou 3 arguments : IF(condition, valeur si vrai, [valeur si faux]).");
+      const cond = evalNode(args[0], ctx);
+      if(cond) return evalNode(args[1], ctx);
+      return args.length===3 ? evalNode(args[2], ctx) : null;
+    }
+    case 'AND': {
+      if(args.length !== 2) throw new Error("AND attend exactement 2 arguments.");
+      return Boolean(evalNode(args[0], ctx)) && Boolean(evalNode(args[1], ctx));
+    }
+    case 'OR': {
+      if(args.length !== 2) throw new Error("OR attend exactement 2 arguments.");
+      return Boolean(evalNode(args[0], ctx)) || Boolean(evalNode(args[1], ctx));
+    }
+    case 'NOT': {
+      if(args.length !== 1) throw new Error("NOT attend exactement 1 argument.");
+      return !evalNode(args[0], ctx);
+    }
+    case 'ROUND': {
+      if(args.length !== 2) throw new Error("ROUND attend 2 arguments : ROUND(nombre, nombre de décimales).");
+      const v = num(evalNode(args[0], ctx));
+      const d = num(evalNode(args[1], ctx));
+      const f = Math.pow(10, d);
+      return Math.round(v * f) / f;
+    }
+    case 'ABS': {
+      if(args.length !== 1) throw new Error("ABS attend exactement 1 argument.");
+      return Math.abs(num(evalNode(args[0], ctx)));
+    }
+    case 'CALCULATE':
+      throw new Error("CALCULATE n'est pas encore au programme à ce niveau, on la découvrira plus tard 😉");
+    default:
+      throw new Error(`La fonction ${name} n'est pas disponible dans ce bac à sable. Fonctions dispo : SUM, AVERAGE, MIN, MAX, COUNT, COUNTROWS, DISTINCTCOUNT, DIVIDE, IF, AND, OR, NOT, ROUND, ABS, BLANK.`);
+  }
+}
+
+function evalMeasure(name, ctx){
+  if(ctx._evaluating.has(name)) throw new Error(`Référence circulaire : la mesure [${name}] se référence elle-même (directement ou indirectement).`);
+  ctx._evaluating.add(name);
+  try{
+    const formulaStr = ctx.measures[name];
+    const ast = new Parser(mergeColumns(tokenize(formulaStr))).parse();
+    return evalNode(ast, ctx);
+  } finally {
+    ctx._evaluating.delete(name);
+  }
+}
+
+function runFormula(formulaStr, measuresStore, tableOverride){
+  const tokens = mergeColumns(tokenize(formulaStr));
+  if(tokens.length === 0) throw new Error("La formule est vide.");
+  const ast = new Parser(tokens).parse();
+  const ctx = { measures: measuresStore, columns, table: tableOverride || table, _evaluating: new Set() };
+  return evalNode(ast, ctx);
+}
+
+/* =========================================================
+   3. ÉTAT DE L'APPLICATION
+   ========================================================= */
+const savedMeasures = {}; // name -> formula string
+
+/* =========================================================
+   4. RENDU UI
+   ========================================================= */
+const fieldsList = document.getElementById('fieldsList');
+const measuresList = document.getElementById('measuresList');
+const formulaInput = document.getElementById('formulaInput');
+const measureNameInput = document.getElementById('measureName');
+const msgBox = document.getElementById('msgBox');
+const cardVisual = document.getElementById('cardVisual');
+const cardValue = document.getElementById('cardValue');
+const cardLabel = document.getElementById('cardLabel');
+const chartWrap = document.getElementById('chartWrap');
+const chartBars = document.getElementById('chartBars');
+const axisRow = document.getElementById('axisRow');
+const axisSelect = document.getElementById('axisSelect');
+
+let visualType = 'card'; // 'card' | 'chart'
+const axisColumns = columns.filter(c => columnTypes[c] === 'txt');
+axisSelect.innerHTML = axisColumns.map(c => `<option value="${c}">${c}</option>`).join('');
+
+document.getElementById('btnTypeCard').addEventListener('click', () => setVisualType('card'));
+document.getElementById('btnTypeChart').addEventListener('click', () => setVisualType('chart'));
+axisSelect.addEventListener('change', evaluate);
+
+function setVisualType(type){
+  visualType = type;
+  document.getElementById('btnTypeCard').classList.toggle('active', type === 'card');
+  document.getElementById('btnTypeChart').classList.toggle('active', type === 'chart');
+  axisRow.classList.toggle('show', type === 'chart');
+  cardVisual.style.display = type === 'card' ? '' : 'none';
+  chartWrap.classList.toggle('show', type === 'chart');
+  evaluate();
+}
+
+const iconFor = t => t==='num' ? {c:'num', s:'Σ'} : t==='date' ? {c:'date', s:'📅'} : {c:'txt', s:'Abc'};
+
+function renderFields(){
+  fieldsList.innerHTML = columns.map(c=>{
+    const ic = iconFor(columnTypes[c]);
+    return `<div class="field-item" data-insert="[${c}]" title="Cliquer pour insérer">
+      <span class="field-icon ${ic.c}">${ic.s}</span>${c}
+    </div>`;
+  }).join('');
+  fieldsList.querySelectorAll('.field-item').forEach(el=>{
+    el.addEventListener('click', ()=> insertAtCursor(el.dataset.insert));
+  });
+}
+
+function renderMeasures(){
+  const names = Object.keys(savedMeasures);
+  if(names.length === 0){
+    measuresList.innerHTML = '<div class="empty-measures">Aucune mesure enregistrée</div>';
+    return;
+  }
+  measuresList.innerHTML = names.map(n=>`
+    <div class="field-item" data-insert="[${n}]" title="Cliquer pour insérer">
+      <span class="field-icon measure">fx</span>${n}
+    </div>`).join('');
+  measuresList.querySelectorAll('.field-item').forEach(el=>{
+    el.addEventListener('click', ()=> insertAtCursor(el.dataset.insert));
+  });
+}
+
+function insertAtCursor(text){
+  const el = formulaInput;
+  const start = el.selectionStart ?? el.value.length;
+  const end = el.selectionEnd ?? el.value.length;
+  el.value = el.value.slice(0,start) + text + el.value.slice(end);
+  el.focus();
+  const pos = start + text.length;
+  el.setSelectionRange(pos,pos);
+  sandboxAC.hide();
+}
+
+/* =========================================================
+   SAISIE INTELLIGENTE (autocomplétion, insensible à la casse)
+   Fabrique générique : réutilisable pour n'importe quel champ
+   (barre de formule du bac à sable, champ de DAX Quest...)
+   ========================================================= */
+const FUNCTION_NAMES = ['SUM','AVERAGE','COUNT','COUNTROWS','MIN','MAX','DISTINCTCOUNT','DIVIDE','IF','AND','OR','NOT','ROUND','ABS','BLANK'];
+
+function computeWordAt(text, pos){
+  const insideBrackets = text.lastIndexOf('[', pos-1) > text.lastIndexOf(']', pos-1);
+  const allowed = insideBrackets ? /[A-Za-z0-9_ ]/ : /[A-Za-z0-9_]/;
+  let start = pos;
+  while(start > 0 && allowed.test(text[start-1])) start--;
+  return { start, end: pos, word: text.slice(start, pos), insideBrackets };
+}
+
+/**
+ * Attache une saisie intelligente à un champ (input ou textarea).
+ * getMeasures : fonction qui renvoie le dictionnaire de mesures disponibles pour ce champ
+ *               (les mesures enregistrées du bac à sable, ou {} pour un contexte isolé comme DAX Quest).
+ * Renvoie { hide, handleKeydown } : handleKeydown doit être appelé en premier par le gestionnaire
+ * keydown du champ, et renvoie true si la touche a été consommée par l'autocomplétion.
+ */
+function createAutocomplete(fieldEl, boxEl, getMeasures){
+  const state = { items: [], activeIndex: -1, wordStart: 0, wordEnd: 0, insideBrackets: false };
+
+  function update(){
+    const pos = fieldEl.selectionStart;
+    const text = fieldEl.value;
+    const { start, end, word, insideBrackets } = computeWordAt(text, pos);
+    if(!word || word.trim().length === 0){ hide(); return; }
+    const wLower = word.toLowerCase();
+    const savedM = getMeasures();
+    let items = [];
+    if(insideBrackets){
+      items = [
+        ...columns.filter(c => c.toLowerCase().startsWith(wLower)).map(c => ({type:'col', label:c, insertName:c})),
+        ...Object.keys(savedM).filter(m => m.toLowerCase().startsWith(wLower)).map(m => ({type:'measure', label:m, insertName:m})),
+      ];
+    } else {
+      items = [
+        ...FUNCTION_NAMES.filter(f => f.toLowerCase().startsWith(wLower)).map(f => ({type:'func', label:f+'( )', insertName:f+'('})),
+        ...columns.filter(c => c.toLowerCase().startsWith(wLower)).map(c => ({type:'col', label:'['+c+']', insertName:'['+c+']'})),
+        ...Object.keys(savedM).filter(m => m.toLowerCase().startsWith(wLower)).map(m => ({type:'measure', label:'['+m+']', insertName:'['+m+']'})),
+      ];
+    }
+    items = items.slice(0, 8);
+    state.items = items;
+    state.activeIndex = items.length ? 0 : -1;
+    state.wordStart = start;
+    state.wordEnd = end;
+    state.insideBrackets = insideBrackets;
+    render();
+  }
+
+  function render(){
+    if(state.items.length === 0){ boxEl.classList.remove('show'); boxEl.innerHTML=''; return; }
+    const badgeChar = t => t==='func' ? 'fx' : t==='measure' ? '▤' : '▥';
+    boxEl.innerHTML = state.items.map((it,i)=>`
+      <div class="ac-item ${i===state.activeIndex?'active':''}" data-idx="${i}">
+        <span class="ac-badge ac-${it.type}">${badgeChar(it.type)}</span>
+        <span class="ac-label">${it.label}</span>
+        <span class="ac-hint">${it.type==='func' ? 'fonction' : it.type==='measure' ? 'mesure' : 'colonne'}</span>
+      </div>`).join('');
+    boxEl.classList.add('show');
+    boxEl.querySelectorAll('.ac-item').forEach(el=>{
+      el.addEventListener('mousedown', (e)=>{
+        e.preventDefault();
+        accept(state.items[+el.dataset.idx]);
+      });
+    });
+  }
+
+  function hide(){
+    state.items = [];
+    state.activeIndex = -1;
+    boxEl.classList.remove('show');
+    boxEl.innerHTML = '';
+  }
+
+  function accept(item){
+    const text = fieldEl.value;
+    let insertText = item.insertName;
+    if(state.insideBrackets){
+      const after = text.slice(state.wordEnd, state.wordEnd+1);
+      if(after !== ']'){ insertText += ']'; }
+    }
+    const newText = text.slice(0, state.wordStart) + insertText + text.slice(state.wordEnd);
+    fieldEl.value = newText;
+    const newPos = state.wordStart + insertText.length;
+    fieldEl.focus();
+    fieldEl.setSelectionRange(newPos, newPos);
+    hide();
+  }
+
+  function handleKeydown(e){
+    if(state.items.length === 0) return false;
+    if(!['ArrowDown','ArrowUp','Enter','Tab','Escape'].includes(e.key)) return false;
+    if(e.key === 'ArrowDown'){ e.preventDefault(); state.activeIndex = Math.min(state.activeIndex+1, state.items.length-1); render(); return true; }
+    if(e.key === 'ArrowUp'){ e.preventDefault(); state.activeIndex = Math.max(state.activeIndex-1, 0); render(); return true; }
+    if(e.key === 'Enter' || e.key === 'Tab'){ e.preventDefault(); accept(state.items[state.activeIndex]); return true; }
+    if(e.key === 'Escape'){ e.preventDefault(); hide(); return true; }
+    return false;
+  }
+
+  fieldEl.addEventListener('input', update);
+  fieldEl.addEventListener('click', update);
+  fieldEl.addEventListener('blur', ()=> setTimeout(hide, 150));
+
+  return { hide, handleKeydown };
+}
+
+function formatResult(v){
+  if(v === null || v === undefined) return {text:'(vide)', blank:true};
+  if(typeof v === 'boolean') return {text: v ? 'VRAI' : 'FAUX', blank:false};
+  if(typeof v === 'number'){
+    const rounded = Math.round(v*100)/100;
+    return {text: rounded.toLocaleString('fr-FR', {maximumFractionDigits:2}), blank:false};
+  }
+  return {text: String(v), blank:false};
+}
+
+function showMessage(type, text){
+  msgBox.className = 'msg show ' + type;
+  msgBox.textContent = text;
+}
+function hideMessage(){
+  msgBox.className = 'msg';
+  msgBox.textContent = '';
+}
+
+function evaluate(){
+  const formula = formulaInput.value.trim();
+  const label = measureNameInput.value.trim() || 'Mesure';
+  if(!formula){
+    formulaInput.classList.remove('state-error','state-success');
+    hideMessage();
+    return;
+  }
+  if(visualType === 'card'){
+    evaluateCard(formula, label);
+  } else {
+    evaluateChart(formula, label);
+  }
+}
+
+/* ---- Moteur de rendu visuel générique (réutilisé par le bac à sable et DAX Quest) ---- */
+function renderCardInto(cardEl, valueEl, labelEl, formula, label, measuresStore){
+  try{
+    const result = runFormula(formula, measuresStore);
+    const {text, blank} = formatResult(result);
+    cardEl.classList.remove('card-placeholder');
+    valueEl.classList.remove('is-error');
+    valueEl.classList.toggle('is-blank', blank);
+    valueEl.textContent = text;
+    labelEl.textContent = label;
+    return {ok:true};
+  } catch(e){
+    valueEl.classList.add('is-error');
+    valueEl.classList.remove('is-blank');
+    valueEl.textContent = '⚠ Erreur dans la formule';
+    labelEl.textContent = label;
+    return {ok:false, message:e.message};
+  }
+}
+
+function renderChartInto(barsEl, formula, axisField, measuresStore){
+  try{
+    const categories = [...new Set(table.map(r => r[axisField]))].sort((a,b)=>String(a).localeCompare(String(b),'fr'));
+    const points = categories.map(cat => {
+      const filtered = table.filter(r => r[axisField] === cat);
+      const value = runFormula(formula, measuresStore, filtered);
+      return {cat, value};
+    });
+    const nonBlank = points.map(p=>p.value).filter(v => v !== null && v !== undefined);
+    if(nonBlank.some(v => typeof v !== 'number')){
+      throw new Error("Le graphique a besoin d'une formule qui renvoie un nombre pour chaque catégorie (ta formule renvoie du texte ou VRAI/FAUX ici). Utilise plutôt la carte pour ce type de résultat.");
+    }
+    const maxVal = Math.max(1, ...nonBlank.map(v => Math.abs(v)));
+    const barPalette = ['#20A264','#DDA40D','#F3D163','#B95E01'];
+    barsEl.innerHTML = points.map((p,i) => {
+      const v = p.value;
+      const isZero = v === null || v === undefined || v === 0;
+      const heightPct = isZero ? 1 : Math.max(2, Math.round((Math.abs(v) / maxVal) * 100));
+      const {text} = formatResult(v);
+      const safeCat = String(p.cat).replace(/</g,'&lt;');
+      const color = barPalette[i % barPalette.length];
+      return `<div class="chart-col" title="${safeCat} : ${text}">
+        <div class="chart-bar-value">${text}</div>
+        <div class="chart-bar ${isZero?'zero':''}" style="height:${heightPct}%; background:${color};"></div>
+        <div class="chart-col-label">${safeCat}</div>
+      </div>`;
+    }).join('');
+    return {ok:true, count:points.length};
+  } catch(e){
+    barsEl.innerHTML = `<div class="chart-empty">⚠ ${e.message}</div>`;
+    return {ok:false, message:e.message};
+  }
+}
+
+/* ---- Bac à sable : branchement sur les éléments de l'onglet Bac à sable ---- */
+function evaluateCard(formula, label){
+  const res = renderCardInto(cardVisual, cardValue, cardLabel, formula, label, savedMeasures);
+  if(res.ok){
+    formulaInput.classList.remove('state-error');
+    formulaInput.classList.add('state-success');
+    showMessage('success', '✓ Formule valide.');
+  } else {
+    formulaInput.classList.remove('state-success');
+    formulaInput.classList.add('state-error');
+    showMessage('error', res.message);
+  }
+}
+
+function evaluateChart(formula, label){
+  const axisField = axisSelect.value;
+  const res = renderChartInto(chartBars, formula, axisField, savedMeasures);
+  if(res.ok){
+    formulaInput.classList.remove('state-error');
+    formulaInput.classList.add('state-success');
+    showMessage('success', `✓ Formule valide, calculée pour chaque ${axisField} (${res.count} barres).`);
+  } else {
+    formulaInput.classList.remove('state-success');
+    formulaInput.classList.add('state-error');
+    showMessage('error', res.message);
+  }
+}
+
+document.getElementById('btnValider').addEventListener('click', evaluate);
+
+const autocompleteBox = document.getElementById('autocompleteBox');
+const sandboxAC = createAutocomplete(formulaInput, autocompleteBox, () => savedMeasures);
+
+formulaInput.addEventListener('keydown', (e)=>{
+  if(sandboxAC.handleKeydown(e)) return;
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); evaluate(); }
+});
+
+document.getElementById('btnClear').addEventListener('click', ()=>{
+  formulaInput.value = '';
+  measureNameInput.value = 'Nouvelle Mesure';
+  formulaInput.classList.remove('state-error','state-success');
+  hideMessage();
+  sandboxAC.hide();
+  cardVisual.classList.add('card-placeholder');
+  cardValue.classList.remove('is-error','is-blank');
+  cardValue.textContent = 'Valide une formule';
+  cardLabel.textContent = 'pour voir le résultat ici';
+  formulaInput.focus();
+});
+
+document.getElementById('btnSaveMeasure').addEventListener('click', ()=>{
+  const formula = formulaInput.value.trim();
+  const name = measureNameInput.value.trim();
+  if(!formula){ showMessage('error', "Écris d'abord une formule avant de l'enregistrer."); return; }
+  if(!name){ showMessage('error', "Donne un nom à ta mesure avant de l'enregistrer."); return; }
+  try{
+    runFormula(formula, savedMeasures); // valider avant sauvegarde
+    savedMeasures[name] = formula;
+    renderMeasures();
+    showMessage('success', `✓ Mesure [${name}] enregistrée. Tu peux maintenant la réutiliser dans d'autres formules.`);
+  } catch(e){
+    showMessage('error', "Impossible d'enregistrer : " + e.message);
+  }
+});
+
+/* Aperçu des données */
+function previewTableHTML(){
+  const head = columns.map(c=>`<th>${c}</th>`).join('');
+  const rows = table.map(r=>`<tr>${columns.map(c=>`<td>${r[c]}</td>`).join('')}</tr>`).join('');
+  return `<table class="preview"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+const previewToggle = document.getElementById('previewToggle');
+const previewWrap = document.getElementById('previewWrap');
+let previewOpen = false;
+function renderPreview(){
+  previewWrap.innerHTML = previewTableHTML();
+}
+previewToggle.addEventListener('click', ()=>{
+  previewOpen = !previewOpen;
+  previewWrap.classList.toggle('open', previewOpen);
+  previewToggle.textContent = (previewOpen ? '▾ ' : '▸ ') + 'Afficher les données de la table Depenses';
+});
+
+/* =========================================================
+   5. FONCTIONS DE RÉFÉRENCE (panneau droit)
+   ========================================================= */
+const funcGroups = [
+  { label:"Agrégations simples", items:[
+    { n:"SUM([Colonne])", d:"Additionne une colonne numérique.",
+      long:"SUM fait exactement ce que tu ferais avec une calculatrice et une pile de tickets de caisse : elle additionne chaque valeur, une par une, jusqu'au total. Elle ne fonctionne que sur des colonnes de nombres.",
+      example:"SUM(Depenses[Montant_EUR])",
+      tip:"Sur une colonne de texte comme Departement, DAX refusera : il n'y a rien à additionner.",
+      excel:"Équivalent à SOMME() en Excel, par exemple SOMME(A2:A100). La différence : en DAX, tu donnes une colonne entière, pas une plage de cellules.",
+      useCase:"utile pour un total simple : chiffre d'affaires total, quantité totale vendue, effectif total d'une équipe.",
+      related:["AVERAGE","COUNTROWS"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/sum-function-dax" },
+    { n:"AVERAGE([Colonne])", d:"Calcule la moyenne d'une colonne numérique.",
+      long:"AVERAGE calcule la moyenne, comme quand tu partages une note de restaurant entre convives : elle additionne tout, puis divise par le nombre de lignes.",
+      example:"AVERAGE(Depenses[Montant_EUR])",
+      tip:"Les lignes vides ne comptent pas : la moyenne ne porte que sur les valeurs réellement renseignées.",
+      excel:"Équivalent à MOYENNE() en Excel. Même logique : la somme divisée par le nombre de valeurs renseignées.",
+      useCase:"utile pour un panier moyen, une note moyenne, un délai moyen de traitement.",
+      related:["SUM","MIN","MAX"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/average-function-dax" },
+    { n:"COUNT([Colonne])", d:"Compte les valeurs non vides d'une colonne.",
+      long:"COUNT compte les cases remplies d'une colonne, un peu comme compter le nombre de tickets dans une pile sans regarder ce qu'il y a dessus.",
+      example:"COUNT(Depenses[Montant_EUR])",
+      tip:"Pour compter toutes les lignes peu importe leur contenu, utilise plutôt COUNTROWS.",
+      excel:"Proche de NB() en Excel, qui compte les cellules contenant un nombre dans une plage donnée.",
+      useCase:"utile pour savoir combien de lignes ont une valeur renseignée dans une colonne précise, par exemple combien de commandes ont un montant facturé.",
+      related:["COUNTROWS","DISTINCTCOUNT"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/count-function-dax" },
+    { n:"COUNTROWS()", d:"Compte le nombre de lignes de la table.",
+      long:"COUNTROWS compte le nombre de lignes d'une table, comme compter le nombre de dossiers dans un classeur sans les ouvrir.",
+      example:"COUNTROWS(Depenses)",
+      tip:"Contrairement à COUNT, elle ne regarde pas une colonne en particulier : elle compte les lignes, point final.",
+      excel:"Pas d'équivalent direct en Excel classique : on s'approcherait avec LIGNES() sur un tableau structuré, ou NBVAL() sur une colonne clé toujours renseignée.",
+      useCase:"utile pour un indicateur du type « nombre de commandes » ou « nombre de clients actifs », peu importe le contenu des colonnes.",
+      related:["COUNT","DISTINCTCOUNT"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/countrows-function-dax" },
+    { n:"DISTINCTCOUNT([Colonne])", d:"Compte les valeurs différentes d'une colonne, sans les doublons.",
+      long:"DISTINCTCOUNT compte le nombre de valeurs différentes, sans les doublons. Un peu comme compter le nombre de départements représentés dans une liste de projets, même si un même département revient plusieurs fois.",
+      example:"DISTINCTCOUNT(Depenses[Departement])",
+      tip:"Une valeur vide compte comme une valeur à part entière dans le décompte.",
+      excel:"Pas d'équivalent direct dans une formule Excel classique : le plus proche est l'option « Nombre de valeurs distinctes » d'un tableau croisé dynamique connecté au modèle de données.",
+      useCase:"utile pour savoir combien de clients différents, ou combien de départements représentés, sans compter les doublons.",
+      related:["COUNT","COUNTROWS"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/distinctcount-function-dax" },
+    { n:"MIN([Colonne]) / MAX([Colonne])", d:"Renvoie la plus petite / grande valeur.",
+      long:"MIN et MAX cherchent la plus petite ou la plus grande valeur, comme parcourir tous les prix d'un rayon pour trouver le moins cher ou le plus cher.",
+      example:"MAX(Depenses[Montant_EUR])",
+      tip:"Sur une colonne de texte, MIN et MAX comparent par ordre alphabétique.",
+      excel:"Équivalent à MIN() et MAX() en Excel, avec exactement le même comportement.",
+      useCase:"utile pour repérer un record : la commande la plus chère, la date la plus ancienne, le délai le plus court.",
+      related:["SUM","AVERAGE"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/max-function-dax" },
+  ]},
+  { label:"Ratios & logique", items:[
+    { n:"DIVIDE(a, b, [alt])", d:"Division sécurisée : évite l'erreur si b = 0.",
+      long:"DIVIDE fait une division, mais avec un filet de sécurité : si le dénominateur est à zéro (ce qui ferait planter une division classique), elle renvoie une valeur de secours au lieu d'une erreur.",
+      example:"DIVIDE(SUM(Depenses[Montant_EUR]), SUM(Depenses[Budget_Projet_EUR]))",
+      tip:"Préfère toujours DIVIDE à l'opérateur / dans une mesure, pour ne jamais avoir de rapport qui casse ton visuel.",
+      excel:"Remplace l'opérateur / d'Excel, mais avec la sécurité intégrée. En Excel, il faudrait écrire SIERREUR(A1/B1;0) pour obtenir le même filet de sécurité.",
+      useCase:"utile pour tout ratio ou pourcentage : taux de conversion, part de budget consommée, marge en pourcentage.",
+      related:["SUM","IF"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/divide-function-dax" },
+    { n:"IF(cond, si_vrai, [si_faux])", d:"Renvoie une valeur selon une condition.",
+      long:"IF pose une question et choisit une réponse selon le résultat, comme un panneau qui indique tout droit si le feu est vert, ou stop si le feu est rouge.",
+      example:'IF(SUM(Depenses[Montant_EUR]) > 100000, "Beaucoup", "Peu")',
+      tip:"La condition doit pouvoir être vraie ou fausse, comme une comparaison avec >, < ou =.",
+      excel:"Équivalent à SI() en Excel, avec exactement la même logique et le même ordre d'arguments.",
+      useCase:"utile pour classer un résultat en catégories : statut budgétaire, seuil d'alerte, segmentation simple d'un indicateur.",
+      related:["AND","OR","DIVIDE"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/if-function-dax" },
+    { n:"AND(a,b) / OR(a,b)", d:"Combine deux conditions.",
+      long:"AND et OR combinent deux conditions. AND exige que les deux soient vraies en même temps, comme il faut la clé ET le code pour ouvrir un coffre. OR se contente qu'une seule le soit, comme payer par carte OU en espèces.",
+      example:"AND(SUM(Depenses[Montant_EUR]) > 50000, COUNTROWS(Depenses) > 5)",
+      tip:null,
+      excel:"Équivalent à ET() et OU() en Excel. Différence à noter : en DAX, tu peux aussi écrire && et || comme raccourcis dans certains contextes.",
+      useCase:"utile pour combiner plusieurs critères dans un IF, par exemple « budget dépassé ET délai dépassé » avant de déclencher une alerte.",
+      related:["IF","NOT"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/and-function-dax" },
+    { n:"NOT(cond)", d:"Inverse une condition (vrai devient faux).",
+      long:"NOT inverse une condition : ce qui était vrai devient faux, et inversement. Comme appuyer sur l'interrupteur pour éteindre une lumière allumée.",
+      example:"NOT(COUNTROWS(Depenses) = 0)",
+      tip:null,
+      excel:"Équivalent à NON() en Excel.",
+      useCase:"utile pour inverser une condition existante plutôt que de la réécrire à l'envers, par exemple pour repérer ce qui n'est pas encore livré.",
+      related:["IF","AND"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/not-function-dax" },
+  ]},
+  { label:"Autres", items:[
+    { n:"ROUND(nombre, décimales)", d:"Arrondit un nombre.",
+      long:"ROUND arrondit un nombre au nombre de décimales souhaité, comme arrondir un prix à l'euro près à la caisse.",
+      example:"ROUND(AVERAGE(Depenses[Montant_EUR]), 0)",
+      tip:"Un nombre de décimales négatif arrondit à la dizaine, à la centaine ou au millier, pratique pour lisser un graphique.",
+      excel:"Équivalent à ARRONDI() en Excel, avec le même fonctionnement pour les décimales négatives (ARRONDI(A1;-2) arrondit à la centaine).",
+      useCase:"utile pour lisser un indicateur affiché dans un visuel, ou arrondir un prix à l'euro près avant de l'afficher.",
+      related:["ABS","AVERAGE"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/round-function-dax" },
+    { n:"ABS(nombre)", d:"Valeur absolue.",
+      long:"ABS transforme un nombre négatif en positif, sans toucher aux nombres déjà positifs. Comme mesurer un écart : peu importe si tu es au-dessus ou en dessous, tu veux juste savoir de combien.",
+      example:"ABS(SUM(Depenses[Montant_EUR]) - SUM(Depenses[Budget_Projet_EUR]))",
+      tip:null,
+      excel:"Équivalent à ABS() en Excel.",
+      useCase:"utile pour mesurer un écart peu importe son sens, comme un écart budgétaire ou une variation d'un mois sur l'autre.",
+      related:["ROUND","DIVIDE"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/abs-function-dax" },
+    { n:"BLANK()", d:"Représente une valeur vide.",
+      long:"BLANK représente une case vide, ni zéro ni texte : littéralement rien. Utile pour dire à DAX de ne rien afficher plutôt que d'afficher 0.",
+      example:"IF(COUNTROWS(Depenses) = 0, BLANK(), SUM(Depenses[Montant_EUR]))",
+      tip:null,
+      excel:"Pas d'équivalent direct : en Excel, on afficherait une chaîne vide \"\" ou on masquerait la valeur par une mise en forme conditionnelle.",
+      useCase:"utile pour éviter d'afficher un 0 trompeur quand une donnée n'existe pas encore, plutôt que de forcer une valeur artificielle.",
+      related:["IF"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/blank-function-dax" },
+  ]},
+];
+
+/**
+ * Construit et câble une liste de fiches fonctions dans le conteneur donné.
+ * withInsertInto : élément textarea/input où "Utiliser cet exemple" doit écrire, ou null pour le désactiver
+ *                   (utilisé pour l'onglet DAX Learn, qui n'a pas de barre de formule).
+ */
+function renderFuncListInto(containerEl, keyPrefix, withInsertInto){
+  containerEl.innerHTML = funcGroups.map((g,gi)=>`
+    <div class="func-group-label">${g.label}</div>
+    ${g.items.map((it,ii)=>{
+      const key = `${keyPrefix}-${gi}-${ii}`;
+      return `
+      <div class="func-item" data-toggle="${key}">
+        <div class="func-name">${it.n}</div>
+        <div class="func-desc">${it.d}</div>
+      </div>
+      <div class="func-detail" id="${key}" data-example="${it.example.replace(/"/g,'&quot;')}">
+        <p class="func-long">${it.long}</p>
+        <div class="func-example-row">
+          <span class="ex-formula"></span><span class="arrow">→</span><span class="ex-result">…</span>
+        </div>
+        ${it.tip ? `<div class="func-tip">💡 ${it.tip}</div>` : ''}
+        <div class="func-actions">
+          ${withInsertInto ? `<button class="ghost" data-use="${key}">Utiliser cet exemple dans la barre de formule</button>` : ''}
+          <a class="learn-link" href="${it.learn}" target="_blank" rel="noopener noreferrer">📘 Pour aller plus loin (Microsoft Learn)</a>
+        </div>
+      </div>`;
+    }).join('')}
+  `).join('');
+
+  // remplir les exemples en évaluant réellement la formule sur la table (résultat "vivant")
+  containerEl.querySelectorAll('.func-detail').forEach(detail=>{
+    const example = detail.dataset.example;
+    const formulaEl = detail.querySelector('.ex-formula');
+    const resultEl = detail.querySelector('.ex-result');
+    formulaEl.textContent = example;
+    try{
+      const r = runFormula(example, {});
+      resultEl.textContent = formatResult(r).text;
+      resultEl.classList.remove('err');
+    } catch(e){
+      resultEl.textContent = 'erreur';
+      resultEl.classList.add('err');
+    }
+  });
+
+  containerEl.querySelectorAll('[data-toggle]').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const detail = document.getElementById(row.dataset.toggle);
+      detail.classList.toggle('open');
+    });
+  });
+
+  if(withInsertInto){
+    containerEl.querySelectorAll('[data-use]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const detail = document.getElementById(btn.dataset.use);
+        withInsertInto.value = detail.dataset.example;
+        sandboxAC.hide();
+        withInsertInto.focus();
+        evaluate();
+      });
+    });
+  }
+}
+
+const funcList = document.getElementById('funcList');
+renderFuncListInto(funcList, 'f', formulaInput);
+
+/* =========================================================
+   6. ONGLETS (Bac à sable / DAX Learn / DAX Quest)
+   ========================================================= */
+const tabSandbox = document.getElementById('tabSandbox');
+const tabLearn = document.getElementById('tabLearn');
+const tabQuest = document.getElementById('tabQuest');
+document.getElementById('tabBtnSandbox').addEventListener('click', ()=> switchTab('sandbox'));
+document.getElementById('tabBtnLearn').addEventListener('click', ()=> switchTab('learn'));
+document.getElementById('tabBtnQuest').addEventListener('click', ()=> switchTab('quest'));
+function switchTab(tab){
+  document.getElementById('tabBtnSandbox').classList.toggle('active', tab==='sandbox');
+  document.getElementById('tabBtnLearn').classList.toggle('active', tab==='learn');
+  document.getElementById('tabBtnQuest').classList.toggle('active', tab==='quest');
+  tabSandbox.style.display = tab==='sandbox' ? '' : 'none';
+  tabLearn.style.display = tab==='learn' ? '' : 'none';
+  tabQuest.style.display = tab==='quest' ? '' : 'none';
+}
+
+/* =========================================================
+   7. DAX QUEST — jeu de progression avec points
+   ========================================================= */
+const QUEST_LEVELS = [
+  { title:"Le total des dépenses",
+    prompt:"Ta première mission : calcule le montant total dépensé sur tous les projets (colonne Montant_EUR).",
+    ref:"SUM(Depenses[Montant_EUR])",
+    hint:"Pense à la fonction qui additionne une colonne entière, comme une pile de tickets de caisse.",
+    points:100 },
+  { title:"Combien de projets ?",
+    prompt:"Calcule le nombre de projets enregistrés dans la table, peu importe leur contenu.",
+    ref:"COUNTROWS(Depenses)",
+    hint:"Il ne s'agit pas de compter une colonne en particulier, mais les lignes de la table.",
+    points:100 },
+  { title:"Le budget total",
+    prompt:"Calcule le budget total alloué à l'ensemble des projets (colonne Budget_Projet_EUR).",
+    ref:"SUM(Depenses[Budget_Projet_EUR])",
+    hint:"Même principe que ta toute première mission, mais sur une autre colonne.",
+    points:100 },
+  { title:"La dépense moyenne",
+    prompt:"Calcule le montant moyen dépensé par projet.",
+    ref:"AVERAGE(Depenses[Montant_EUR])",
+    hint:"La fonction qui calcule une moyenne s'écrit presque comme SUM.",
+    points:120 },
+  { title:"Le projet le plus coûteux",
+    prompt:"Trouve le montant du projet le plus cher de la table.",
+    ref:"MAX(Depenses[Montant_EUR])",
+    hint:"Cherche la fonction qui renvoie la plus grande valeur d'une colonne.",
+    points:120 },
+  { title:"Combien de départements ?",
+    prompt:"Calcule le nombre de départements différents impliqués dans ces projets, sans compter les doublons.",
+    ref:"DISTINCTCOUNT(Depenses[Departement])",
+    hint:"Il te faut une fonction qui compte les valeurs différentes d'une colonne.",
+    points:130 },
+  { title:"Le taux de consommation",
+    prompt:"Calcule le pourcentage du budget total consommé (montant total dépensé divisé par budget total, multiplié par 100). Protège-toi d'une éventuelle division par zéro.",
+    ref:"DIVIDE(SUM(Depenses[Montant_EUR]), SUM(Depenses[Budget_Projet_EUR])) * 100",
+    hint:"Utilise DIVIDE plutôt que l'opérateur /, puis multiplie le résultat par 100.",
+    points:150 },
+  { title:"Dépassement ou pas ?",
+    prompt:'Affiche le texte "Depassement" si le total dépensé dépasse le budget total, sinon affiche "Sous controle".',
+    ref:'IF(SUM(Depenses[Montant_EUR]) > SUM(Depenses[Budget_Projet_EUR]), "Depassement", "Sous controle")',
+    hint:'IF(condition, valeur_si_vrai, valeur_si_faux). Les textes s\'écrivent entre guillemets droits.',
+    points:150 },
+  { title:"L'écart, toujours positif",
+    prompt:"Calcule l'écart entre le total dépensé et le budget total, mais le résultat doit toujours être positif, même si le budget dépasse la dépense.",
+    ref:"ABS(SUM(Depenses[Montant_EUR]) - SUM(Depenses[Budget_Projet_EUR]))",
+    hint:"Calcule d'abord la différence, puis rends-la positive avec la bonne fonction.",
+    points:150 },
+  { title:"Un indicateur propre",
+    prompt:"Arrondis le montant moyen dépensé par projet à la centaine d'euros la plus proche.",
+    ref:"ROUND(AVERAGE(Depenses[Montant_EUR]), -2)",
+    hint:"ROUND(nombre, décimales). Un nombre de décimales négatif arrondit à la dizaine, la centaine, le millier...",
+    points:180 },
+];
+
+const questScoreEl = document.getElementById('questScore');
+const questLevelsEl = document.getElementById('questLevels');
+const questMainEl = document.getElementById('questMain');
+
+function freshQuestState(){
+  return {
+    current: 0,
+    levels: QUEST_LEVELS.map((l,i)=>({ status: i===0 ? 'active' : 'locked', earned:0, hintUsed:false, solutionRevealed:false, done:false, visualType:'card', axisField:axisColumns[0] })),
+  };
+}
+let questState = freshQuestState();
+
+function resultsMatch(a, b){
+  if(a === null || a === undefined) return b === null || b === undefined;
+  if(typeof a === 'number' && typeof b === 'number') return Math.abs(a-b) < 0.01;
+  if(typeof a === 'boolean' && typeof b === 'boolean') return a === b;
+  return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+}
+
+function questTotals(){
+  const possible = QUEST_LEVELS.reduce((s,l)=>s+l.points, 0);
+  const earned = questState.levels.reduce((s,l)=>s+l.earned, 0);
+  const doneCount = questState.levels.filter(l=>l.done).length;
+  return { possible, earned, doneCount };
+}
+
+function renderQuestScore(){
+  const { possible, earned, doneCount } = questTotals();
+  const pct = Math.round((earned/possible)*100);
+  questScoreEl.innerHTML = `
+    <div class="quest-score-num">${earned} <span style="font-size:14px;color:var(--text-secondary);font-weight:400;">/ ${possible} pts</span></div>
+    <div class="quest-score-label">Niveau ${Math.min(doneCount+1, QUEST_LEVELS.length)} / ${QUEST_LEVELS.length}${doneCount===QUEST_LEVELS.length ? ' · terminée !' : ''}</div>
+    <div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${pct}%;"></div></div>
+  `;
+}
+
+function renderQuestLevels(){
+  questLevelsEl.innerHTML = QUEST_LEVELS.map((l,i)=>{
+    const st = questState.levels[i];
+    const clickable = st.status !== 'locked';
+    const badge = st.done ? '✓' : st.status==='locked' ? '🔒' : (i+1);
+    return `<div class="quest-level-item ${st.status} ${clickable?'clickable':''}" data-idx="${i}">
+      <span class="quest-level-badge">${badge}</span>
+      <span>${l.title}</span>
+      <span class="quest-level-pts">${st.done ? st.earned+' pts' : l.points+' pts'}</span>
+    </div>`;
+  }).join('');
+  questLevelsEl.querySelectorAll('.quest-level-item.clickable').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      questState.current = +el.dataset.idx;
+      renderQuestMain();
+      renderQuestLevels();
+    });
+  });
+}
+
+function renderQuestMain(){
+  const { doneCount } = questTotals();
+  if(doneCount === QUEST_LEVELS.length){
+    const { possible, earned } = questTotals();
+    const pct = Math.round((earned/possible)*100);
+    let medal = '🥉', title = 'Apprenti DAX';
+    if(pct >= 90){ medal='🥇'; title='Maître DAX'; }
+    else if(pct >= 70){ medal='🥈'; title='Expert DAX'; }
+    else if(pct >= 50){ medal='🥉'; title='DAX confirmé'; }
+    else { medal='🎯'; title='Apprenti DAX'; }
+    questMainEl.innerHTML = `
+      <div class="quest-complete">
+        <div class="medal">${medal}</div>
+        <div class="medal-title">Quête terminée : ${title} !</div>
+        <div class="medal-score">Tu termines avec ${earned} / ${possible} points (${pct}%).</div>
+        <button class="primary" id="btnRestartFromComplete">↺ Recommencer la quête</button>
+      </div>`;
+    document.getElementById('btnRestartFromComplete').addEventListener('click', resetQuest);
+    return;
+  }
+
+  const i = questState.current;
+  const level = QUEST_LEVELS[i];
+  const st = questState.levels[i];
+
+  questMainEl.innerHTML = `
+    <div class="quest-level-eyebrow">Niveau ${i+1} / ${QUEST_LEVELS.length}</div>
+    <div class="quest-level-title">${level.title}</div>
+    <div class="quest-level-points">🏆 ${level.points} points${st.done ? ' · déjà validé ('+st.earned+' pts obtenus)' : ''}</div>
+    <div class="quest-prompt">${level.prompt}</div>
+    <div class="quest-input-row">
+      <div class="quest-input-wrap">
+        <input type="text" id="questInput" spellcheck="false" placeholder="Écris ta formule DAX ici..." value="${st.done ? level.ref.replace(/"/g,'&quot;') : ''}">
+        <div class="autocomplete-box" id="qAutocompleteBox"></div>
+      </div>
+      <button class="primary" id="btnQuestValidate">✓ Valider</button>
+    </div>
+    <div class="quest-actions">
+      <button class="ghost" id="btnQuestHint">💡 Indice</button>
+      <button class="ghost" id="btnQuestSolution">👁 Voir la solution</button>
+      ${i < QUEST_LEVELS.length-1 && st.done ? `<button class="ghost" id="btnQuestNext">Niveau suivant →</button>` : ''}
+    </div>
+    <div class="quest-hint-box" id="questHintBox">💡 ${level.hint}</div>
+    <div class="quest-solution-box" id="questSolutionBox">${level.ref}</div>
+    <div class="msg" id="questMsg"></div>
+
+    <div class="visual-controls" style="margin-top:6px;">
+      <div class="seg">
+        <button class="${st.visualType==='card'?'active':''}" id="qBtnTypeCard" data-type="card">Carte</button>
+        <button class="${st.visualType==='chart'?'active':''}" id="qBtnTypeChart" data-type="chart">Graphique à barres</button>
+      </div>
+      <div class="axis-row ${st.visualType==='chart'?'show':''}" id="qAxisRow">
+        <span>Axe :</span>
+        <select id="qAxisSelect">${axisColumns.map(c=>`<option value="${c}" ${c===st.axisField?'selected':''}>${c}</option>`).join('')}</select>
+        <span class="axis-hint">alimente le graphique avec ta formule</span>
+      </div>
+    </div>
+    <div class="visual-wrap">
+      <div class="card-visual card-placeholder" id="qCardVisual">
+        <div class="card-value" id="qCardValue">En attente</div>
+        <div class="card-label" id="qCardLabel">valide ta formule pour alimenter le visuel</div>
+      </div>
+      <div class="chart-wrap ${st.visualType==='chart'?'show':''}" id="qChartWrap">
+        <div class="chart-scroll"><div class="chart-bars" id="qChartBars"></div></div>
+      </div>
+    </div>
+    <div class="preview-toggle" id="qPreviewToggle">▸ Afficher les données de la table Depenses</div>
+    <div class="preview-table-wrap" id="qPreviewWrap"></div>
+  `;
+
+  document.getElementById('qCardVisual').style.display = st.visualType==='card' ? '' : 'none';
+
+  const questInput = document.getElementById('questInput');
+  const questAutocompleteBox = document.getElementById('qAutocompleteBox');
+  const questAC = createAutocomplete(questInput, questAutocompleteBox, () => ({})); // pas de mesures enregistrées dans la quête
+  const questMsg = document.getElementById('questMsg');
+  const hintBox = document.getElementById('questHintBox');
+  const solutionBox = document.getElementById('questSolutionBox');
+  const qCardVisual = document.getElementById('qCardVisual');
+  const qCardValue = document.getElementById('qCardValue');
+  const qCardLabel = document.getElementById('qCardLabel');
+  const qChartWrap = document.getElementById('qChartWrap');
+  const qChartBars = document.getElementById('qChartBars');
+  const qAxisRow = document.getElementById('qAxisRow');
+  const qAxisSelect = document.getElementById('qAxisSelect');
+
+  if(st.hintUsed) hintBox.classList.add('show');
+  if(st.solutionRevealed) solutionBox.classList.add('show');
+
+  function showQuestMsg(type, text){
+    questMsg.className = 'msg show ' + type;
+    questMsg.textContent = text;
+  }
+
+  function renderQuestVisual(){
+    const formula = questInput.value.trim();
+    if(!formula) return;
+    if(st.visualType === 'card'){
+      renderCardInto(qCardVisual, qCardValue, qCardLabel, formula, level.title, {});
+    } else {
+      renderChartInto(qChartBars, formula, st.axisField, {});
+    }
+  }
+
+  document.getElementById('qBtnTypeCard').addEventListener('click', ()=>{
+    st.visualType = 'card';
+    document.getElementById('qBtnTypeCard').classList.add('active');
+    document.getElementById('qBtnTypeChart').classList.remove('active');
+    qAxisRow.classList.remove('show');
+    qCardVisual.style.display = '';
+    qChartWrap.classList.remove('show');
+    renderQuestVisual();
+  });
+  document.getElementById('qBtnTypeChart').addEventListener('click', ()=>{
+    st.visualType = 'chart';
+    document.getElementById('qBtnTypeChart').classList.add('active');
+    document.getElementById('qBtnTypeCard').classList.remove('active');
+    qAxisRow.classList.add('show');
+    qCardVisual.style.display = 'none';
+    qChartWrap.classList.add('show');
+    renderQuestVisual();
+  });
+  qAxisSelect.addEventListener('change', ()=>{
+    st.axisField = qAxisSelect.value;
+    renderQuestVisual();
+  });
+
+  const qPreviewToggle = document.getElementById('qPreviewToggle');
+  const qPreviewWrap = document.getElementById('qPreviewWrap');
+  let qPreviewOpen = false;
+  qPreviewToggle.addEventListener('click', ()=>{
+    qPreviewOpen = !qPreviewOpen;
+    if(qPreviewOpen && !qPreviewWrap.innerHTML) qPreviewWrap.innerHTML = previewTableHTML();
+    qPreviewWrap.classList.toggle('open', qPreviewOpen);
+    qPreviewToggle.textContent = (qPreviewOpen ? '▾ ' : '▸ ') + 'Afficher les données de la table Depenses';
+  });
+
+  if(st.done){ renderQuestVisual(); }
+
+  function validateLevel(){
+    const formula = questInput.value.trim();
+    if(!formula){ showQuestMsg('error', "Écris une formule avant de valider."); return; }
+    let userResult, expected;
+    try{
+      userResult = runFormula(formula, {});
+    } catch(e){
+      questInput.classList.add('state-error');
+      showQuestMsg('error', e.message);
+      return;
+    }
+    expected = runFormula(level.ref, {});
+    questInput.classList.remove('state-error');
+    renderQuestVisual();
+    if(resultsMatch(userResult, expected)){
+      const multiplier = st.solutionRevealed ? 0.1 : st.hintUsed ? 0.6 : 1;
+      st.earned = Math.round(level.points * multiplier);
+      st.done = true;
+      st.status = 'done';
+      if(i < QUEST_LEVELS.length-1 && questState.levels[i+1].status === 'locked'){
+        questState.levels[i+1].status = 'active';
+      }
+      showQuestMsg('success', `✓ Bravo, c'est la bonne formule ! +${st.earned} points.`);
+      renderQuestScore();
+      renderQuestLevels();
+      setTimeout(()=>{
+        const { doneCount:dc } = questTotals();
+        if(dc === QUEST_LEVELS.length){ renderQuestMain(); }
+        else if(i < QUEST_LEVELS.length-1){ questState.current = i+1; renderQuestMain(); }
+        else { renderQuestMain(); }
+      }, 900);
+    } else {
+      const {text} = formatResult(userResult);
+      showQuestMsg('error', `Ta formule fonctionne, mais ce n'est pas encore le bon résultat (elle renvoie ${text}). Réessaie, ou utilise un indice.`);
+    }
+  }
+
+  document.getElementById('btnQuestValidate').addEventListener('click', validateLevel);
+  questInput.addEventListener('keydown', (e)=>{
+    if(questAC.handleKeydown(e)) return;
+    if(e.key === 'Enter'){ e.preventDefault(); validateLevel(); }
+  });
+  document.getElementById('btnQuestHint').addEventListener('click', ()=>{
+    st.hintUsed = true;
+    hintBox.classList.add('show');
+  });
+  document.getElementById('btnQuestSolution').addEventListener('click', ()=>{
+    st.solutionRevealed = true;
+    solutionBox.classList.add('show');
+  });
+  const nextBtn = document.getElementById('btnQuestNext');
+  if(nextBtn){
+    nextBtn.addEventListener('click', ()=>{
+      questState.current = i+1;
+      renderQuestMain();
+      renderQuestLevels();
+    });
+  }
+}
+
+function resetQuest(){
+  questState = freshQuestState();
+  renderQuestScore();
+  renderQuestLevels();
+  renderQuestMain();
+}
+
+document.getElementById('btnResetQuest').addEventListener('click', ()=>{
+  if(confirm("Recommencer la quête depuis le début ? Ta progression actuelle sera perdue.")){
+    resetQuest();
+  }
+});
+
+/* =========================================================
+   9. DAX LEARN — règles d'écriture, astuces, fiches fonctions
+   ========================================================= */
+const LEARN_RULES = [
+  'Les colonnes et les mesures s\'écrivent toujours entre crochets, par exemple <code>[Montant_EUR]</code>. Sans crochets, DAX ne les reconnaît pas.',
+  'La casse ne compte pas dans les noms de fonctions : <code>sum</code>, <code>Sum</code> et <code>SUM</code> fonctionnent tous les trois. Par convention, on écrit les fonctions en MAJUSCULES pour les repérer d\'un coup d\'œil dans une formule.',
+  'Le texte s\'écrit entre guillemets droits : <code>"Depassement"</code>. Les nombres s\'écrivent sans guillemets, et sans espace de séparation des milliers.',
+  'Les arguments d\'une fonction sont séparés par des virgules, toujours dans le même ordre : <code>IF(condition, valeur_si_vrai, valeur_si_faux)</code>.',
+  'Chaque parenthèse ouverte doit être refermée, même pour une fonction sans argument comme <code>COUNTROWS()</code>.',
+  'Une mesure renvoie toujours une seule valeur. Une colonne seule, comme <code>[Montant_EUR]</code>, doit d\'abord passer par une fonction d\'agrégation (SUM, AVERAGE, MIN...).',
+];
+
+const LEARN_TIPS = [
+  "Teste toujours ta formule en mode carte avant de la basculer en graphique : c'est plus simple d'y repérer une erreur.",
+  "En cas d'erreur, lis le message en entier : il explique précisément ce qui ne va pas, pas juste que la formule est fausse.",
+  "Préfère DIVIDE à l'opérateur / dans une mesure, pour ne jamais avoir de division par zéro qui casse ton visuel.",
+  "Une formule longue peut se découper en plusieurs mesures enregistrées, puis se combiner : souvent plus lisible qu'une formule géante.",
+  "Si l'autocomplétion ne propose rien, vérifie que tu es bien à l'intérieur des crochets pour une colonne, ou juste après le nom pour une fonction.",
+];
+
+document.getElementById('learnRules').innerHTML = LEARN_RULES.map((r,i)=>`
+  <div class="rule-card">
+    <span class="rule-num">${i+1}</span>
+    <span class="rule-text">${r}</span>
+  </div>`).join('');
+
+document.getElementById('learnTips').innerHTML = LEARN_TIPS.map(t=>`
+  <div class="tip-line">💡 ${t}</div>`).join('');
+
+/* ---- Section fonctions de DAX Learn : liste à gauche, fiche complète à droite ---- */
+const learnFuncNav = document.getElementById('learnFuncNav');
+const learnFuncDetail = document.getElementById('learnFuncDetail');
+let learnSelected = { gi: 0, ii: 0 };
+
+function funcNames(it){
+  // gère les entrées combinées comme "MIN([Colonne]) / MAX([Colonne])" -> ["MIN","MAX"]
+  return it.n.split('/').map(s => s.trim().split('(')[0].trim());
+}
+
+function selectLearnFunc(gi, ii){
+  learnSelected = { gi, ii };
+  renderLearnFuncNav();
+  renderLearnFuncDetail();
+}
+
+function findFuncIndex(shortName){
+  for(let gi=0; gi<funcGroups.length; gi++){
+    for(let ii=0; ii<funcGroups[gi].items.length; ii++){
+      if(funcNames(funcGroups[gi].items[ii]).includes(shortName)) return {gi, ii};
+    }
+  }
+  return null;
+}
+
+function renderLearnFuncNav(){
+  learnFuncNav.innerHTML = funcGroups.map((g,gi)=>`
+    <div class="learn-func-group-label">${g.label}</div>
+    ${g.items.map((it,ii)=>{
+      const active = gi===learnSelected.gi && ii===learnSelected.ii;
+      const shortName = funcNames(it).join(' / ');
+      return `<div class="learn-func-nav-item ${active?'active':''}" data-gi="${gi}" data-ii="${ii}">${shortName}</div>`;
+    }).join('')}
+  `).join('');
+  learnFuncNav.querySelectorAll('.learn-func-nav-item').forEach(el=>{
+    el.addEventListener('click', ()=> selectLearnFunc(+el.dataset.gi, +el.dataset.ii));
+  });
+}
+
+function renderLearnFuncDetail(){
+  const it = funcGroups[learnSelected.gi].items[learnSelected.ii];
+  let resultText = '…', isErr = false;
+  try{
+    const r = runFormula(it.example, {});
+    resultText = formatResult(r).text;
+  } catch(e){
+    resultText = 'erreur';
+    isErr = true;
+  }
+  const relatedChips = (it.related || []).map(name=>
+    `<button class="lf-related-chip" data-name="${name}">${name}</button>`
+  ).join('');
+  const msLogoSvg = `<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+    <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+    <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
+    <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
+    <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
+  </svg>`;
+  learnFuncDetail.innerHTML = `
+    ${it.useCase ? `<div class="lf-usecase-top">🎯 <span><b>Cas d'usage :</b> ${it.useCase}</span></div>` : ''}
+    <div class="lf-name">${it.n}</div>
+    <div class="lf-desc">${it.d}</div>
+    <p class="lf-long">${it.long}</p>
+    <div class="lf-example-row">
+      <span>${it.example}</span><span class="lf-arrow">→</span><span class="lf-result ${isErr?'err':''}">${resultText}</span>
+    </div>
+    ${it.tip ? `<div class="lf-tip">💡 ${it.tip}</div>` : ''}
+    ${it.excel ? `<div class="lf-section-label">Équivalent Excel</div><div class="lf-excel">${it.excel}</div>` : ''}
+    <a class="lf-msdocs-card" href="${it.learn}" target="_blank" rel="noopener noreferrer">
+      <span class="lf-msdocs-logo">${msLogoSvg}</span>
+      <span class="lf-msdocs-text">
+        <span class="lf-msdocs-title">Microsoft Learn</span>
+        <span class="lf-msdocs-sub">Voir la documentation officielle de ${it.n.split('(')[0].split('/')[0].trim()}</span>
+      </span>
+      <span class="lf-msdocs-arrow">↗</span>
+    </a>
+    ${relatedChips ? `<div class="lf-section-label">Fonctions connexes</div><div class="lf-related">${relatedChips}</div>` : ''}
+  `;
+  learnFuncDetail.querySelectorAll('.lf-related-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const idx = findFuncIndex(chip.dataset.name);
+      if(idx) selectLearnFunc(idx.gi, idx.ii);
+    });
+  });
+}
+
+renderLearnFuncNav();
+renderLearnFuncDetail();
+
+/* =========================================================
+   10. INITIALISATION
+   ========================================================= */
+renderFields();
+renderMeasures();
+renderPreview();
+evaluate();
+renderQuestScore();
+renderQuestLevels();
+renderQuestMain();
+</script>
+</body>
+</html>
