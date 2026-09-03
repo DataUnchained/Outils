@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<!--
+  Data Unchained — Atelier Tableaux Croisés Dynamiques
+  Version : 1.3.0
+
+  Historique :
+    1.0.0 — Version initiale : atelier (4 zones), missions progressives, cartographie des 4 zones.
+    1.1.0 — Atelier : ajout des vues Graphique et Données sources. Fusion des champs/zones dans
+            l'onglet Missions (renommé "TCD Quest"). "Cartographie" renommé "TCD Learn".
+    1.2.0 — TCD Learn enrichi (actualisation, changement d'agrégation, pourcentages, illustrations
+            maison). Bandeau supérieur (logo + onglets) figé au défilement. Badge Excel dans le
+            bandeau. Bandeau "Comment ça marche" déplacé dans l'onglet Atelier uniquement.
+    1.3.0 — Nouvel onglet "Cartographie" (entre Atelier et TCD Learn) : présentation de la table
+            Salariés (schéma des champs + aperçu des données). Numéro de version affiché en pied
+            de page.
+-->
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Unchained – Atelier Tableaux Croisés Dynamiques</title>
+<style>
+  :root{
+    --bg-canvas:#F3F2F1;
+    --bg-surface:#FFFFFF;
+    --bg-dark:#175B36;
+    --bg-dark-2:#1F7A47;
+    --accent:#DDA40D;
+    --accent-dark:#B98C0A;
+    --data-blue:#1D8A57;
+    --brand-yellow:#F3D163;
+    --brand-orange:#B95E01;
+    --text-primary:#333333;
+    --text-secondary:#6B6B6B;
+    --border:#E1DFDD;
+    --border-strong:#C8C6C4;
+    --error:#A80000;
+    --error-bg:#FDF3F3;
+    --success:#1D8A57;
+    --success-bg:#EAF6EF;
+    --radius:4px;
+    --mono: 'Cascadia Code','Consolas','SFMono-Regular',Menlo,monospace;
+    --sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg-canvas); color:var(--text-primary); font-family:var(--sans); }
+  .wrap{ width:min(1600px,94vw); margin:0 auto; }
+  .app-footer{ text-align:center; font-size:11px; color:var(--text-secondary); padding:6px 14px 26px; }
+
+  /* ---------- Bandeau supérieur figé ---------- */
+  .app-header{ position:sticky; top:0; z-index:100; box-shadow:0 2px 10px rgba(0,0,0,.15); }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    background:var(--bg-dark);
+    color:#fff;
+    padding:12px 20px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .topbar .logo-img{ width:38px; height:38px; display:block; flex-shrink:0; border-radius:6px; }
+  .topbar .brand-text{ display:flex; flex-direction:column; gap:1px; }
+  .topbar .brand-name{ font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-yellow); }
+  .topbar h1{ font-size:17px; margin:0; font-weight:600; }
+  .topbar-right{ margin-left:auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .topbar .sub{ font-size:12.5px; color:#CFE8DA; }
+  @media (max-width:640px){ .topbar-right{ margin-left:0; width:100%; justify-content:space-between; } }
+
+  /* Badge Excel : icône générique maison (pas le logo Microsoft, voir message) */
+  .excel-badge{
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.25);
+    border-radius:14px; padding:3px 11px 3px 4px; font-size:11.5px; font-weight:600; color:#fff;
+    flex-shrink:0; white-space:nowrap;
+  }
+  .excel-badge-icon{
+    width:19px; height:19px; border-radius:4px; background:#1D6F42; color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;
+    font-family:Georgia, 'Times New Roman', serif; flex-shrink:0;
+  }
+
+  .scope-note{
+    background:#FFF9E6;
+    border:1px solid #EEDD9C;
+    color:#5C4A00;
+    font-size:12.5px;
+    padding:10px 14px;
+    line-height:1.5;
+    border-radius:var(--radius);
+    margin:14px 14px 0;
+  }
+  .scope-note b{ font-weight:600; }
+
+  /* ---------- Onglets ---------- */
+  .tabbar{
+    background:var(--bg-dark-2);
+    display:flex;
+    gap:2px;
+    overflow-x:auto;
+    padding:0 16px;
+  }
+  .tab-btn{
+    flex-shrink:0;
+    padding:11px 16px;
+    font-size:12.5px;
+    font-weight:600;
+    color:#CFE8DA;
+    background:transparent;
+    border:none;
+    border-bottom:3px solid transparent;
+    cursor:pointer;
+    font-family:var(--sans);
+    white-space:nowrap;
+  }
+  .tab-btn:hover{ background:rgba(255,255,255,.08); color:#fff; }
+  .tab-btn.active{ color:#fff; border-bottom-color:var(--accent); background:rgba(255,255,255,.07); }
+
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* ---------- Layout général ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns: 250px 1fr;
+    gap:14px;
+    padding:14px;
+    align-items:start;
+  }
+  @media (max-width: 900px){ .layout{ grid-template-columns: 1fr; } }
+
+  .panel{ background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius); }
+  .panel-title{
+    font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.03em;
+    color:var(--text-secondary); padding:10px 12px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  button{
+    font-family:var(--sans); font-size:12.5px; font-weight:600; padding:7px 14px;
+    border-radius:var(--radius); border:1px solid var(--border-strong); background:#fff;
+    cursor:pointer; color:var(--text-primary);
+  }
+  button:hover{ background:#F3F2F1; }
+  button.primary{ background:var(--accent); border-color:var(--accent-dark); color:#3B2F00; }
+  button.primary:hover{ background:var(--accent-dark); color:#fff; }
+  button.ghost{ background:transparent; border-color:transparent; color:var(--data-blue); padding:4px 6px; font-weight:600; }
+  button.ghost:hover{ text-decoration:underline; background:transparent; }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+
+  .msg{ font-size:12.5px; margin-top:8px; padding:7px 9px; border-radius:var(--radius); display:none; line-height:1.5; }
+  .msg.show{ display:block; }
+  .msg.error{ background:var(--error-bg); color:var(--error); border:1px solid #F1C0C0; }
+  .msg.success{ background:var(--success-bg); color:var(--success); border:1px solid #C3E6C3; }
+
+  /* ---------- Panneau champs ---------- */
+  .fields-body{ padding:8px; }
+  .table-node{ font-size:13px; font-weight:600; padding:6px 4px; display:flex; align-items:center; gap:6px; }
+  .table-node::before{ content:"▾"; font-size:10px; color:var(--text-secondary); }
+  .field-item{
+    display:flex; align-items:center; gap:6px;
+    padding:6px 6px 6px 18px;
+    font-size:12.5px;
+    border-radius:3px;
+    cursor:grab;
+    user-select:none;
+  }
+  .field-item:hover{ background:#F3F2F1; }
+  .field-icon{
+    width:15px; height:15px; border-radius:2px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:9.5px; font-weight:700; color:#fff; flex-shrink:0;
+  }
+  .field-icon.num{ background:var(--data-blue); }
+  .field-icon.txt{ background:var(--brand-orange); }
+  .field-name{ flex:1; line-height:1.25; }
+  .zone-toggles{ display:flex; gap:3px; flex-shrink:0; }
+  .zbtn{
+    width:18px; height:18px; border-radius:3px; border:1px solid var(--border-strong);
+    background:#fff; font-size:9px; font-weight:700; display:flex; align-items:center;
+    justify-content:center; cursor:pointer; color:var(--text-secondary); padding:0; line-height:1;
+  }
+  .zbtn:hover{ border-color:var(--text-secondary); }
+  .zbtn.on-filtres{ background:var(--brand-orange); color:#fff; border-color:var(--brand-orange); }
+  .zbtn.on-lignes{ background:var(--data-blue); color:#fff; border-color:var(--data-blue); }
+  .zbtn.on-colonnes{ background:var(--accent); color:#3B2F00; border-color:var(--accent-dark); }
+  .zbtn.on-valeurs{ background:var(--accent-dark); color:#fff; border-color:var(--accent-dark); }
+  .fields-hint{ font-size:11.5px; color:var(--text-secondary); padding:6px 8px 2px; line-height:1.5; }
+
+  /* ---------- Zones de dépose ---------- */
+  .zones-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:12px; }
+  @media (max-width:640px){ .zones-grid{ grid-template-columns:1fr; } }
+  .dropzone{
+    min-height:64px; border:1.5px dashed var(--border-strong); border-radius:var(--radius);
+    padding:8px; background:#FAFAF9; transition:background .1s,border-color .1s;
+  }
+  .dropzone.dragover{ border-color:var(--accent); background:#FFF9E6; }
+  .zone-label{
+    font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em;
+    color:var(--text-secondary); margin-bottom:6px; display:flex; align-items:center; gap:5px;
+  }
+  .zone-dot{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+  .zone-dot.filtres{ background:var(--brand-orange); }
+  .zone-dot.lignes{ background:var(--data-blue); }
+  .zone-dot.colonnes{ background:var(--accent); }
+  .zone-dot.valeurs{ background:var(--accent-dark); }
+  .zone-empty{ font-size:11.5px; color:var(--text-secondary); font-style:italic; padding:4px 2px; }
+
+  .chip{
+    display:inline-flex; align-items:center; gap:5px; background:#fff;
+    border:1px solid var(--border-strong); border-radius:13px; padding:3px 4px 3px 9px;
+    font-size:11.5px; margin:3px 4px 3px 0;
+  }
+  .chip select{ border:none; background:transparent; font-size:11px; font-family:var(--sans); color:var(--data-blue); font-weight:600; max-width:110px; }
+  .chip select:focus{ outline:none; }
+  .chip .chip-remove{ cursor:pointer; color:var(--text-secondary); font-weight:700; padding:1px 4px; border-radius:50%; }
+  .chip .chip-remove:hover{ color:var(--error); background:var(--error-bg); }
+
+  /* ---------- Tableau pivot ---------- */
+  .pivot-wrap{ overflow:auto; padding:0 12px 12px; }
+  table.pivot{ border-collapse:collapse; font-size:12.5px; width:100%; min-width:420px; }
+  table.pivot th, table.pivot td{ border:1px solid var(--border); padding:6px 10px; text-align:right; white-space:nowrap; }
+  table.pivot th{ background:#F7F6F5; font-weight:600; text-align:center; }
+  table.pivot td.rowhead{ text-align:left; font-weight:600; background:#FAFAF9; }
+  table.pivot tr.total-row td{ background:#FBF0D9; font-weight:700; }
+  table.pivot td.total-col, table.pivot th.total-col{ background:#FBF0D9; font-weight:700; }
+  .pivot-empty{ padding:30px 14px; text-align:center; color:var(--text-secondary); font-size:13px; }
+
+  /* ---------- Bascule Tableau / Graphique / Données ---------- */
+  .view-switch{ display:flex; gap:4px; flex-wrap:wrap; }
+  .view-btn{
+    font-family:var(--sans); font-size:11px; font-weight:600; padding:4px 9px;
+    border-radius:12px; border:1px solid var(--border-strong); background:#fff;
+    cursor:pointer; color:var(--text-secondary);
+  }
+  .view-btn:hover{ background:#F3F2F1; }
+  .view-btn.active{ background:var(--data-blue); color:#fff; border-color:var(--data-blue); }
+
+  /* ---------- Graphique ---------- */
+  .chart-title{ font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); padding:10px 12px 0; }
+  .chart-scroll{ overflow-x:auto; padding:4px 12px 14px; }
+  .chart-legend{ display:flex; flex-wrap:wrap; gap:10px 14px; padding:6px 12px 0; font-size:11.5px; color:var(--text-primary); }
+  .legend-item{ display:flex; align-items:center; gap:5px; }
+  .legend-swatch{ width:10px; height:10px; border-radius:2px; display:inline-block; flex-shrink:0; }
+
+  /* ---------- Données sources ---------- */
+  .raw-data-wrap{ max-height:460px; overflow-y:auto; }
+  table.data-table th{ position:sticky; top:0; }
+
+  /* ---------- Cartographie / TCD Learn ---------- */
+  table.schema-table th, table.schema-table td{ text-align:left; }
+  table.schema-table td:nth-child(2){ text-align:center; white-space:nowrap; }
+  table.schema-table .field-icon{ display:inline-flex; vertical-align:middle; margin-right:7px; }
+  .carto-wrap{ padding:16px; }
+  .carto-intro{ font-size:13px; line-height:1.6; margin-bottom:16px; color:var(--text-primary); }
+  .carto-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+  @media (max-width:900px){ .carto-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:520px){ .carto-grid{ grid-template-columns:1fr; } }
+  .carto-card{
+    background:#fff; border:1px solid var(--border); border-radius:6px; padding:12px;
+    cursor:pointer; transition:box-shadow .15s;
+  }
+  .carto-card:hover{ box-shadow:0 2px 8px rgba(0,0,0,.08); }
+  .carto-card .cc-tag{
+    display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.03em; padding:2px 7px; border-radius:10px; color:#fff; margin-bottom:8px;
+  }
+  .carto-card .cc-title{ font-size:14px; font-weight:600; margin-bottom:5px; }
+  .carto-card .cc-desc{ font-size:12px; color:var(--text-secondary); line-height:1.5; }
+  .carto-card .cc-detail{ display:none; font-size:12px; line-height:1.6; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+  .carto-card.open .cc-detail{ display:block; }
+  .carto-card .cc-toggle{ font-size:11px; color:var(--data-blue); font-weight:600; margin-top:6px; }
+
+  .carto-analogy{
+    background:#FFF9E6; border:1px solid #EEDD9C; border-radius:var(--radius);
+    padding:12px 14px; font-size:12.5px; line-height:1.6; color:#5C4A00; margin-bottom:16px;
+  }
+  .carto-links{ font-size:12.5px; line-height:1.9; }
+  .carto-links a{ color:var(--data-blue); }
+
+  /* ---------- Encadré d'alerte (ex : actualisation) ---------- */
+  .carto-warning{
+    background:var(--error-bg); border:1px solid #F1C0C0; border-left:4px solid var(--error);
+    border-radius:var(--radius); padding:12px 14px; font-size:12.5px; line-height:1.6;
+    color:#5C1414; margin-bottom:16px;
+  }
+  .carto-warning b{ font-weight:700; }
+  .carto-warning .kbd{
+    font-family:var(--mono); font-size:11px; background:#fff; border:1px solid var(--border-strong);
+    border-radius:3px; padding:1px 6px; color:var(--text-primary);
+  }
+
+  /* ---------- Sous-section "aller plus loin" avec mockup illustratif ---------- */
+  .carto-subsection{ margin-bottom:20px; }
+  .carto-subsection h3{ font-size:14px; font-weight:600; margin:0 0 6px; }
+  .carto-subsection p{ font-size:12.5px; line-height:1.6; margin:0 0 10px; }
+  .carto-subsection-body{ display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .carto-subsection-text{ flex:1; min-width:240px; }
+
+  /* Mockup = illustration maison du principe, PAS une capture d'écran d'Excel */
+  .mockup-caption{ font-size:10.5px; color:var(--text-secondary); font-style:italic; margin-top:4px; text-align:left; max-width:250px; line-height:1.5; }
+  .mockup-window{
+    width:250px; flex-shrink:0; border:1px solid var(--border-strong); border-radius:6px;
+    overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.10); background:#fff;
+  }
+  .mockup-titlebar{
+    background:#EDECEB; padding:6px 10px; font-size:10.5px; font-weight:700; color:#444;
+    border-bottom:1px solid var(--border-strong);
+  }
+  .mockup-tabs{ display:flex; border-bottom:1px solid var(--border); background:#FAFAF9; }
+  .mockup-tab{ padding:6px 9px; font-size:9.5px; color:var(--text-secondary); border-bottom:2px solid transparent; }
+  .mockup-tab.active{ border-bottom-color:var(--data-blue); color:var(--data-blue); font-weight:700; background:#fff; }
+  .mockup-body{ padding:10px 12px 12px; }
+  .mockup-row{ display:flex; align-items:center; gap:7px; padding:3px 0; font-size:10.5px; color:var(--text-primary); }
+  .mockup-radio{ width:11px; height:11px; border-radius:50%; border:1.4px solid var(--border-strong); flex-shrink:0; }
+  .mockup-radio.checked{ border-color:var(--data-blue); background:radial-gradient(circle, var(--data-blue) 42%, transparent 43%); }
+  .mockup-select{
+    display:flex; align-items:center; justify-content:space-between; gap:6px;
+    border:1px solid var(--border-strong); border-radius:3px; padding:5px 8px; font-size:10.5px;
+    background:#FAFAFA; margin:4px 0 8px;
+  }
+  .mockup-note{ font-size:9.5px; color:var(--text-secondary); line-height:1.5; margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); }
+
+  /* ---------- Missions / Quest ---------- */
+  .quest-wrap{ padding:14px; }
+  .quest-intro{ font-size:13px; line-height:1.6; margin-bottom:14px; }
+  .progress-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .progress-pill{
+    width:30px; height:30px; border-radius:50%; border:1.5px solid var(--border-strong);
+    background:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; color:var(--text-secondary); cursor:pointer; flex-shrink:0;
+  }
+  .progress-pill.done{ background:var(--success); border-color:var(--success); color:#fff; }
+  .progress-pill.current{ border-color:var(--accent); color:var(--accent-dark); box-shadow:0 0 0 2px #FBF0D9; }
+  .progress-pill.locked{ cursor:not-allowed; opacity:.5; }
+
+  .mission-card{ background:#fff; border:1px solid var(--border); border-radius:6px; padding:16px; }
+  .mission-eyebrow{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--accent-dark); margin-bottom:4px; }
+  .mission-title{ font-size:15px; font-weight:600; margin-bottom:8px; }
+  .mission-text{ font-size:13px; line-height:1.6; margin-bottom:12px; }
+  .mission-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .hint-box{ background:#F3F2F1; border-radius:var(--radius); padding:9px 11px; font-size:12px; line-height:1.6; margin-top:8px; }
+  .sol-box{ background:var(--success-bg); border:1px solid #C3E6C3; border-radius:var(--radius); padding:9px 11px; font-size:12px; line-height:1.6; margin-top:8px; display:none; }
+  .sol-box.open{ display:block; }
+  .quest-end{ text-align:center; padding:30px 14px; }
+  .quest-end .big{ font-size:34px; margin-bottom:8px; }
+
+  code{ font-family:var(--mono); background:#F3F2F1; padding:1px 5px; border-radius:3px; font-size:12px; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+<div class="topbar">
+  <img class="logo-img" alt="Logo Data Unchained" src="data:image/jpeg;base64,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JFSNAFVVGAAOwp9ABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAHl/xh6aN/wBt/wD2nXl1eo/GHpo3/bf/ANp15dQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUoJBBBwR0IpKKANS0vvNIjlwG7H1q7XPVbt7+SM4ky6+/UUAa1FRxTJMm5GB9R3FSUAFFFFABRRRQAUUUUAFFFFABRRRQAUVb0/TL3VJ/JsrZ5n77eg+pPA/GvQdC8AW9mwn1VkupRgrEufLUg9T/e7cEY68GgDnvC3g6bVpVur+OSGxXBAIKtN3GP8AZ9/y9R6lFFHBEkUSKkaDaqqMACn0UAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAHl/xh6aN/23/9p15dX0J4j8Kaf4o+zfbpLhPs+7Z5LAZ3YznIP90Vhf8ACp9A/wCfjUP+/qf/ABNAHjFFez/8Ko8P/wDPfUP+/q//ABNH/CqPD/8Az3v/APv6v/xNAHjFFe0f8Ko8P/8APe//AO/q/wDxNH/CqPD/APz2v/8Av6v/AMTQB4vRXtH/AAqnw/8A89r/AP7+r/8AE0f8Kp8P/wDPa/8A+/q//E0AeL0V7R/wqnw//wA9b7/v6v8A8TS/8Kp8Pf8APW+/7+r/APE0AeLUV7T/AMKq8Pf89L7/AL+r/wDE0f8ACqvD3/PS+/7+r/8AE0AeLUV7T/wqrw9/z0vv+/q//E0v/CqvD39++/7+j/4mgDxWivav+FV+Hv797/39H/xNPj+F3hxD8y3T+zTf4AUAeJUV71B8PfC8DBhpgcj/AJ6Su36ZxWzaaNpdhg2mnWsBHeOFQfzxQB4NpnhXX9SZXs9NuNp6SMPLX/vpsCu5svhrqbWTNeahbJc4ysaoSPoW4x+ANenUUAeJ6n4d1TSGf7VaSeUnPnIN0eM4B3Dpn0ODyOKy6+gKqXWl6ffPvurK3nfbt3yRBmA9MnmgDwqivWrnwFoM8YWOGa3IOd0UpJPt82RVRvhvpJHy3V6D7sh/9loA8wor0n/hWtju/wCP+4x6bVqVfhvpQ+9d3h+jKP8A2WgDzGivWbbwDoMCFZIZrgk53SykEe3y4rXsdC0rTfLNpYQRvHnbJsy4znPzHnue9AHkml+G9W1cK9paMYSQPOf5U64yCeuMHOM12Wk/DqCIiTVZ/Pb/AJ4wkqnfq3U9umPxruaKYiK2tbezgWG2hjhiXokagCpaKKV7jCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD/2Q==">
+  <div class="brand-text">
+    <span class="brand-name">Data Unchained</span>
+    <h1>Atelier Tableaux Croisés Dynamiques</h1>
+  </div>
+  <div class="topbar-right">
+    <span class="excel-badge" title="Entraînement conçu pour les tableaux croisés dynamiques Excel"><span class="excel-badge-icon">X</span>Excel</span>
+    <span class="sub">Manipule les 4 zones d'un TCD sur un jeu de données RH fictif</span>
+  </div>
+</div>
+
+<div class="tabbar">
+  <button class="tab-btn active" data-tab="atelier">🛠 Atelier</button>
+  <button class="tab-btn" data-tab="cartographie">🗺 Cartographie</button>
+  <button class="tab-btn" data-tab="learn">🎓 TCD Learn</button>
+  <button class="tab-btn" data-tab="quest">🎯 TCD Quest</button>
+</div>
+</div><!-- /app-header -->
+
+<div class="wrap">
+
+<!-- ========== ONGLET ATELIER ========== -->
+<div class="tab-panel active" id="tab-atelier">
+  <div class="scope-note">
+    <b>Comment ça marche :</b> à gauche, les champs disponibles. Ajoute-les dans une des 4 zones (Filtres, Lignes, Colonnes, Valeurs) soit en <b>glissant</b> le champ dans la zone, soit en <b>cliquant</b> sur le bouton correspondant (F / L / C / Σ). Le tableau se recalcule en direct. Onglet <b>Cartographie</b> pour découvrir la table de données, <b>TCD Learn</b> pour comprendre à quoi sert chaque zone, <b>TCD Quest</b> pour t'entraîner pas à pas.
+  </div>
+  <div class="layout">
+    <div class="panel">
+      <div class="panel-title">Champs · Table Salariés</div>
+      <div class="fields-body">
+        <div class="table-node">🗂 Salariés</div>
+        <div id="fieldsList-atelier"></div>
+        <div class="fields-hint">💡 F = Filtres, L = Lignes, C = Colonnes, Σ = Valeurs. Un champ peut être utilisé dans plusieurs zones à la fois.</div>
+      </div>
+    </div>
+
+    <div class="center-col">
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-title">Les 4 zones
+          <button class="ghost" id="btnResetZones-atelier">Tout vider</button>
+        </div>
+        <div class="zones-grid" id="zonesGrid-atelier">
+          <div class="dropzone" data-zone="filtres">
+            <div class="zone-label"><span class="zone-dot filtres"></span>Filtres</div>
+            <div class="zone-body" id="zone-filtres-atelier"></div>
+          </div>
+          <div class="dropzone" data-zone="valeurs">
+            <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs</div>
+            <div class="zone-body" id="zone-valeurs-atelier"></div>
+          </div>
+          <div class="dropzone" data-zone="lignes">
+            <div class="zone-label"><span class="zone-dot lignes"></span>Lignes</div>
+            <div class="zone-body" id="zone-lignes-atelier"></div>
+          </div>
+          <div class="dropzone" data-zone="colonnes">
+            <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes</div>
+            <div class="zone-body" id="zone-colonnes-atelier"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Résultat
+          <div class="view-switch" id="viewSwitch">
+            <button type="button" class="view-btn active" data-view="pivot">📊 Tableau croisé</button>
+            <button type="button" class="view-btn" data-view="chart">📈 Graphique</button>
+            <button type="button" class="view-btn" data-view="data">📋 Données sources</button>
+          </div>
+        </div>
+        <div id="resultView-atelier"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ONGLET CARTOGRAPHIE (table de données) ========== -->
+<div class="tab-panel" id="tab-cartographie">
+  <div class="carto-wrap">
+    <div class="carto-intro">Avant de croiser les champs, voici la table sur laquelle repose tout l'atelier : une liste fictive de salariés, avec ses 11 champs. Les champs texte (T) servent surtout en Lignes, Colonnes ou Filtres ; les champs numériques (#) servent surtout en Valeurs.</div>
+
+    <div class="panel" style="padding:16px; margin-bottom:16px;">
+      <div class="panel-title" style="padding:0 0 12px;border:none;">🗂 Schéma de la table Salariés</div>
+      <div id="schemaTable"></div>
+    </div>
+
+    <div class="panel" style="padding:16px;">
+      <div class="panel-title" style="padding:0 0 12px;border:none;">👀 Aperçu des données</div>
+      <div id="schemaPreview"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ONGLET TCD LEARN ========== -->
+<div class="tab-panel" id="tab-learn">
+  <div class="carto-wrap">
+    <div class="carto-intro">Un tableau croisé dynamique, c'est une façon de résumer une grande table en croisant des champs entre eux. Imagine ta table Salariés comme un gros tas de fiches individuelles : le TCD te permet de les trier et de les empiler automatiquement selon les critères que tu choisis, sans jamais toucher aux fiches d'origine.</div>
+
+    <div class="carto-grid" id="cartoGrid"></div>
+
+    <div class="carto-analogy" id="cartoAnalogy"></div>
+
+    <div class="carto-warning">
+      🔄 <b>Un TCD ne se met pas à jour tout seul.</b> Contrairement à une formule normale, un tableau croisé dynamique fonctionne sur une copie figée des données au moment où tu l'as créé (le « cache » du TCD). Si tu modifies une valeur dans la table source, le TCD affiche encore l'ancien résultat tant que tu ne l'as pas <b>actualisé</b> : clic droit sur le TCD → <b>Actualiser</b>, ou raccourci <span class="kbd">Alt+F5</span> (<span class="kbd">Ctrl+Alt+F5</span> pour actualiser tous les TCD du classeur d'un coup). Dans notre atelier, ce n'est pas la peine : le tableau se recalcule tout seul à chaque changement de zone.
+    </div>
+
+    <div class="carto-subsection">
+      <h3>🔀 Passer de Somme à Moyenne, Nombre, Max...</h3>
+      <div class="carto-subsection-body">
+        <div class="carto-subsection-text">
+          <p>Dans notre atelier, tu changes l'agrégation d'un champ avec le petit menu déroulant à côté de son nom, dans la zone <b>Σ Valeurs</b>. Dans Excel, le principe est le même mais l'accès est différent : <b>clic droit sur une valeur du tableau</b> → <b>Paramètres des champs de valeurs</b> → onglet <b>Synthèse des valeurs par</b>. Une liste de fonctions apparaît (Somme, Nombre, Moyenne, Max, Min...), exactement celles que tu utilises ici.</p>
+          <p>💡 Par défaut, Excel choisit Somme pour un champ numérique et Nombre pour un champ texte : c'est pour ça qu'il faut souvent corriger l'agrégation à la main.</p>
+        </div>
+        <div>
+          <div class="mockup-window">
+            <div class="mockup-titlebar">Paramètres des champs de valeurs</div>
+            <div class="mockup-tabs">
+              <div class="mockup-tab active">Synthèse des valeurs par</div>
+              <div class="mockup-tab">Afficher les valeurs sous</div>
+            </div>
+            <div class="mockup-body">
+              <div class="mockup-row"><span class="mockup-radio checked"></span>Somme</div>
+              <div class="mockup-row"><span class="mockup-radio"></span>Nombre</div>
+              <div class="mockup-row"><span class="mockup-radio"></span>Moyenne</div>
+              <div class="mockup-row"><span class="mockup-radio"></span>Max</div>
+              <div class="mockup-row"><span class="mockup-radio"></span>Min</div>
+              <div class="mockup-row"><span class="mockup-radio"></span>Nb valeurs distinctes</div>
+            </div>
+          </div>
+          <div class="mockup-caption">🎨 Illustration du principe, pas une capture d'écran réelle d'Excel.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="carto-subsection">
+      <h3>％ Afficher un pourcentage plutôt qu'une valeur brute</h3>
+      <div class="carto-subsection-body">
+        <div class="carto-subsection-text">
+          <p>Le même menu <b>Paramètres des champs de valeurs</b> a un second onglet, <b>Afficher les valeurs sous</b>, qui propose des options comme « % du total général », « % du total de la ligne » ou « % du total de la colonne » à la place du chiffre brut.</p>
+          <p>💡 <b>Astuce Excel :</b> pour voir le montant ET le pourcentage côte à côte, glisse le même champ deux fois dans Valeurs, puis règle l'un en Somme et l'autre en % du total général. C'est exactement le principe qu'on utilise dans l'atelier pour afficher Min et Max du salaire côte à côte (mission « Étendue des salaires par région »).</p>
+        </div>
+        <div>
+          <div class="mockup-window">
+            <div class="mockup-titlebar">Paramètres des champs de valeurs</div>
+            <div class="mockup-tabs">
+              <div class="mockup-tab">Synthèse des valeurs par</div>
+              <div class="mockup-tab active">Afficher les valeurs sous</div>
+            </div>
+            <div class="mockup-body">
+              <div class="mockup-select">Aucun calcul <span>▾</span></div>
+              <div class="mockup-select" style="border-color:var(--data-blue); color:var(--data-blue); font-weight:700;">% du total général <span>▾</span></div>
+              <div class="mockup-note">Ex : 24 % au lieu de 697 659 €</div>
+            </div>
+          </div>
+          <div class="mockup-caption">🎨 Illustration du principe, pas une vraie capture d'Excel. Le pourcentage n'est pas encore simulé dans ce bac à sable : voir les liens ci-dessous.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="padding:14px;">
+      <div class="panel-title" style="padding:0 0 10px;border:none;">📘 Pour aller plus loin</div>
+      <div class="carto-links" id="cartoLinks"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ONGLET TCD QUEST ========== -->
+<div class="tab-panel" id="tab-quest">
+  <div class="quest-wrap">
+    <div class="quest-intro">Une question à la fois. Configure les zones ci-dessous puis clique sur « Vérifier ». La validation compare le résultat produit par ton tableau, pas la façon exacte dont tu as placé les champs : plusieurs organisations peuvent être correctes tant que le résultat est le bon.</div>
+    <div class="progress-row" id="progressRow"></div>
+    <div id="missionZone" style="margin-bottom:14px;"></div>
+
+    <div class="layout" style="padding:0;">
+      <div class="panel">
+        <div class="panel-title">Champs · Table Salariés</div>
+        <div class="fields-body">
+          <div class="table-node">🗂 Salariés</div>
+          <div id="fieldsList-quest"></div>
+          <div class="fields-hint">💡 F = Filtres, L = Lignes, C = Colonnes, Σ = Valeurs.</div>
+        </div>
+      </div>
+
+      <div class="center-col">
+        <div class="panel" style="margin-bottom:14px;">
+          <div class="panel-title">Les 4 zones
+            <button class="ghost" id="btnResetZones-quest">Tout vider</button>
+          </div>
+          <div class="zones-grid" id="zonesGrid-quest">
+            <div class="dropzone" data-zone="filtres">
+              <div class="zone-label"><span class="zone-dot filtres"></span>Filtres</div>
+              <div class="zone-body" id="zone-filtres-quest"></div>
+            </div>
+            <div class="dropzone" data-zone="valeurs">
+              <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs</div>
+              <div class="zone-body" id="zone-valeurs-quest"></div>
+            </div>
+            <div class="dropzone" data-zone="lignes">
+              <div class="zone-label"><span class="zone-dot lignes"></span>Lignes</div>
+              <div class="zone-body" id="zone-lignes-quest"></div>
+            </div>
+            <div class="dropzone" data-zone="colonnes">
+              <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes</div>
+              <div class="zone-body" id="zone-colonnes-quest"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Résultat</div>
+          <div id="resultView-quest"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<div class="app-footer">Data Unchained · Atelier Tableaux Croisés Dynamiques · <span id="appVersion"></span></div>
+
+<script>
+/* =========================================================
+   1. DONNÉES — génération d'un jeu de données RH fictif
+   ========================================================= */
+// Numéro de version de l'outil : à incrémenter à chaque évolution notable
+// (voir l'historique en commentaire tout en haut du fichier).
+const APP_VERSION = '1.3.0';
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(1337);
+function pick(arr){ return arr[Math.floor(rand()*arr.length)]; }
+function randInt(min,max){ return Math.floor(min + rand()*(max-min+1)); }
+
+const PRENOMS = ['Camille','Julien','Manon','Nicolas','Léa','Thomas','Chloé','Antoine','Sarah','Maxime','Emma','Hugo','Laura','Alexandre','Marie','Louis','Julie','Romain','Sophie','Baptiste','Claire','Mathieu','Anaïs','Kevin','Pauline','Damien','Charlotte','Florian','Elise','Guillaume'];
+const INITIALES = ['B','D','F','G','H','L','M','N','P','R','S','T','V'];
+const SERVICES = ['Commercial','IT','Marketing','Finance','Production','RH','Logistique'];
+const POSTES = ['Junior','Confirmé','Senior','Manager'];
+const CONTRATS = ['CDI','CDD','Alternance','Stage'];
+const REGIONS = ['Île-de-France','Nouvelle-Aquitaine','Occitanie','Hauts-de-France','PACA','Bretagne'];
+const TELETRAVAIL = ['Oui','Non'];
+
+const SALAIRE_RANGES = { Junior:[26000,32000], 'Confirmé':[32000,42000], Senior:[42000,54000], Manager:[54000,72000] };
+const ANCIENNETE_RANGES = { Junior:[0,3], 'Confirmé':[2,7], Senior:[5,15], Manager:[8,20] };
+
+function genererDonnees(n){
+  const rows = [];
+  for(let i=0;i<n;i++){
+    const poste = pick(POSTES);
+    const contrat = poste === 'Manager' ? 'CDI' : pick(CONTRATS.concat(['CDI','CDI'])); // CDI un peu plus fréquent
+    const [salMin,salMax] = SALAIRE_RANGES[poste];
+    const salaire = randInt(salMin, salMax);
+    const [ancMin,ancMax] = ANCIENNETE_RANGES[poste];
+    rows.push({
+      employe: pick(PRENOMS) + ' ' + pick(INITIALES) + '.',
+      service: pick(SERVICES),
+      poste: poste,
+      contrat: contrat,
+      region: pick(REGIONS),
+      teletravail: pick(TELETRAVAIL),
+      anciennete: randInt(ancMin, ancMax),
+      salaire: salaire,
+      prime: Math.round(salaire * (0.02 + rand()*0.10)),
+      note: randInt(1,5),
+      absences: randInt(0,15),
+    });
+  }
+  return rows;
+}
+const DATA = genererDonnees(72);
+
+const FIELDS = [
+  {key:'employe',     label:'Employé',              type:'txt'},
+  {key:'service',     label:'Service',              type:'txt'},
+  {key:'poste',       label:'Poste',                type:'txt'},
+  {key:'contrat',     label:'Contrat',              type:'txt'},
+  {key:'region',      label:'Région',               type:'txt'},
+  {key:'teletravail', label:'Télétravail',          type:'txt'},
+  {key:'anciennete',  label:'Ancienneté (ans)',     type:'num'},
+  {key:'salaire',     label:'Salaire annuel (€)',   type:'num'},
+  {key:'prime',       label:'Prime annuelle (€)',   type:'num'},
+  {key:'note',        label:"Note d'évaluation",    type:'num'},
+  {key:'absences',    label:"Jours d'absence",      type:'num'},
+];
+function fieldByKey(k){ return FIELDS.find(f=>f.key===k); }
+
+// Descriptions métier utilisées dans l'onglet Cartographie (schéma de la table)
+const FIELD_DESCRIPTIONS = {
+  employe:     "Prénom et initiale du salarié (donnée fictive).",
+  service:     "Département auquel appartient le salarié.",
+  poste:       "Niveau hiérarchique du poste occupé.",
+  contrat:     "Type de contrat de travail.",
+  region:      "Région administrative du site de travail.",
+  teletravail: "Le salarié travaille-t-il à distance ?",
+  anciennete:  "Nombre d'années passées dans l'entreprise.",
+  salaire:     "Rémunération brute annuelle.",
+  prime:       "Prime annuelle versée en plus du salaire.",
+  note:        "Note du dernier entretien annuel, de 1 (faible) à 5 (excellent).",
+  absences:    "Nombre de jours d'absence sur l'année.",
+};
+
+const AGG_LABELS = { somme:'Somme', moyenne:'Moyenne', nombre:'Nombre', nombre_distinct:'Nb distinct', min:'Min', max:'Max' };
+const CURRENCY_FIELDS = ['salaire','prime'];
+
+/* =========================================================
+   2. ÉTAT — zones actuellement configurées par l'apprenant
+   ========================================================= */
+let zones = {
+  filtres: [],  // {field, value}
+  lignes: [],   // {field}
+  colonnes: [], // {field}
+  valeurs: [],  // {field, agg}
+};
+
+function isFieldInZone(zoneName, key){ return zones[zoneName].some(it=>it.field===key); }
+
+function toggleField(zoneName, key){
+  const f = fieldByKey(key);
+  const idx = zones[zoneName].findIndex(it=>it.field===key);
+  if(idx>=0){
+    zones[zoneName].splice(idx,1);
+  } else {
+    if(zoneName==='filtres') zones.filtres.push({field:key, value:'__TOUS__'});
+    else if(zoneName==='valeurs') zones.valeurs.push({field:key, agg: f.type==='num' ? 'somme' : 'nombre'});
+    else zones[zoneName].push({field:key});
+  }
+  renderAll();
+}
+function addFieldDrag(zoneName, key){
+  // En Valeurs, on autorise plusieurs fois le même champ (ex : Min et Max du salaire
+  // côte à côte), comme dans Excel. Dans les autres zones, un doublon n'a pas de sens.
+  const f = fieldByKey(key);
+  if(zoneName!=='valeurs' && isFieldInZone(zoneName, key)) return;
+  if(zoneName==='filtres') zones.filtres.push({field:key, value:'__TOUS__'});
+  else if(zoneName==='valeurs') zones.valeurs.push({field:key, agg: f.type==='num' ? 'somme' : 'nombre'});
+  else zones[zoneName].push({field:key});
+  renderAll();
+}
+function removeFromZone(zoneName, idx){
+  zones[zoneName].splice(idx,1);
+  renderAll();
+}
+
+/* =========================================================
+   3. RENDU — panneau des champs
+   ========================================================= */
+// L'outil affiche les champs et les 4 zones à DEUX endroits (onglets Atelier et
+// TCD Quest), qui reflètent le même état `zones`. UI_INSTANCES liste les suffixes
+// d'id à mettre à jour à chaque rendu, pour ne pas dupliquer la logique.
+const UI_INSTANCES = ['atelier','quest'];
+
+function renderFieldsInto(suffix){
+  const el = document.getElementById('fieldsList-'+suffix);
+  if(!el) return;
+  el.innerHTML = FIELDS.map(f=>{
+    const btns = ['filtres','lignes','colonnes','valeurs'].map(z=>{
+      const letter = z==='filtres'?'F':z==='lignes'?'L':z==='colonnes'?'C':'Σ';
+      const on = isFieldInZone(z, f.key) ? ' on-'+z : '';
+      return `<button type="button" class="zbtn${on}" data-zone="${z}" data-key="${f.key}" title="${letter==='F'?'Filtres':letter==='L'?'Lignes':letter==='C'?'Colonnes':'Valeurs'}">${letter}</button>`;
+    }).join('');
+    return `
+    <div class="field-item" draggable="true" data-key="${f.key}">
+      <span class="field-icon ${f.type}">${f.type==='num'?'#':'T'}</span>
+      <span class="field-name">${f.label}</span>
+      <span class="zone-toggles">${btns}</span>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.zbtn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      toggleField(btn.dataset.zone, btn.dataset.key);
+    });
+  });
+  el.querySelectorAll('.field-item').forEach(item=>{
+    item.addEventListener('dragstart', (e)=>{
+      e.dataTransfer.setData('text/plain', item.dataset.key);
+    });
+  });
+}
+function renderFields(){ UI_INSTANCES.forEach(renderFieldsInto); }
+
+/* =========================================================
+   4. RENDU — zones de dépose
+   ========================================================= */
+function uniqueValues(key){
+  const set = new Set(DATA.map(r=>String(r[key])));
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'fr',{numeric:true}));
+}
+
+function renderZonesInto(suffix){
+  const zf = document.getElementById('zone-filtres-'+suffix);
+  if(!zf) return;
+
+  // Filtres
+  zf.innerHTML = zones.filtres.length===0 ? '<div class="zone-empty">Dépose ou clique sur F pour filtrer un champ</div>' :
+    zones.filtres.map((it,i)=>{
+      const f = fieldByKey(it.field);
+      const opts = ['<option value="__TOUS__">Tous</option>'].concat(
+        uniqueValues(it.field).map(v=>`<option value="${v}" ${it.value===v?'selected':''}>${v}</option>`)
+      ).join('');
+      return `<span class="chip">${f.label} :
+        <select data-zone="filtres" data-idx="${i}">${opts}</select>
+        <span class="chip-remove" data-zone="filtres" data-idx="${i}">✕</span>
+      </span>`;
+    }).join('');
+
+  // Lignes / Colonnes (listes simples de champs)
+  ['lignes','colonnes'].forEach(zn=>{
+    const el = document.getElementById('zone-'+zn+'-'+suffix);
+    el.innerHTML = zones[zn].length===0 ? '<div class="zone-empty">Dépose ou clique sur '+(zn==='lignes'?'L':'C')+' pour ajouter un champ</div>' :
+      zones[zn].map((it,i)=>{
+        const f = fieldByKey(it.field);
+        return `<span class="chip">${f.label}<span class="chip-remove" data-zone="${zn}" data-idx="${i}">✕</span></span>`;
+      }).join('');
+  });
+
+  // Valeurs
+  const zv = document.getElementById('zone-valeurs-'+suffix);
+  zv.innerHTML = zones.valeurs.length===0 ? '<div class="zone-empty">Dépose ou clique sur Σ pour agréger un champ</div>' :
+    zones.valeurs.map((it,i)=>{
+      const f = fieldByKey(it.field);
+      const opts = Object.keys(AGG_LABELS).map(a=>`<option value="${a}" ${it.agg===a?'selected':''}>${AGG_LABELS[a]}</option>`).join('');
+      return `<span class="chip">${f.label} :
+        <select data-zone="valeurs" data-idx="${i}">${opts}</select>
+        <span class="chip-remove" data-zone="valeurs" data-idx="${i}">✕</span>
+      </span>`;
+    }).join('');
+
+  // listeners, limités à cette instance pour ne pas toucher l'autre onglet
+  document.querySelectorAll(`#zonesGrid-${suffix} .chip-remove`).forEach(x=>{
+    x.addEventListener('click', ()=> removeFromZone(x.dataset.zone, parseInt(x.dataset.idx)));
+  });
+  document.querySelectorAll(`#zonesGrid-${suffix} .zone-body select`).forEach(sel=>{
+    sel.addEventListener('change', ()=>{
+      const zn = sel.dataset.zone, idx = parseInt(sel.dataset.idx);
+      if(zn==='filtres') zones.filtres[idx].value = sel.value;
+      if(zn==='valeurs') zones.valeurs[idx].agg = sel.value;
+      renderResult();
+    });
+  });
+}
+function renderZones(){ UI_INSTANCES.forEach(renderZonesInto); }
+
+// Écouteurs de dépose : attachés UNE SEULE FOIS (les .dropzone existent dès le départ
+// dans le HTML et ne sont jamais recréées). Les attacher ici plutôt que dans renderZones()
+// évite l'empilement de listeners à chaque re-rendu.
+function initDropzones(){
+  document.querySelectorAll('.dropzone').forEach(dz=>{
+    dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('dragover'); });
+    dz.addEventListener('dragleave', ()=> dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e=>{
+      e.preventDefault();
+      dz.classList.remove('dragover');
+      const key = e.dataTransfer.getData('text/plain');
+      if(key) addFieldDrag(dz.dataset.zone, key);
+    });
+  });
+}
+
+/* =========================================================
+   5. MOTEUR PIVOT — agrégation et croisement
+   ========================================================= */
+function applyFiltres(data, filtres){
+  return data.filter(row => filtres.every(f => f.value==='__TOUS__' || String(row[f.field])===f.value));
+}
+function groupKeyParts(row, fieldKeys){ return fieldKeys.map(k=>String(row[k])); }
+
+function aggregate(rows, field, agg){
+  if(agg==='nombre') return rows.length;
+  if(agg==='nombre_distinct') return new Set(rows.map(r=>r[field])).size;
+  const vals = rows.map(r=>Number(r[field])).filter(v=>!isNaN(v));
+  if(vals.length===0) return 0;
+  if(agg==='somme') return vals.reduce((a,b)=>a+b,0);
+  if(agg==='moyenne') return vals.reduce((a,b)=>a+b,0)/vals.length;
+  if(agg==='min') return Math.min(...vals);
+  if(agg==='max') return Math.max(...vals);
+  return 0;
+}
+function formatValue(field, agg, value){
+  const rounded = (agg==='moyenne') ? Math.round(value*10)/10 : Math.round(value);
+  if(CURRENCY_FIELDS.includes(field) && agg!=='nombre' && agg!=='nombre_distinct'){
+    return Math.round(value).toLocaleString('fr-FR') + ' €';
+  }
+  return rounded.toLocaleString('fr-FR');
+}
+
+function sortCombos(list){
+  return list.slice().sort((a,b)=>{
+    for(let i=0;i<a.parts.length;i++){
+      const pa=a.parts[i], pb=b.parts[i];
+      const na=parseFloat(pa), nb=parseFloat(pb);
+      if(!isNaN(na) && !isNaN(nb) && String(na)===pa && String(nb)===pb){
+        if(na!==nb) return na-nb;
+      } else if(pa!==pb){
+        return pa.localeCompare(pb,'fr');
+      }
+    }
+    return 0;
+  });
+}
+
+// Construit une structure de résultat pivot indépendante du rendu, réutilisée
+// pour l'affichage ET pour la validation des missions (comparaison de résultats).
+function computePivot(cfg){
+  const lignesF = cfg.lignes || [];
+  const colonnesF = cfg.colonnes || [];
+  const valeursF = cfg.valeurs || [];
+  const filtered = applyFiltres(DATA, cfg.filtres || []);
+
+  if(valeursF.length===0 || (lignesF.length===0 && colonnesF.length===0)){
+    return { lignesF, colonnesF, valeursF, rowCombos:[], colCombos:[], cells:new Map(), rowTotals:new Map(), colTotals:new Map(), grandTotal:{}, empty:true };
+  }
+
+  const rowMap = new Map(); // key -> {parts, rows}
+  const colMap = new Map();
+  const cellMap = new Map(); // rowKey||colKey -> rows
+
+  filtered.forEach(row=>{
+    const rParts = groupKeyParts(row, lignesF);
+    const cParts = groupKeyParts(row, colonnesF);
+    const rKey = rParts.join('§');
+    const cKey = cParts.join('§');
+    if(!rowMap.has(rKey)) rowMap.set(rKey, {parts:rParts, rows:[]});
+    rowMap.get(rKey).rows.push(row);
+    if(!colMap.has(cKey)) colMap.set(cKey, {parts:cParts, rows:[]});
+    colMap.get(cKey).rows.push(row);
+    const cellKey = rKey+'||'+cKey;
+    if(!cellMap.has(cellKey)) cellMap.set(cellKey, []);
+    cellMap.get(cellKey).push(row);
+  });
+
+  const rowCombos = sortCombos(Array.from(rowMap.entries()).map(([key,v])=>({key, parts:v.parts})));
+  const colCombos = sortCombos(Array.from(colMap.entries()).map(([key,v])=>({key, parts:v.parts})));
+
+  const cells = new Map(); // "rKey||cKey||field_agg" -> value
+  cellMap.forEach((rows, cellKey)=>{
+    valeursF.forEach(v=>{
+      cells.set(cellKey+'||'+v.field+'_'+v.agg, aggregate(rows, v.field, v.agg));
+    });
+  });
+
+  const rowTotals = new Map(); // "rKey||field_agg" -> value (total sur toute la ligne, tous groupes de colonnes confondus)
+  rowMap.forEach((v, rKey)=>{
+    valeursF.forEach(vv=>{
+      rowTotals.set(rKey+'||'+vv.field+'_'+vv.agg, aggregate(v.rows, vv.field, vv.agg));
+    });
+  });
+  const colTotals = new Map();
+  colMap.forEach((v, cKey)=>{
+    valeursF.forEach(vv=>{
+      colTotals.set(cKey+'||'+vv.field+'_'+vv.agg, aggregate(v.rows, vv.field, vv.agg));
+    });
+  });
+  const grandTotal = {};
+  valeursF.forEach(vv=>{ grandTotal[vv.field+'_'+vv.agg] = aggregate(filtered, vv.field, vv.agg); });
+
+  return { lignesF, colonnesF, valeursF, rowCombos, colCombos, cells, rowTotals, colTotals, grandTotal, empty:false };
+}
+
+/* =========================================================
+   6. RENDU — tableau croisé (HTML)
+   ========================================================= */
+function currentConfig(){
+  return {
+    filtres: zones.filtres,
+    lignes: zones.lignes.map(it=>it.field),
+    colonnes: zones.colonnes.map(it=>it.field),
+    valeurs: zones.valeurs,
+  };
+}
+
+function renderPivotTable(pivot, containerId){
+  const el = document.getElementById(containerId);
+  if(pivot.empty){
+    el.innerHTML = '<div class="pivot-empty">Ajoute au moins un champ en <b>Lignes</b> ou <b>Colonnes</b>, et un champ en <b>Valeurs</b> pour voir apparaître le résultat.</div>';
+    return;
+  }
+  const hasCols = pivot.colonnesF.length>0;
+  const multiVal = pivot.valeursF.length>1;
+  const rowLabel = pivot.lignesF.map(k=>fieldByKey(k).label).join(' › ') || '(Total)';
+
+  let head1 = `<tr><th rowspan="2">${rowLabel}</th>`;
+  let head2 = '';
+  if(hasCols){
+    pivot.colCombos.forEach(cc=>{
+      const label = cc.parts.join(' › ');
+      head1 += `<th colspan="${pivot.valeursF.length}">${label}</th>`;
+    });
+    head1 += `<th colspan="${pivot.valeursF.length}" class="total-col">Total général</th></tr>`;
+    head2 = '<tr>';
+    pivot.colCombos.forEach(()=>{
+      pivot.valeursF.forEach(v=> head2 += `<th>${AGG_LABELS[v.agg]} ${fieldByKey(v.field).label}</th>`);
+    });
+    pivot.valeursF.forEach(v=> head2 += `<th class="total-col">${AGG_LABELS[v.agg]} ${fieldByKey(v.field).label}</th>`);
+    head2 += '</tr>';
+  } else {
+    pivot.valeursF.forEach(v=> head1 += `<th>${AGG_LABELS[v.agg]} ${fieldByKey(v.field).label}</th>`);
+    head1 += '</tr>';
+  }
+
+  let body = '';
+  pivot.rowCombos.forEach(rc=>{
+    body += `<tr><td class="rowhead">${rc.parts.join(' › ')}</td>`;
+    if(hasCols){
+      pivot.colCombos.forEach(cc=>{
+        const cellKey = rc.key+'||'+cc.key;
+        pivot.valeursF.forEach(v=>{
+          const val = pivot.cells.get(cellKey+'||'+v.field+'_'+v.agg);
+          body += `<td>${val===undefined ? '—' : formatValue(v.field, v.agg, val)}</td>`;
+        });
+      });
+      pivot.valeursF.forEach(v=>{
+        const val = pivot.rowTotals.get(rc.key+'||'+v.field+'_'+v.agg);
+        body += `<td class="total-col">${formatValue(v.field, v.agg, val)}</td>`;
+      });
+    } else {
+      pivot.valeursF.forEach(v=>{
+        const val = pivot.rowTotals.get(rc.key+'||'+v.field+'_'+v.agg);
+        body += `<td>${formatValue(v.field, v.agg, val)}</td>`;
+      });
+    }
+    body += '</tr>';
+  });
+
+  // ligne total général
+  body += `<tr class="total-row"><td class="rowhead">Total général</td>`;
+  if(hasCols){
+    pivot.colCombos.forEach(cc=>{
+      pivot.valeursF.forEach(v=>{
+        const val = pivot.colTotals.get(cc.key+'||'+v.field+'_'+v.agg);
+        body += `<td>${formatValue(v.field, v.agg, val)}</td>`;
+      });
+    });
+  }
+  pivot.valeursF.forEach(v=>{
+    body += `<td class="total-col">${formatValue(v.field, v.agg, pivot.grandTotal[v.field+'_'+v.agg])}</td>`;
+  });
+  body += '</tr>';
+
+  el.innerHTML = `<table class="pivot">${head1}${head2}<tbody>${body}</tbody></table>`;
+}
+
+/* =========================================================
+   7. RENDU — graphique (SVG maison, aucune dépendance externe)
+   ========================================================= */
+const CHART_COLORS = ['#1D8A57','#DDA40D','#B95E01','#175B36','#6B6B6B','#B98C0A','#3F8F6B','#E0A93A'];
+function escapeXml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Prépare les séries à tracer à partir du pivot. On ne représente que la première
+// mesure de la zone Valeurs (un graphique lisible = un seul indicateur à la fois).
+function buildChartData(pivot){
+  if(pivot.empty || pivot.valeursF.length===0 || pivot.rowCombos.length===0) return null;
+  const v = pivot.valeursF[0];
+  const categories = pivot.rowCombos.map(rc=>({key:rc.key, label:rc.parts.join(' › ')}));
+  let series;
+  if(pivot.colonnesF.length>0){
+    series = pivot.colCombos.map((cc,i)=>({
+      label: cc.parts.join(' › '),
+      color: CHART_COLORS[i % CHART_COLORS.length],
+      values: categories.map(cat => pivot.cells.get(cat.key+'||'+cc.key+'||'+v.field+'_'+v.agg) || 0),
+    }));
+  } else {
+    series = [{
+      label: AGG_LABELS[v.agg]+' '+fieldByKey(v.field).label,
+      color: CHART_COLORS[0],
+      values: categories.map(cat => pivot.rowTotals.get(cat.key+'||'+v.field+'_'+v.agg) || 0),
+    }];
+  }
+  return { categories, series, field:v.field, agg:v.agg,
+    measureLabel: AGG_LABELS[v.agg]+' de '+fieldByKey(v.field).label };
+}
+
+function renderChart(pivot, containerId){
+  const el = document.getElementById(containerId);
+  const cd = buildChartData(pivot);
+  if(!cd){
+    el.innerHTML = '<div class="pivot-empty">Configure au moins un champ en <b>Lignes</b> (ou Colonnes) et un champ en <b>Valeurs</b> pour voir apparaître un graphique.</div>';
+    return;
+  }
+  const nCats = cd.categories.length, nSeries = cd.series.length;
+  const W = Math.max(480, nCats * (nSeries>1 ? 90 : 60) + 90);
+  const H = 320, padL = 66, padB = 74, padT = 18, padR = 16;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxVal = Math.max(1, ...cd.series.flatMap(s=>s.values));
+  const groupWidth = plotW / nCats;
+  const barGap = 6;
+  const barWidth = Math.max(6, (groupWidth - barGap*(nSeries+1)) / nSeries);
+  const showLabels = nCats <= 14;
+
+  let bars = '', xlabels = '';
+  cd.categories.forEach((cat,ci)=>{
+    const groupX = padL + ci*groupWidth;
+    cd.series.forEach((s,si)=>{
+      const val = s.values[ci];
+      const barH = maxVal>0 ? (val/maxVal)*plotH : 0;
+      const x = groupX + barGap + si*(barWidth+barGap);
+      const y = padT + (plotH - barH);
+      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barH.toFixed(1)}" fill="${s.color}" rx="2"><title>${escapeXml(cat.label)} · ${escapeXml(s.label)} : ${formatValue(cd.field, cd.agg, val)}</title></rect>`;
+      if(showLabels && barH>14){
+        bars += `<text x="${(x+barWidth/2).toFixed(1)}" y="${(y-4).toFixed(1)}" font-size="9.5" text-anchor="middle" fill="var(--text-secondary)">${formatValue(cd.field, cd.agg, val)}</text>`;
+      }
+    });
+    const shortLabel = cat.label.length>14 ? cat.label.slice(0,13)+'…' : cat.label;
+    xlabels += `<text x="${(groupX+groupWidth/2).toFixed(1)}" y="${(H-padB+16).toFixed(1)}" font-size="10.5" text-anchor="middle" fill="var(--text-primary)">${escapeXml(shortLabel)}</text>`;
+  });
+
+  let gridLines = '';
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const yVal = maxVal * i/steps;
+    const y = padT + plotH - (yVal/maxVal)*plotH;
+    gridLines += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
+    gridLines += `<text x="${padL-8}" y="${(y+3).toFixed(1)}" font-size="10" text-anchor="end" fill="var(--text-secondary)">${formatValue(cd.field, cd.agg, yVal)}</text>`;
+  }
+
+  let legend = '';
+  if(cd.series.length>1){
+    legend = '<div class="chart-legend">' + cd.series.map(s=>
+      `<span class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${escapeXml(s.label)}</span>`
+    ).join('') + '</div>';
+  }
+
+  const axisTitle = pivot.colonnesF.length
+    ? cd.measureLabel+' par '+pivot.lignesF.map(k=>fieldByKey(k).label).join(', ')+' (couleur = '+pivot.colonnesF.map(k=>fieldByKey(k).label).join(', ')+')'
+    : cd.measureLabel+' par '+pivot.lignesF.map(k=>fieldByKey(k).label).join(', ');
+
+  el.innerHTML = `<div class="chart-title">${escapeXml(axisTitle)}</div>
+    ${legend}
+    <div class="chart-scroll"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="max-width:100%;">
+      ${gridLines}
+      ${bars}
+      ${xlabels}
+      <line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" stroke="var(--border-strong)" stroke-width="1.3"/>
+    </svg></div>`;
+}
+
+/* =========================================================
+   8. RENDU — table de données sources
+   ========================================================= */
+function renderDataTable(containerId, filtres){
+  const el = document.getElementById(containerId);
+  const filtered = applyFiltres(DATA, filtres);
+  const rows = filtered.map(row => '<tr>'+FIELDS.map(f=>{
+    let v = row[f.key];
+    if(CURRENCY_FIELDS.includes(f.key)) v = Number(v).toLocaleString('fr-FR')+' €';
+    return `<td class="${f.type==='txt' ? 'rowhead' : ''}">${escapeXml(v)}</td>`;
+  }).join('')+'</tr>').join('');
+
+  el.innerHTML = `<div class="chart-title">Table Salariés — ${filtered.length} ligne(s)${filtres.length ? ' après filtre' : ''} sur ${DATA.length}</div>
+    <div class="pivot-wrap raw-data-wrap"><table class="pivot data-table">
+      <thead><tr>${FIELDS.map(f=>`<th>${f.label}</th>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+/* =========================================================
+   9. RENDU RÉSULTAT
+   ========================================================= */
+// Onglet Atelier : trois vues possibles sur le même résultat.
+let atelierView = 'pivot';
+
+function renderResult(){
+  const pivot = computePivot(currentConfig());
+  if(atelierView==='pivot') renderPivotTable(pivot, 'resultView-atelier');
+  else if(atelierView==='chart') renderChart(pivot, 'resultView-atelier');
+  else if(atelierView==='data') renderDataTable('resultView-atelier', zones.filtres);
+  // Onglet TCD Quest : toujours le tableau croisé, pour vérifier son travail sans changer d'onglet.
+  renderPivotTable(pivot, 'resultView-quest');
+}
+
+function renderAll(){
+  renderFields();
+  renderZones();
+  renderResult();
+}
+
+document.querySelectorAll('.view-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    atelierView = btn.dataset.view;
+    renderResult();
+  });
+});
+
+/* =========================================================
+   10. ONGLETS
+   ========================================================= */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='quest') renderMissionZone();
+  });
+});
+
+function resetZones(){
+  zones = { filtres:[], lignes:[], colonnes:[], valeurs:[] };
+  renderAll();
+}
+document.getElementById('btnResetZones-atelier').addEventListener('click', resetZones);
+document.getElementById('btnResetZones-quest').addEventListener('click', resetZones);
+</script>
+
+<script>
+/* =========================================================
+   11. TCD LEARN (cartographie des 4 zones)
+   ========================================================= */
+const CARTO_ITEMS = [
+  { zone:'filtres', color:'var(--brand-orange)', title:'Filtres', desc:"Réduit le périmètre avant tout calcul.",
+    detail:"Un champ posé en Filtres ne s'affiche pas dans le tableau : il sert à ne garder qu'une partie des lignes avant de calculer quoi que ce soit. Exemple : filtrer sur Contrat = CDI pour n'analyser que les salariés en CDI." },
+  { zone:'lignes', color:'var(--data-blue)', title:'Lignes', desc:"Découpe le tableau verticalement, une ligne par valeur.",
+    detail:"Chaque valeur unique du champ posé en Lignes devient une ligne du tableau. Exemple : le champ Service en Lignes donne une ligne par service (Commercial, IT, RH...)." },
+  { zone:'colonnes', color:'var(--accent)', title:'Colonnes', desc:"Découpe le tableau horizontalement, une colonne par valeur.",
+    detail:"Même principe que Lignes, mais à l'horizontale. Exemple : Télétravail en Colonnes crée deux colonnes, Oui et Non, pour comparer côte à côte." },
+  { zone:'valeurs', color:'var(--accent-dark)', title:'Σ Valeurs', desc:"Le calcul affiché dans chaque case du tableau.",
+    detail:"C'est le champ qu'on agrège (Somme, Moyenne, Nombre...) pour chaque croisement Ligne × Colonne. Exemple : Somme de Salaire pour connaître la masse salariale de chaque case." },
+];
+function renderCarto(){
+  const grid = document.getElementById('cartoGrid');
+  grid.innerHTML = CARTO_ITEMS.map((it,i)=>`
+    <div class="carto-card" data-idx="${i}">
+      <span class="cc-tag" style="background:${it.color};">${it.title}</span>
+      <div class="cc-title">${it.title}</div>
+      <div class="cc-desc">${it.desc}</div>
+      <div class="cc-toggle">Voir un exemple ▾</div>
+      <div class="cc-detail">${it.detail}</div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('.carto-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      const willOpen = !card.classList.contains('open');
+      card.classList.toggle('open', willOpen);
+      card.querySelector('.cc-toggle').textContent = willOpen ? 'Masquer ▴' : 'Voir un exemple ▾';
+    });
+  });
+  document.getElementById('cartoAnalogy').innerHTML =
+    "💡 <b>Analogie :</b> imagine que tu répartis les fiches de tous les salariés dans un meuble à tiroirs. Les <b>Filtres</b>, c'est décider quelles fiches tu sors du classeur avant de commencer. Les <b>Lignes</b> et les <b>Colonnes</b>, ce sont les tiroirs et les compartiments dans lesquels tu ranges chaque fiche selon un critère. La <b>Valeur</b>, c'est le chiffre que tu calcules une fois les fiches empilées dans chaque compartiment : leur nombre, leur somme, leur moyenne...";
+  document.getElementById('cartoLinks').innerHTML =
+    '<a href="https://support.microsoft.com/fr-fr/office/cr%C3%A9er-un-tableau-crois%C3%A9-dynamique-pour-analyser-des-donn%C3%A9es-de-feuille-de-calcul-a9a84538-bfe9-40a9-a8e9-f99134456576" target="_blank" rel="noopener noreferrer">📘 Créer un tableau croisé dynamique (Microsoft Support)</a><br>' +
+    '<a href="https://support.microsoft.com/fr-fr/office/actualisation-des-donn%C3%A9es-d-un-tableau-crois%C3%A9-dynamique-6d24cece-a038-468a-8176-8b6568ca9be2" target="_blank" rel="noopener noreferrer">📘 Actualiser les données d\'un tableau croisé dynamique (Microsoft Support)</a><br>' +
+    '<a href="https://support.microsoft.com/fr-fr/office/afficher-des-calculs-diff%C3%A9rents-dans-les-champs-de-valeurs-d-un-tableau-crois%C3%A9-dynamique-014d2777-baaf-480b-a32b-98431f48bfec" target="_blank" rel="noopener noreferrer">📘 Afficher des pourcentages dans les champs de valeurs (Microsoft Support)</a>';
+}
+renderCarto();
+
+/* =========================================================
+   11bis. CARTOGRAPHIE — schéma de la table Salariés
+   ========================================================= */
+function fieldDomainLabel(f){
+  if(f.type === 'txt'){
+    const vals = uniqueValues(f.key);
+    // Au-delà de 8 valeurs distinctes (ex. Employé), une liste complète devient illisible :
+    // on affiche le compte et quelques exemples plutôt que tout énumérer.
+    if(vals.length > 8){
+      return `${vals.length} valeurs distinctes (ex. ${vals.slice(0,4).join(', ')}...)`;
+    }
+    return vals.join(', ');
+  }
+  const vals = DATA.map(r => Number(r[f.key]));
+  const min = Math.min(...vals), max = Math.max(...vals);
+  if(CURRENCY_FIELDS.includes(f.key)){
+    return `de ${min.toLocaleString('fr-FR')} € à ${max.toLocaleString('fr-FR')} €`;
+  }
+  return `de ${min} à ${max}`;
+}
+
+function renderSchema(){
+  const el = document.getElementById('schemaTable');
+  el.innerHTML = `<div class="pivot-wrap"><table class="pivot schema-table">
+    <thead><tr><th>Champ</th><th>Type</th><th>Description</th><th>Valeurs / plage</th></tr></thead>
+    <tbody>${FIELDS.map(f => `
+      <tr>
+        <td class="rowhead"><span class="field-icon ${f.type}">${f.type==='num'?'#':'T'}</span>${f.label}</td>
+        <td>${f.type==='num' ? 'Numérique' : 'Texte'}</td>
+        <td>${FIELD_DESCRIPTIONS[f.key]}</td>
+        <td>${escapeXml(fieldDomainLabel(f))}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function renderSchemaPreview(){
+  const el = document.getElementById('schemaPreview');
+  const sample = DATA.slice(0, 5);
+  const rows = sample.map(row => '<tr>'+FIELDS.map(f=>{
+    let v = row[f.key];
+    if(CURRENCY_FIELDS.includes(f.key)) v = Number(v).toLocaleString('fr-FR')+' €';
+    return `<td class="${f.type==='txt' ? 'rowhead' : ''}">${escapeXml(v)}</td>`;
+  }).join('')+'</tr>').join('');
+  el.innerHTML = `<div class="pivot-wrap"><table class="pivot data-table">
+      <thead><tr>${FIELDS.map(f=>`<th>${f.label}</th>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="mockup-caption" style="max-width:none; margin-top:8px;">Extrait des ${sample.length} premières lignes sur ${DATA.length} au total. La table complète est consultable dans l'onglet Atelier, vue « Données sources ».</div>`;
+}
+renderSchema();
+renderSchemaPreview();
+
+/* =========================================================
+   12. TCD QUEST (missions)
+   ========================================================= */
+const MISSIONS = [
+  { titre:"Effectif par service", texte:"Affiche le nombre de salariés dans chaque service.",
+    cfg:{ filtres:[], lignes:['service'], colonnes:[], valeurs:[{field:'employe',agg:'nombre'}] },
+    hints:["Le champ qui compte des lignes, peu importe lequel, s'agrège avec « Nombre ».","Place Service en Lignes, puis n'importe quel champ en Valeurs avec la fonction Nombre."] },
+  { titre:"Masse salariale par service", texte:"Calcule le salaire total (la somme) versé dans chaque service.",
+    cfg:{ filtres:[], lignes:['service'], colonnes:[], valeurs:[{field:'salaire',agg:'somme'}] },
+    hints:["« Total » veut dire Somme, pas Moyenne.","Service en Lignes, Salaire en Valeurs avec la fonction Somme."] },
+  { titre:"Salaire moyen par poste", texte:"Calcule le salaire moyen selon le poste (Junior, Confirmé, Senior, Manager).",
+    cfg:{ filtres:[], lignes:['poste'], colonnes:[], valeurs:[{field:'salaire',agg:'moyenne'}] },
+    hints:["« Moyen » se traduit toujours par la fonction Moyenne.","Poste en Lignes, Salaire en Valeurs avec la fonction Moyenne."] },
+  { titre:"Étendue des salaires par région", texte:"Pour chaque région, affiche à la fois le salaire minimum et le salaire maximum.",
+    cfg:{ filtres:[], lignes:['region'], colonnes:[], valeurs:[{field:'salaire',agg:'min'},{field:'salaire',agg:'max'}] },
+    hints:["Le clic n'ajoute un champ qu'une fois dans Valeurs : pour le poser deux fois avec deux fonctions différentes, utilise le glisser-déposer.","Région en Lignes, puis glisse Salaire dans Valeurs une première fois (choisis Min), puis une seconde fois (choisis Max)."] },
+  { titre:"Diversité des postes par service", texte:"Compte le nombre de postes différents (distincts) représentés dans chaque service.",
+    cfg:{ filtres:[], lignes:['service'], colonnes:[], valeurs:[{field:'poste',agg:'nombre_distinct'}] },
+    hints:["« Différents » est le mot-clé qui pointe vers Nb distinct, pas Nombre tout court.","Service en Lignes, Poste en Valeurs avec la fonction Nb distinct."] },
+  { titre:"Croisement Service × Contrat", texte:"Affiche le nombre de salariés pour chaque combinaison Service / Type de contrat, sous forme de grille.",
+    cfg:{ filtres:[], lignes:['service'], colonnes:['contrat'], valeurs:[{field:'employe',agg:'nombre'}] },
+    hints:["Pour obtenir une vraie grille croisée, il faut un champ en Lignes ET un champ en Colonnes.","Service en Lignes, Contrat en Colonnes, n'importe quel champ en Valeurs avec Nombre."] },
+  { titre:"Focus CDI : salaire moyen par service et télétravail", texte:"Ne garde que les CDI (filtre), puis affiche le salaire moyen croisé par Service (lignes) et Télétravail (colonnes).",
+    cfg:{ filtres:[{field:'contrat', value:'CDI'}], lignes:['service'], colonnes:['teletravail'], valeurs:[{field:'salaire',agg:'moyenne'}] },
+    hints:["Commence par poser Contrat en Filtres et choisis CDI dans la liste déroulante.","Ensuite : Service en Lignes, Télétravail en Colonnes, Salaire en Valeurs avec Moyenne."] },
+  { titre:"Absences moyennes, vue détaillée", texte:"Affiche le nombre moyen de jours d'absence, croisé par Poste puis par Région (deux champs en lignes).",
+    cfg:{ filtres:[], lignes:['poste','region'], colonnes:[], valeurs:[{field:'absences',agg:'moyenne'}] },
+    hints:["Tu peux empiler deux champs dans la même zone Lignes, l'ordre compte pour la lecture.","Poste puis Région en Lignes (dans cet ordre), Jours d'absence en Valeurs avec Moyenne."] },
+  { titre:"Focus Managers : primes par région", texte:"Ne garde que les Managers (filtre), puis calcule la prime totale versée par région.",
+    cfg:{ filtres:[{field:'poste', value:'Manager'}], lignes:['region'], colonnes:[], valeurs:[{field:'prime',agg:'somme'}] },
+    hints:["Le filtre porte sur le champ Poste, valeur Manager.","Région en Lignes, Prime en Valeurs avec la fonction Somme."] },
+];
+
+let questState = { current:0, done:new Array(MISSIONS.length).fill(false), hintsShown:new Array(MISSIONS.length).fill(0) };
+
+function normalizeCellsForCompare(pivot){
+  const rows = [];
+  if(pivot.empty) return rows;
+  pivot.rowCombos.forEach(rc=>{
+    if(pivot.colonnesF.length>0){
+      pivot.colCombos.forEach(cc=>{
+        pivot.valeursF.forEach(v=>{
+          const val = pivot.cells.get(rc.key+'||'+cc.key+'||'+v.field+'_'+v.agg);
+          rows.push([rc.parts.slice().sort().join(','), cc.parts.slice().sort().join(','), v.field+'_'+v.agg, Math.round((val||0)*100)/100].join('~'));
+        });
+      });
+    } else {
+      pivot.valeursF.forEach(v=>{
+        const val = pivot.rowTotals.get(rc.key+'||'+v.field+'_'+v.agg);
+        rows.push([rc.parts.slice().sort().join(','), '', v.field+'_'+v.agg, Math.round((val||0)*100)/100].join('~'));
+      });
+    }
+  });
+  return rows.sort();
+}
+
+function checkMission(missionIdx){
+  const mission = MISSIONS[missionIdx];
+  const target = computePivot(mission.cfg);
+  const current = computePivot(currentConfig());
+  const targetSig = normalizeCellsForCompare(target);
+  const currentSig = normalizeCellsForCompare(current);
+  if(targetSig.length===0) return false;
+  if(targetSig.length !== currentSig.length) return false;
+  return targetSig.every((s,i)=> s===currentSig[i]);
+}
+
+function renderProgress(){
+  const row = document.getElementById('progressRow');
+  row.innerHTML = MISSIONS.map((m,i)=>{
+    let cls = 'progress-pill';
+    if(questState.done[i]) cls += ' done';
+    else if(i>questState.current) cls += ' locked';
+    else if(i===questState.current) cls += ' current';
+    return `<div class="${cls}" data-idx="${i}">${questState.done[i]?'✓':i+1}</div>`;
+  }).join('');
+  row.querySelectorAll('.progress-pill').forEach(p=>{
+    const idx = parseInt(p.dataset.idx);
+    if(idx <= questState.current || questState.done[idx]){
+      p.addEventListener('click', ()=>{ questState.current = idx; renderMissionZone(); });
+    }
+  });
+}
+
+function renderMissionZone(){
+  renderProgress();
+  const zone = document.getElementById('missionZone');
+  if(questState.done.every(Boolean)){
+    zone.innerHTML = `<div class="quest-end"><div class="big">🏆</div><div style="font-size:16px;font-weight:600;margin-bottom:6px;">Toutes les missions sont terminées !</div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Tu maîtrises les 4 zones et les 6 fonctions d'agrégation d'un tableau croisé dynamique.</div>
+      <button class="primary" id="btnRestart">Recommencer depuis le début</button></div>`;
+    document.getElementById('btnRestart').addEventListener('click', ()=>{
+      questState = { current:0, done:new Array(MISSIONS.length).fill(false), hintsShown:new Array(MISSIONS.length).fill(0) };
+      renderMissionZone();
+    });
+    return;
+  }
+  const i = questState.current;
+  const m = MISSIONS[i];
+  const nbHints = questState.hintsShown[i];
+  let hintsHtml = '';
+  for(let h=0; h<nbHints; h++){
+    hintsHtml += `<div class="hint-box">💡 Indice ${h+1} : ${m.hints[h]}</div>`;
+  }
+  const solConfig = ['Filtres : ' + (m.cfg.filtres.length ? m.cfg.filtres.map(f=>fieldByKey(f.field).label+' = '+f.value).join(', ') : 'aucun'),
+    'Lignes : ' + (m.cfg.lignes.length ? m.cfg.lignes.map(k=>fieldByKey(k).label).join(' puis ') : 'aucune'),
+    'Colonnes : ' + (m.cfg.colonnes.length ? m.cfg.colonnes.map(k=>fieldByKey(k).label).join(' puis ') : 'aucune'),
+    'Valeurs : ' + m.cfg.valeurs.map(v=>AGG_LABELS[v.agg]+' de '+fieldByKey(v.field).label).join(', ')].join('<br>');
+
+  zone.innerHTML = `
+    <div class="mission-card">
+      <div class="mission-eyebrow">Mission ${i+1} / ${MISSIONS.length}</div>
+      <div class="mission-title">${m.titre}</div>
+      <div class="mission-text">${m.texte}</div>
+      <div class="mission-actions">
+        <button class="primary" id="btnVerifier">✓ Vérifier ma configuration</button>
+        <button class="ghost" id="btnHint" ${nbHints>=m.hints.length?'disabled':''}>💡 Indice</button>
+        <button class="ghost" id="btnSol">Voir la solution</button>
+      </div>
+      <div class="msg" id="missionMsg"></div>
+      ${hintsHtml}
+      <div class="sol-box" id="solBox">${solConfig}</div>
+    </div>`;
+
+  document.getElementById('btnVerifier').addEventListener('click', ()=>{
+    const ok = checkMission(i);
+    const msg = document.getElementById('missionMsg');
+    msg.classList.remove('error','success'); msg.classList.add('show');
+    if(ok){
+      msg.classList.add('success');
+      msg.textContent = "✓ Bien joué, c'est le bon résultat !";
+      questState.done[i] = true;
+      if(i < MISSIONS.length-1) questState.current = i+1;
+      setTimeout(renderMissionZone, 900);
+    } else {
+      msg.classList.add('error');
+      msg.textContent = "Pas encore le bon résultat. Ajuste les zones ci-dessous, puis reviens vérifier.";
+    }
+  });
+  document.getElementById('btnHint').addEventListener('click', ()=>{
+    questState.hintsShown[i] = Math.min(m.hints.length, questState.hintsShown[i]+1);
+    renderMissionZone();
+  });
+  document.getElementById('btnSol').addEventListener('click', ()=>{
+    const box = document.getElementById('solBox');
+    const willOpen = !box.classList.contains('open');
+    box.classList.toggle('open', willOpen);
+    document.getElementById('btnSol').textContent = willOpen ? 'Masquer la solution' : 'Voir la solution';
+  });
+}
+
+/* =========================================================
+   13. INITIALISATION
+   ========================================================= */
+initDropzones();
+renderAll();
+document.getElementById('appVersion').textContent = 'v' + APP_VERSION;
+</script>
+</body>
+</html>
