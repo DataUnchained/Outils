@@ -1,4 +1,24 @@
 <!DOCTYPE html>
+<!--
+  Data Unchained — Bac à sable DAX
+  Version : 1.6.0
+
+  Historique :
+    1.0.0 — Version initiale : bac à sable DAX (carte), table Depenses, fonctions de base.
+    1.1.0 — Ajout du graphique à barres avec choix d'axe (chaque barre filtre la table sur sa
+            catégorie), et premiers petits exercices dans le panneau Fonctions.
+    1.2.0 — Charte graphique Data Unchained (logo, palette extraite du logo) et ajout de la
+            saisie intelligente (autocomplétion insensible à la casse) dans la barre de formule.
+    1.3.0 — Ajout de l'onglet DAX Quest : jeu à progression avec points, indices, solutions,
+            alimentant une carte ou un graphique avec la formule du joueur.
+    1.4.0 — Ajout de l'onglet DAX Learn (règles d'écriture, astuces, fiches fonctions en
+            maître-détail) et extension de la saisie intelligente à DAX Quest.
+    1.5.0 — Fiches fonctions enrichies (cas d'usage en tête, équivalence Excel, fonctions
+            connexes cliquables) et mise en avant du lien Microsoft Learn (carte avec logo).
+    1.6.0 — Ajout de l'onglet Cartographie (schéma et aperçu de la table Depenses). Bandeau
+            supérieur et onglets figés au défilement, logo Power BI dans le bandeau. Numéro de
+            version affiché en pied de page.
+-->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -145,16 +165,6 @@
   .center-col{ display:flex; flex-direction:column; gap:14px; }
 
   .formula-bar{ padding:12px; }
-  .formula-row1{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-  .formula-row1 input[type=text]{
-    font-family:var(--mono);
-    font-size:13px;
-    padding:7px 9px;
-    border:1px solid var(--border-strong);
-    border-radius:var(--radius);
-    width:220px;
-  }
-  .formula-row1 .eq{ font-family:var(--mono); font-weight:700; color:var(--text-secondary); }
 
   .fx-row{ display:flex; gap:8px; align-items:flex-start; }
   .fx-icon{
@@ -208,6 +218,7 @@
   .ac-badge.ac-func{ background:var(--data-blue); font-style:italic; }
   .ac-badge.ac-col{ background:var(--accent); color:#4A3300; }
   .ac-badge.ac-measure{ background:var(--accent-dark); }
+  .ac-badge.ac-table{ background:var(--bg-dark); }
   .ac-label{ font-family:var(--mono); }
   .ac-hint{ margin-left:auto; font-family:var(--sans); font-size:10.5px; color:var(--text-secondary); }
 
@@ -459,6 +470,21 @@
   .quest-complete .medal-title{ font-size:19px; font-weight:700; margin-bottom:6px; }
   .quest-complete .medal-score{ font-size:14px; color:var(--text-secondary); margin-bottom:18px; }
 
+  /* ---------- Cartographie ---------- */
+  .carto-wrap{ padding:16px; }
+  .carto-intro{ font-size:13px; line-height:1.6; margin-bottom:16px; color:var(--text-primary); }
+  table.schema-table{ border-collapse:collapse; width:100%; font-size:12.5px; }
+  table.schema-table th, table.schema-table td{ border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top; }
+  table.schema-table th{ background:#FAF9F8; font-weight:600; }
+  table.schema-table td.field-cell{ font-weight:600; white-space:nowrap; }
+  .schema-icon{
+    width:16px; height:16px; border-radius:2px; display:inline-flex; align-items:center; justify-content:center;
+    font-size:9.5px; font-weight:700; color:#fff; flex-shrink:0; vertical-align:middle; margin-right:7px;
+  }
+  .schema-icon.num{ background:var(--data-blue); }
+  .schema-icon.txt{ background:var(--brand-orange); }
+  .schema-icon.date{ background:var(--accent); color:#4A3300; }
+
   /* ---------- DAX Learn ---------- */
   .learn-layout{
     display:grid;
@@ -603,6 +629,7 @@
 
 <div class="tab-bar">
   <button class="tab-btn active" id="tabBtnSandbox" data-tab="sandbox">🧮 Bac à sable</button>
+  <button class="tab-btn" id="tabBtnCarto" data-tab="carto">🗂 Cartographie</button>
   <button class="tab-btn" id="tabBtnLearn" data-tab="learn">📚 DAX Learn</button>
   <button class="tab-btn" id="tabBtnQuest" data-tab="quest">🏆 DAX Quest</button>
 </div>
@@ -631,15 +658,10 @@
   <!-- CENTER : formula bar + card -->
   <div class="center-col">
     <div class="panel formula-bar">
-      <div class="formula-row1">
-        <input type="text" id="measureName" value="Ma Mesure" spellcheck="false">
-        <span class="eq">=</span>
-        <span style="font-size:11.5px;color:var(--text-secondary);">nom de la mesure</span>
-      </div>
       <div class="fx-row">
         <span class="fx-icon">fx</span>
         <div class="formula-input-wrap">
-          <textarea id="formulaInput" spellcheck="false" placeholder="Écris ta formule ici, ex : SUM(Depenses[Montant_EUR])">SUM(Depenses[Montant_EUR])</textarea>
+          <textarea id="formulaInput" spellcheck="false" placeholder="NomDeTaMesure = SUM(Depenses[Montant_EUR])">Ma Mesure = SUM(Depenses[Montant_EUR])</textarea>
           <div class="autocomplete-box" id="autocompleteBox"></div>
         </div>
       </div>
@@ -691,6 +713,22 @@
 </div>
 </div>
 
+<div id="tabCarto" class="tab-panel" style="display:none;">
+  <div class="carto-wrap">
+    <div class="carto-intro">Avant de croiser les champs, voici la table sur laquelle repose tout l'outil : une liste fictive de dépenses de projets, avec ses 6 champs. Les champs texte (T) servent surtout à filtrer ou à croiser un graphique ; les champs numériques (#) servent surtout à être agrégés dans une formule DAX.</div>
+
+    <div class="panel" style="padding:16px; margin-bottom:16px;">
+      <div class="panel-title" style="padding:0 0 12px;border:none;">🗂 Schéma de la table Depenses</div>
+      <div id="cartoSchema"></div>
+    </div>
+
+    <div class="panel" style="padding:16px;">
+      <div class="panel-title" style="padding:0 0 12px;border:none;">👀 Aperçu des données</div>
+      <div id="cartoPreview"></div>
+    </div>
+  </div>
+</div>
+
 <div id="tabLearn" class="tab-panel" style="display:none;">
   <div class="learn-layout">
 
@@ -736,12 +774,15 @@
   </div>
 </div>
 
-<footer>Application 100% locale : aucune donnée n'est envoyée ni réutilisée, tout se calcule dans ton navigateur.</footer>
+<footer>Data Unchained · Bac à sable DAX · <span id="appVersion"></span><br>Application 100% locale : aucune donnée n'est envoyée ni réutilisée, tout se calcule dans ton navigateur.</footer>
 
 <script>
 /* =========================================================
    1. DONNÉES FICTIVES
    ========================================================= */
+// Numéro de version de l'outil : à incrémenter à chaque évolution notable
+// (voir l'historique en commentaire tout en haut du fichier).
+const APP_VERSION = '1.6.0';
 const TABLE_NAME = "Depenses";
 const table = [
   {Departement:"Operations",    Projet:"Maintenance Site A",      Montant_EUR:45230, Budget_Projet_EUR:50000, Date:"2025-01-15", Region:"Paris"},
@@ -1063,6 +1104,29 @@ function runFormula(formulaStr, measuresStore, tableOverride){
   return evalNode(ast, ctx);
 }
 
+/**
+ * Réflexe Excel / Power BI : une mesure s'écrit toujours "NomDeLaMesure = formule".
+ * Le nom est entièrement libre, seul ce qu'il y a après le signe = est jugé. On ne fait
+ * que vérifier qu'un nom existe et qu'un signe = est présent avant de découper les deux.
+ * Le signe = est cherché à la première occurrence : tout = supplémentaire dans la formule
+ * (une comparaison dans un IF, par exemple) reste normalement dans la partie formule.
+ */
+function splitMeasureExpr(raw){
+  const eqIdx = raw.indexOf('=');
+  if(eqIdx === -1){
+    return { error: "Il manque le signe = : commence par le nom de ta mesure, comme dans Power BI (ex. Total Ventes = SUM(...))." };
+  }
+  const name = raw.slice(0, eqIdx).trim();
+  const formula = raw.slice(eqIdx + 1).trim();
+  if(!name){
+    return { error: "Donne un nom à ta mesure avant le signe = (ex. Total Ventes = SUM(...))." };
+  }
+  if(!formula){
+    return { error: "Écris une formule après le signe =." };
+  }
+  return { name, formula };
+}
+
 /* =========================================================
    3. ÉTAT DE L'APPLICATION
    ========================================================= */
@@ -1074,7 +1138,6 @@ const savedMeasures = {}; // name -> formula string
 const fieldsList = document.getElementById('fieldsList');
 const measuresList = document.getElementById('measuresList');
 const formulaInput = document.getElementById('formulaInput');
-const measureNameInput = document.getElementById('measureName');
 const msgBox = document.getElementById('msgBox');
 const cardVisual = document.getElementById('cardVisual');
 const cardValue = document.getElementById('cardValue');
@@ -1171,8 +1234,12 @@ function createAutocomplete(fieldEl, boxEl, getMeasures){
     const pos = fieldEl.selectionStart;
     const text = fieldEl.value;
     const { start, end, word, insideBrackets } = computeWordAt(text, pos);
-    if(!word || word.trim().length === 0){ hide(); return; }
-    const wLower = word.toLowerCase();
+    // Hors crochets, un mot vide ne donne rien d'utile à proposer (comme avant).
+    // Mais À L'INTÉRIEUR des crochets, même sans rien avoir tapé (juste après le "["),
+    // on affiche la liste complète des colonnes : c'est exactement le comportement
+    // de Power BI dès qu'on ouvre TableName[ ... ].
+    if(!insideBrackets && (!word || word.trim().length === 0)){ hide(); return; }
+    const wLower = (word || '').toLowerCase();
     const savedM = getMeasures();
     let items = [];
     if(insideBrackets){
@@ -1181,13 +1248,21 @@ function createAutocomplete(fieldEl, boxEl, getMeasures){
         ...Object.keys(savedM).filter(m => m.toLowerCase().startsWith(wLower)).map(m => ({type:'measure', label:m, insertName:m})),
       ];
     } else {
+      // Dès que ce qui est tapé correspond au début du nom de la table (ex. "Dep", "Depe"...),
+      // on propose directement toutes ses colonnes sous la forme Table[Colonne], comme le fait
+      // Power BI dès qu'on commence à écrire le nom d'une table.
+      const tableMatches = TABLE_NAME.toLowerCase().startsWith(wLower);
+      const columnItems = tableMatches
+        ? columns.map(c => ({type:'col', label:TABLE_NAME+'['+c+']', insertName:TABLE_NAME+'['+c+']'}))
+        : columns.filter(c => c.toLowerCase().startsWith(wLower)).map(c => ({type:'col', label:'['+c+']', insertName:'['+c+']'}));
       items = [
         ...FUNCTION_NAMES.filter(f => f.toLowerCase().startsWith(wLower)).map(f => ({type:'func', label:f+'( )', insertName:f+'('})),
-        ...columns.filter(c => c.toLowerCase().startsWith(wLower)).map(c => ({type:'col', label:'['+c+']', insertName:'['+c+']'})),
+        ...(tableMatches ? [{type:'table', label:TABLE_NAME, insertName:TABLE_NAME}] : []),
+        ...columnItems,
         ...Object.keys(savedM).filter(m => m.toLowerCase().startsWith(wLower)).map(m => ({type:'measure', label:'['+m+']', insertName:'['+m+']'})),
       ];
     }
-    items = items.slice(0, 8);
+    items = items.slice(0, 10);
     state.items = items;
     state.activeIndex = items.length ? 0 : -1;
     state.wordStart = start;
@@ -1198,12 +1273,12 @@ function createAutocomplete(fieldEl, boxEl, getMeasures){
 
   function render(){
     if(state.items.length === 0){ boxEl.classList.remove('show'); boxEl.innerHTML=''; return; }
-    const badgeChar = t => t==='func' ? 'fx' : t==='measure' ? '▤' : '▥';
+    const badgeChar = t => t==='func' ? 'fx' : t==='measure' ? '▤' : t==='table' ? '⊞' : '▥';
     boxEl.innerHTML = state.items.map((it,i)=>`
       <div class="ac-item ${i===state.activeIndex?'active':''}" data-idx="${i}">
         <span class="ac-badge ac-${it.type}">${badgeChar(it.type)}</span>
         <span class="ac-label">${it.label}</span>
-        <span class="ac-hint">${it.type==='func' ? 'fonction' : it.type==='measure' ? 'mesure' : 'colonne'}</span>
+        <span class="ac-hint">${it.type==='func' ? 'fonction' : it.type==='measure' ? 'mesure' : it.type==='table' ? 'table' : 'colonne'}</span>
       </div>`).join('');
     boxEl.classList.add('show');
     boxEl.querySelectorAll('.ac-item').forEach(el=>{
@@ -1273,17 +1348,23 @@ function hideMessage(){
 }
 
 function evaluate(){
-  const formula = formulaInput.value.trim();
-  const label = measureNameInput.value.trim() || 'Mesure';
-  if(!formula){
+  const raw = formulaInput.value.trim();
+  if(!raw){
     formulaInput.classList.remove('state-error','state-success');
     hideMessage();
     return;
   }
+  const parsed = splitMeasureExpr(raw);
+  if(parsed.error){
+    formulaInput.classList.remove('state-success');
+    formulaInput.classList.add('state-error');
+    showMessage('error', parsed.error);
+    return;
+  }
   if(visualType === 'card'){
-    evaluateCard(formula, label);
+    evaluateCard(parsed.formula, parsed.name);
   } else {
-    evaluateChart(formula, label);
+    evaluateChart(parsed.formula, parsed.name);
   }
 }
 
@@ -1381,7 +1462,6 @@ formulaInput.addEventListener('keydown', (e)=>{
 
 document.getElementById('btnClear').addEventListener('click', ()=>{
   formulaInput.value = '';
-  measureNameInput.value = 'Nouvelle Mesure';
   formulaInput.classList.remove('state-error','state-success');
   hideMessage();
   sandboxAC.hide();
@@ -1393,15 +1473,15 @@ document.getElementById('btnClear').addEventListener('click', ()=>{
 });
 
 document.getElementById('btnSaveMeasure').addEventListener('click', ()=>{
-  const formula = formulaInput.value.trim();
-  const name = measureNameInput.value.trim();
-  if(!formula){ showMessage('error', "Écris d'abord une formule avant de l'enregistrer."); return; }
-  if(!name){ showMessage('error', "Donne un nom à ta mesure avant de l'enregistrer."); return; }
+  const raw = formulaInput.value.trim();
+  if(!raw){ showMessage('error', "Écris d'abord une formule avant de l'enregistrer."); return; }
+  const parsed = splitMeasureExpr(raw);
+  if(parsed.error){ showMessage('error', parsed.error); return; }
   try{
-    runFormula(formula, savedMeasures); // valider avant sauvegarde
-    savedMeasures[name] = formula;
+    runFormula(parsed.formula, savedMeasures); // valider avant sauvegarde
+    savedMeasures[parsed.name] = parsed.formula;
     renderMeasures();
-    showMessage('success', `✓ Mesure [${name}] enregistrée. Tu peux maintenant la réutiliser dans d'autres formules.`);
+    showMessage('success', `✓ Mesure [${parsed.name}] enregistrée. Tu peux maintenant la réutiliser dans d'autres formules.`);
   } catch(e){
     showMessage('error', "Impossible d'enregistrer : " + e.message);
   }
@@ -1598,7 +1678,7 @@ function renderFuncListInto(containerEl, keyPrefix, withInsertInto){
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
         const detail = document.getElementById(btn.dataset.use);
-        withInsertInto.value = detail.dataset.example;
+        withInsertInto.value = 'Ma Mesure = ' + detail.dataset.example;
         sandboxAC.hide();
         withInsertInto.focus();
         evaluate();
@@ -1611,21 +1691,85 @@ const funcList = document.getElementById('funcList');
 renderFuncListInto(funcList, 'f', formulaInput);
 
 /* =========================================================
-   6. ONGLETS (Bac à sable / DAX Learn / DAX Quest)
+   6. ONGLETS (Bac à sable / Cartographie / DAX Learn / DAX Quest)
    ========================================================= */
 const tabSandbox = document.getElementById('tabSandbox');
+const tabCarto = document.getElementById('tabCarto');
 const tabLearn = document.getElementById('tabLearn');
 const tabQuest = document.getElementById('tabQuest');
 document.getElementById('tabBtnSandbox').addEventListener('click', ()=> switchTab('sandbox'));
+document.getElementById('tabBtnCarto').addEventListener('click', ()=> switchTab('carto'));
 document.getElementById('tabBtnLearn').addEventListener('click', ()=> switchTab('learn'));
 document.getElementById('tabBtnQuest').addEventListener('click', ()=> switchTab('quest'));
 function switchTab(tab){
   document.getElementById('tabBtnSandbox').classList.toggle('active', tab==='sandbox');
+  document.getElementById('tabBtnCarto').classList.toggle('active', tab==='carto');
   document.getElementById('tabBtnLearn').classList.toggle('active', tab==='learn');
   document.getElementById('tabBtnQuest').classList.toggle('active', tab==='quest');
   tabSandbox.style.display = tab==='sandbox' ? '' : 'none';
+  tabCarto.style.display = tab==='carto' ? '' : 'none';
   tabLearn.style.display = tab==='learn' ? '' : 'none';
   tabQuest.style.display = tab==='quest' ? '' : 'none';
+}
+
+/* =========================================================
+   6bis. CARTOGRAPHIE — schéma et aperçu de la table Depenses
+   ========================================================= */
+const FIELD_DESCRIPTIONS = {
+  Departement:       "Département auquel appartient le projet.",
+  Projet:            "Nom du projet concerné par la dépense.",
+  Montant_EUR:       "Montant réellement dépensé pour le projet.",
+  Budget_Projet_EUR: "Budget initialement alloué au projet.",
+  Date:              "Date d'engagement de la dépense.",
+  Region:            "Région administrative du site concerné.",
+};
+const CARTO_CURRENCY_FIELDS = ['Montant_EUR','Budget_Projet_EUR'];
+
+function fieldDomainLabel(key){
+  const type = columnTypes[key];
+  if(type === 'txt'){
+    const vals = [...new Set(table.map(r=>String(r[key])))].sort((a,b)=>a.localeCompare(b,'fr'));
+    // Au-delà de 8 valeurs distinctes (ex. Projet), une liste complète devient illisible :
+    // on affiche le compte et quelques exemples plutôt que tout énumérer.
+    if(vals.length > 8){
+      return `${vals.length} valeurs distinctes (ex. ${vals.slice(0,4).join(', ')}...)`;
+    }
+    return vals.join(', ');
+  }
+  if(type === 'date'){
+    const vals = table.map(r=>r[key]).slice().sort();
+    return `de ${vals[0]} à ${vals[vals.length-1]}`;
+  }
+  const vals = table.map(r=>Number(r[key]));
+  const min = Math.min(...vals), max = Math.max(...vals);
+  if(CARTO_CURRENCY_FIELDS.includes(key)){
+    return `de ${min.toLocaleString('fr-FR')} € à ${max.toLocaleString('fr-FR')} €`;
+  }
+  return `de ${min} à ${max}`;
+}
+
+function renderCartoSchema(){
+  const el = document.getElementById('cartoSchema');
+  el.innerHTML = `<div style="overflow-x:auto;"><table class="schema-table">
+    <thead><tr><th>Champ</th><th>Type</th><th>Description</th><th>Valeurs / plage</th></tr></thead>
+    <tbody>${columns.map(key=>{
+      const type = columnTypes[key];
+      const icon = type==='num' ? {c:'num', s:'Σ'} : type==='date' ? {c:'date', s:'📅'} : {c:'txt', s:'Abc'};
+      const typeLabel = type==='num' ? 'Numérique' : type==='date' ? 'Date' : 'Texte';
+      return `<tr>
+        <td class="field-cell"><span class="schema-icon ${icon.c}">${icon.s}</span>${key}</td>
+        <td>${typeLabel}</td>
+        <td>${FIELD_DESCRIPTIONS[key] || ''}</td>
+        <td>${fieldDomainLabel(key)}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function renderCartoPreview(){
+  const el = document.getElementById('cartoPreview');
+  el.innerHTML = previewTableHTML() +
+    `<div style="font-size:11.5px;color:var(--text-secondary);font-style:italic;margin-top:8px;">Table complète : ${table.length} lignes. Consultable aussi depuis le bac à sable, bouton « Afficher les données ».</div>`;
 }
 
 /* =========================================================
@@ -1691,7 +1835,7 @@ const questMainEl = document.getElementById('questMain');
 function freshQuestState(){
   return {
     current: 0,
-    levels: QUEST_LEVELS.map((l,i)=>({ status: i===0 ? 'active' : 'locked', earned:0, hintUsed:false, solutionRevealed:false, done:false, visualType:'card', axisField:axisColumns[0] })),
+    levels: QUEST_LEVELS.map((l,i)=>({ status: i===0 ? 'active' : 'locked', earned:0, hintUsed:false, solutionRevealed:false, done:false, visualType:'card', axisField:axisColumns[0], lastInput:'' })),
   };
 }
 let questState = freshQuestState();
@@ -1770,9 +1914,10 @@ function renderQuestMain(){
     <div class="quest-level-title">${level.title}</div>
     <div class="quest-level-points">🏆 ${level.points} points${st.done ? ' · déjà validé ('+st.earned+' pts obtenus)' : ''}</div>
     <div class="quest-prompt">${level.prompt}</div>
+    <div class="axis-hint" style="margin-bottom:8px;">💡 Comme dans Power BI : nomme ta mesure comme tu veux, puis <code>=</code>, puis ta formule. Seul ce qui suit le <code>=</code> est jugé.</div>
     <div class="quest-input-row">
       <div class="quest-input-wrap">
-        <input type="text" id="questInput" spellcheck="false" placeholder="Écris ta formule DAX ici..." value="${st.done ? level.ref.replace(/"/g,'&quot;') : ''}">
+        <input type="text" id="questInput" spellcheck="false" placeholder="NomDeTaMesure = SUM(Depenses[Montant_EUR])" value="${(st.done ? st.lastInput : '').replace(/"/g,'&quot;')}">
         <div class="autocomplete-box" id="qAutocompleteBox"></div>
       </div>
       <button class="primary" id="btnQuestValidate">✓ Valider</button>
@@ -1783,7 +1928,7 @@ function renderQuestMain(){
       ${i < QUEST_LEVELS.length-1 && st.done ? `<button class="ghost" id="btnQuestNext">Niveau suivant →</button>` : ''}
     </div>
     <div class="quest-hint-box" id="questHintBox">💡 ${level.hint}</div>
-    <div class="quest-solution-box" id="questSolutionBox">${level.ref}</div>
+    <div class="quest-solution-box" id="questSolutionBox">NomLibre = ${level.ref}</div>
     <div class="msg" id="questMsg"></div>
 
     <div class="visual-controls" style="margin-top:6px;">
@@ -1835,12 +1980,14 @@ function renderQuestMain(){
   }
 
   function renderQuestVisual(){
-    const formula = questInput.value.trim();
-    if(!formula) return;
+    const raw = questInput.value.trim();
+    if(!raw) return;
+    const parsed = splitMeasureExpr(raw);
+    if(parsed.error) return; // rien à alimenter tant que nom + = ne sont pas là ; validateLevel affichera l'erreur
     if(st.visualType === 'card'){
-      renderCardInto(qCardVisual, qCardValue, qCardLabel, formula, level.title, {});
+      renderCardInto(qCardVisual, qCardValue, qCardLabel, parsed.formula, parsed.name, {});
     } else {
-      renderChartInto(qChartBars, formula, st.axisField, {});
+      renderChartInto(qChartBars, parsed.formula, st.axisField, {});
     }
   }
 
@@ -1880,11 +2027,17 @@ function renderQuestMain(){
   if(st.done){ renderQuestVisual(); }
 
   function validateLevel(){
-    const formula = questInput.value.trim();
-    if(!formula){ showQuestMsg('error', "Écris une formule avant de valider."); return; }
+    const raw = questInput.value.trim();
+    if(!raw){ showQuestMsg('error', "Écris une formule avant de valider."); return; }
+    const parsed = splitMeasureExpr(raw);
+    if(parsed.error){
+      questInput.classList.add('state-error');
+      showQuestMsg('error', parsed.error);
+      return;
+    }
     let userResult, expected;
     try{
-      userResult = runFormula(formula, {});
+      userResult = runFormula(parsed.formula, {});
     } catch(e){
       questInput.classList.add('state-error');
       showQuestMsg('error', e.message);
@@ -1892,6 +2045,7 @@ function renderQuestMain(){
     }
     expected = runFormula(level.ref, {});
     questInput.classList.remove('state-error');
+    st.lastInput = raw;
     renderQuestVisual();
     if(resultsMatch(userResult, expected)){
       const multiplier = st.solutionRevealed ? 0.1 : st.hintUsed ? 0.6 : 1;
@@ -2077,9 +2231,12 @@ renderFields();
 renderMeasures();
 renderPreview();
 evaluate();
+renderCartoSchema();
+renderCartoPreview();
 renderQuestScore();
 renderQuestLevels();
 renderQuestMain();
+document.getElementById('appVersion').textContent = 'v' + APP_VERSION;
 </script>
 </body>
 </html>
