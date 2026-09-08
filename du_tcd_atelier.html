@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Data Unchained — Atelier Tableaux Croisés Dynamiques
-  Version : 1.3.0
+  Version : 1.4.0
 
   Historique :
     1.0.0 — Version initiale : atelier (4 zones), missions progressives, cartographie des 4 zones.
@@ -13,6 +13,9 @@
     1.3.0 — Nouvel onglet "Cartographie" (entre Atelier et TCD Learn) : présentation de la table
             Salariés (schéma des champs + aperçu des données). Numéro de version affiché en pied
             de page.
+    1.4.0 — Onglet "Atelier" renommé "Bac à sable". Ajout d'info-bulles explicatives sur les 4
+            zones (Filtres, Lignes, Colonnes, Valeurs), au survol d'une pastille "?", dans le
+            Bac à sable et dans TCD Quest.
 -->
 
 <html lang="fr">
@@ -207,6 +210,28 @@
   .zone-dot.valeurs{ background:var(--accent-dark); }
   .zone-empty{ font-size:11.5px; color:var(--text-secondary); font-style:italic; padding:4px 2px; }
 
+  /* ---------- Info-bulle d'explication sur chaque zone ---------- */
+  .zone-help{
+    position:relative; display:inline-flex; align-items:center; justify-content:center;
+    width:14px; height:14px; border-radius:50%; background:var(--border-strong); color:#fff;
+    font-size:9px; font-weight:700; font-style:normal; text-transform:none; letter-spacing:normal;
+    cursor:help; flex-shrink:0;
+  }
+  .zone-help:hover, .zone-help:focus{ background:var(--text-secondary); outline:none; }
+  .zone-tooltip{
+    display:none; position:absolute; z-index:30; top:22px; left:50%; transform:translateX(-50%);
+    width:230px; max-width:calc(100vw - 40px); background:#2A2A28; color:#fff;
+    font-size:11.5px; font-weight:400; line-height:1.55; text-transform:none; letter-spacing:normal;
+    padding:10px 12px; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.25); text-align:left;
+  }
+  .zone-help:hover .zone-tooltip, .zone-help:focus .zone-tooltip{ display:block; }
+  .zone-tooltip b{ color:var(--brand-yellow); font-weight:700; }
+  .zone-tooltip::before{
+    content:''; position:absolute; bottom:100%; left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-bottom-color:#2A2A28;
+  }
+  .zone-tooltip-ex{ display:block; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.15); color:#CFE8DA; font-size:11px; }
+
   .chip{
     display:inline-flex; align-items:center; gap:5px; background:#fff;
     border:1px solid var(--border-strong); border-radius:13px; padding:3px 4px 3px 9px;
@@ -365,7 +390,7 @@
 </div>
 
 <div class="tabbar">
-  <button class="tab-btn active" data-tab="atelier">🛠 Atelier</button>
+  <button class="tab-btn active" data-tab="atelier">🛠 Bac à sable</button>
   <button class="tab-btn" data-tab="cartographie">🗺 Cartographie</button>
   <button class="tab-btn" data-tab="learn">🎓 TCD Learn</button>
   <button class="tab-btn" data-tab="quest">🎯 TCD Quest</button>
@@ -396,19 +421,19 @@
         </div>
         <div class="zones-grid" id="zonesGrid-atelier">
           <div class="dropzone" data-zone="filtres">
-            <div class="zone-label"><span class="zone-dot filtres"></span>Filtres</div>
+            <div class="zone-label"><span class="zone-dot filtres"></span>Filtres<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Filtres</b> réduit le périmètre avant tout calcul. Le champ posé ici ne s'affiche pas dans le tableau : il sert juste à ne garder qu'une partie des lignes.<span class="zone-tooltip-ex">Ex : Contrat = CDI</span></span></span></div>
             <div class="zone-body" id="zone-filtres-atelier"></div>
           </div>
           <div class="dropzone" data-zone="valeurs">
-            <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs</div>
+            <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
             <div class="zone-body" id="zone-valeurs-atelier"></div>
           </div>
           <div class="dropzone" data-zone="lignes">
-            <div class="zone-label"><span class="zone-dot lignes"></span>Lignes</div>
+            <div class="zone-label"><span class="zone-dot lignes"></span>Lignes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Lignes</b> découpe le tableau verticalement : chaque valeur du champ devient une ligne.<span class="zone-tooltip-ex">Ex : Service → une ligne par service</span></span></span></div>
             <div class="zone-body" id="zone-lignes-atelier"></div>
           </div>
           <div class="dropzone" data-zone="colonnes">
-            <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes</div>
+            <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
             <div class="zone-body" id="zone-colonnes-atelier"></div>
           </div>
         </div>
@@ -542,19 +567,19 @@
           </div>
           <div class="zones-grid" id="zonesGrid-quest">
             <div class="dropzone" data-zone="filtres">
-              <div class="zone-label"><span class="zone-dot filtres"></span>Filtres</div>
+              <div class="zone-label"><span class="zone-dot filtres"></span>Filtres<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Filtres</b> réduit le périmètre avant tout calcul. Le champ posé ici ne s'affiche pas dans le tableau : il sert juste à ne garder qu'une partie des lignes.<span class="zone-tooltip-ex">Ex : Contrat = CDI</span></span></span></div>
               <div class="zone-body" id="zone-filtres-quest"></div>
             </div>
             <div class="dropzone" data-zone="valeurs">
-              <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs</div>
+              <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
               <div class="zone-body" id="zone-valeurs-quest"></div>
             </div>
             <div class="dropzone" data-zone="lignes">
-              <div class="zone-label"><span class="zone-dot lignes"></span>Lignes</div>
+              <div class="zone-label"><span class="zone-dot lignes"></span>Lignes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Lignes</b> découpe le tableau verticalement : chaque valeur du champ devient une ligne.<span class="zone-tooltip-ex">Ex : Service → une ligne par service</span></span></span></div>
               <div class="zone-body" id="zone-lignes-quest"></div>
             </div>
             <div class="dropzone" data-zone="colonnes">
-              <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes</div>
+              <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
               <div class="zone-body" id="zone-colonnes-quest"></div>
             </div>
           </div>
@@ -579,7 +604,7 @@
    ========================================================= */
 // Numéro de version de l'outil : à incrémenter à chaque évolution notable
 // (voir l'historique en commentaire tout en haut du fichier).
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 function mulberry32(a){
   return function(){
@@ -705,7 +730,7 @@ function removeFromZone(zoneName, idx){
 /* =========================================================
    3. RENDU — panneau des champs
    ========================================================= */
-// L'outil affiche les champs et les 4 zones à DEUX endroits (onglets Atelier et
+// L'outil affiche les champs et les 4 zones à DEUX endroits (onglets Bac à sable et
 // TCD Quest), qui reflètent le même état `zones`. UI_INSTANCES liste les suffixes
 // d'id à mettre à jour à chaque rendu, pour ne pas dupliquer la logique.
 const UI_INSTANCES = ['atelier','quest'];
@@ -1118,7 +1143,7 @@ function renderDataTable(containerId, filtres){
 /* =========================================================
    9. RENDU RÉSULTAT
    ========================================================= */
-// Onglet Atelier : trois vues possibles sur le même résultat.
+// Onglet Bac à sable : trois vues possibles sur le même résultat.
 let atelierView = 'pivot';
 
 function renderResult(){
@@ -1255,7 +1280,7 @@ function renderSchemaPreview(){
       <thead><tr>${FIELDS.map(f=>`<th>${f.label}</th>`).join('')}</tr></thead>
       <tbody>${rows}</tbody>
     </table></div>
-    <div class="mockup-caption" style="max-width:none; margin-top:8px;">Extrait des ${sample.length} premières lignes sur ${DATA.length} au total. La table complète est consultable dans l'onglet Atelier, vue « Données sources ».</div>`;
+    <div class="mockup-caption" style="max-width:none; margin-top:8px;">Extrait des ${sample.length} premières lignes sur ${DATA.length} au total. La table complète est consultable dans le Bac à sable, vue « Données sources ».</div>`;
 }
 renderSchema();
 renderSchemaPreview();
