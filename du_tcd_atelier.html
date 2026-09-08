@@ -18,6 +18,9 @@
             Bac à sable et dans TCD Quest.
     1.4.1 — Ordre des 4 zones aligné sur celui d'Excel : Filtres / Colonnes en haut, Lignes /
             Valeurs en bas (au lieu de Filtres / Valeurs, Lignes / Colonnes).
+    1.4.2 — Correction de la validation des missions TCD Quest : la comparaison ignore désormais
+            le champ posé en Valeurs et ne compare que les valeurs produites, pour accepter tout
+            champ équivalent (ex : Nombre sur Employé ou sur Poste donnent le même effectif).
 -->
 
 <html lang="fr">
@@ -606,7 +609,7 @@
    ========================================================= */
 // Numéro de version de l'outil : à incrémenter à chaque évolution notable
 // (voir l'historique en commentaire tout en haut du fichier).
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.4.2';
 
 function mulberry32(a){
   return function(){
@@ -1322,6 +1325,10 @@ const MISSIONS = [
 
 let questState = { current:0, done:new Array(MISSIONS.length).fill(false), hintsShown:new Array(MISSIONS.length).fill(0) };
 
+// Compare le RÉSULTAT produit (les valeurs de chaque case), pas la configuration exacte :
+// le nom du champ posé en Valeurs ne fait pas partie de la signature. Ça permet par exemple
+// de valider "Nombre de Poste" aussi bien que "Nombre d'Employé" pour compter des lignes,
+// puisque la fonction Nombre donne le même résultat quel que soit le champ choisi.
 function normalizeCellsForCompare(pivot){
   const rows = [];
   if(pivot.empty) return rows;
@@ -1330,13 +1337,13 @@ function normalizeCellsForCompare(pivot){
       pivot.colCombos.forEach(cc=>{
         pivot.valeursF.forEach(v=>{
           const val = pivot.cells.get(rc.key+'||'+cc.key+'||'+v.field+'_'+v.agg);
-          rows.push([rc.parts.slice().sort().join(','), cc.parts.slice().sort().join(','), v.field+'_'+v.agg, Math.round((val||0)*100)/100].join('~'));
+          rows.push([rc.parts.slice().sort().join(','), cc.parts.slice().sort().join(','), Math.round((val||0)*100)/100].join('~'));
         });
       });
     } else {
       pivot.valeursF.forEach(v=>{
         const val = pivot.rowTotals.get(rc.key+'||'+v.field+'_'+v.agg);
-        rows.push([rc.parts.slice().sort().join(','), '', v.field+'_'+v.agg, Math.round((val||0)*100)/100].join('~'));
+        rows.push([rc.parts.slice().sort().join(','), '', Math.round((val||0)*100)/100].join('~'));
       });
     }
   });
