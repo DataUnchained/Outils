@@ -16,6 +16,8 @@
     1.4.0 — Onglet "Atelier" renommé "Bac à sable". Ajout d'info-bulles explicatives sur les 4
             zones (Filtres, Lignes, Colonnes, Valeurs), au survol d'une pastille "?", dans le
             Bac à sable et dans TCD Quest.
+    1.4.1 — Ordre des 4 zones aligné sur celui d'Excel : Filtres / Colonnes en haut, Lignes /
+            Valeurs en bas (au lieu de Filtres / Valeurs, Lignes / Colonnes).
 -->
 
 <html lang="fr">
@@ -424,17 +426,17 @@
             <div class="zone-label"><span class="zone-dot filtres"></span>Filtres<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Filtres</b> réduit le périmètre avant tout calcul. Le champ posé ici ne s'affiche pas dans le tableau : il sert juste à ne garder qu'une partie des lignes.<span class="zone-tooltip-ex">Ex : Contrat = CDI</span></span></span></div>
             <div class="zone-body" id="zone-filtres-atelier"></div>
           </div>
-          <div class="dropzone" data-zone="valeurs">
-            <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
-            <div class="zone-body" id="zone-valeurs-atelier"></div>
+          <div class="dropzone" data-zone="colonnes">
+            <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
+            <div class="zone-body" id="zone-colonnes-atelier"></div>
           </div>
           <div class="dropzone" data-zone="lignes">
             <div class="zone-label"><span class="zone-dot lignes"></span>Lignes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Lignes</b> découpe le tableau verticalement : chaque valeur du champ devient une ligne.<span class="zone-tooltip-ex">Ex : Service → une ligne par service</span></span></span></div>
             <div class="zone-body" id="zone-lignes-atelier"></div>
           </div>
-          <div class="dropzone" data-zone="colonnes">
-            <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
-            <div class="zone-body" id="zone-colonnes-atelier"></div>
+          <div class="dropzone" data-zone="valeurs">
+            <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
+            <div class="zone-body" id="zone-valeurs-atelier"></div>
           </div>
         </div>
       </div>
@@ -570,17 +572,17 @@
               <div class="zone-label"><span class="zone-dot filtres"></span>Filtres<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Filtres</b> réduit le périmètre avant tout calcul. Le champ posé ici ne s'affiche pas dans le tableau : il sert juste à ne garder qu'une partie des lignes.<span class="zone-tooltip-ex">Ex : Contrat = CDI</span></span></span></div>
               <div class="zone-body" id="zone-filtres-quest"></div>
             </div>
-            <div class="dropzone" data-zone="valeurs">
-              <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
-              <div class="zone-body" id="zone-valeurs-quest"></div>
+            <div class="dropzone" data-zone="colonnes">
+              <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
+              <div class="zone-body" id="zone-colonnes-quest"></div>
             </div>
             <div class="dropzone" data-zone="lignes">
               <div class="zone-label"><span class="zone-dot lignes"></span>Lignes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Lignes</b> découpe le tableau verticalement : chaque valeur du champ devient une ligne.<span class="zone-tooltip-ex">Ex : Service → une ligne par service</span></span></span></div>
               <div class="zone-body" id="zone-lignes-quest"></div>
             </div>
-            <div class="dropzone" data-zone="colonnes">
-              <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
-              <div class="zone-body" id="zone-colonnes-quest"></div>
+            <div class="dropzone" data-zone="valeurs">
+              <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
+              <div class="zone-body" id="zone-valeurs-quest"></div>
             </div>
           </div>
         </div>
@@ -604,7 +606,7 @@
    ========================================================= */
 // Numéro de version de l'outil : à incrémenter à chaque évolution notable
 // (voir l'historique en commentaire tout en haut du fichier).
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.4.1';
 
 function mulberry32(a){
   return function(){
