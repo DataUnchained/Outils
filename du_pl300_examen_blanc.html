@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<!--
+  Data Unchained — PL-300 Examen Blanc
+  Version : 1.4.1
+
+  Historique :
+    1.0.0 — Version initiale : onglets Contexte / Examen blanc / Récap (exceptionnellement,
+            pas de structure Cartographie/Learn/Quest habituelle). 40 questions couvrant les
+            4 domaines officiels PL-300 (QCM simple, QCM à choix multiples, mini mises en
+            situation de 3 questions liées). Chronomètre de 100 minutes démarrant à l'entrée
+            sur l'onglet Examen blanc, palette de navigation façon centre d'examen, onglet
+            Récap déverrouillé une fois l'examen terminé, avec corrections et impression A4.
+    1.1.0 — Ajout d'un indice et d'une solution consultables sur chaque question. Consulter
+            l'un ou l'autre marque définitivement la question comme « aidée » (pastille ⓘ
+            sur la palette) : elle ne rapporte alors aucun point au récap final, même en cas
+            de bonne réponse. Mise à jour du récap et des textes de l'onglet Contexte en
+            conséquence.
+    1.2.0 — L'examen s'ouvre désormais par la mise en situation Vélocia (3 questions), comme
+            à l'examen officiel : navigation libre uniquement entre ces 3 questions, écran de
+            révision dédié à la fin, puis section verrouillée définitivement une fois validée
+            (palette grisée, plus de retour possible). La seconde mise en situation (Norda RH)
+            reste mêlée au reste de l'examen, en navigation libre.
+    1.3.0 — Chronomètre déplacé dans le bandeau supérieur : reste visible en permanence,
+            quel que soit l'onglet consulté, dès que l'examen a démarré. Ajout d'un lien
+            "Approfondir sur Microsoft Learn" par question dans le récap (pages vérifiées
+            par recherche web ; à défaut de page dédiée confirmée, lien vers le portail
+            général de la documentation Power BI). Ajout d'une alerte informative en cas de
+            changement de fenêtre ou d'onglet pendant l'examen (détection de perte de focus
+            via l'API de visibilité du navigateur : un signal pédagogique, pas une vraie
+            surveillance), avec compteur rappelé dans le récap final.
+    1.3.1 — L'alerte de changement de fenêtre est repensée pour être bien plus visible :
+            bandeau rouge plein écran au-dessus de tout le contenu (quel que soit l'onglet
+            actif), icône animée, affichage prolongé à 15 secondes, bouton de fermeture.
+            Correction : sur la dernière question de l'examen, le bouton "Suivante" est
+            remplacé par "Terminer l'examen" et déclenche réellement la fin de l'examen
+            (avec la même confirmation que le bouton dédié s'il reste des questions sans
+            réponse) au lieu de rester inerte.
+    1.3.2 — Correction : une trentaine d'énoncés de questions s'arrêtaient sur la mise en
+            contexte sans poser explicitement la question, la laissant implicite juste avant
+            les propositions de réponses. Chaque énoncé se termine désormais par une
+            question claire ("Quelle fonctionnalité utilises-tu ?", "Que fais-tu ?"...).
+    1.4.0 — Ajout de deux nouveaux types de questions, conformes au format réel de l'examen
+            PL-300 (confirmé par recherche web : QCM, glisser-déposer, liste ordonnée, zone
+            active, mises en situation) : "liste ordonnée" (remettre des étapes dans le bon
+            ordre, par glisser-déposer ou flèches ▲▼) et "association" (relier chaque élément
+            à sa catégorie, par glisser-déposer ou clic). Deux questions ont été converties
+            à ces nouveaux formats : les étapes d'un projet Power BI (domaine Gérer, remplace
+            l'ancienne question sur la mise en page mobile) et les catégories de fonctions
+            DAX (domaine Modéliser, remplace l'ancienne question sur les mesures rapides).
+            Nettoyage : suppression d'un bloc de liens Microsoft Learn devenu obsolète et
+            resté par erreur dans le code (sans effet visible, écrasé par le bloc actif).
+    1.4.1 — Correction : la question 26 (type "ordre", nouveauté de la 1.4.0) apparaissait
+            marquée comme répondue (pastille verte) dans la palette dès l'ouverture de
+            l'examen, avant toute interaction. Une question de type "ordre" n'est désormais
+            marquée répondue qu'après une action réelle de l'apprenant (glisser-déposer ou
+            flèches ▲▼), comme pour tous les autres types de questions.
+-->
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Unchained – PL-300 Examen Blanc</title>
+<style>
+  :root{
+    --bg-canvas:#F3F2F1;
+    --bg-surface:#FFFFFF;
+    --bg-dark:#175B36;
+    --bg-dark-2:#1F7A47;
+    --accent:#DDA40D;
+    --accent-dark:#B98C0A;
+    --data-blue:#1D8A57;
+    --brand-yellow:#F3D163;
+    --brand-orange:#B95E01;
+    --text-primary:#333333;
+    --text-secondary:#6B6B6B;
+    --border:#E1DFDD;
+    --border-strong:#C8C6C4;
+    --error:#A80000;
+    --error-bg:#FDF3F3;
+    --success:#1D8A57;
+    --success-bg:#EAF6EF;
+    --radius:4px;
+    --mono: 'Cascadia Code','Consolas','SFMono-Regular',Menlo,monospace;
+    --sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg-canvas); color:var(--text-primary); font-family:var(--sans); }
+  .wrap{ width:min(1100px,94vw); margin:0 auto; }
+  .app-footer{ text-align:center; font-size:11px; color:var(--text-secondary); padding:6px 14px 26px; }
+  button{ font-family:var(--sans); }
+  code{ font-family:var(--mono); background:#F3F2F1; padding:1px 5px; border-radius:3px; font-size:12px; }
+
+  /* ---------- Bandeau supérieur figé ---------- */
+  .app-header{ position:sticky; top:0; z-index:100; box-shadow:0 2px 10px rgba(0,0,0,.15); }
+  .topbar{ background:var(--bg-dark); color:#fff; padding:12px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .topbar .logo-img{ width:38px; height:38px; display:block; flex-shrink:0; border-radius:6px; }
+  .topbar .brand-text{ display:flex; flex-direction:column; gap:1px; }
+  .topbar .brand-name{ font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-yellow); }
+  .topbar h1{ font-size:17px; margin:0; font-weight:600; }
+  .topbar-right{ margin-left:auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .topbar .sub{ font-size:12.5px; color:#CFE8DA; }
+  @media (max-width:640px){ .topbar-right{ margin-left:0; width:100%; justify-content:space-between; } }
+
+  /* Chrono permanent dans le bandeau : visible sur tous les onglets une fois l'examen démarré,
+     pour que le temps restant reste consultable même en scrollant ou en changeant d'onglet. */
+  .header-timer{
+    display:none; align-items:center; gap:6px; font-family:var(--mono); font-size:14px; font-weight:700;
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); border-radius:6px;
+    padding:5px 11px; color:#fff; flex-shrink:0;
+  }
+  .header-timer.low{ background:var(--error); border-color:var(--error); }
+  .header-timer .ht-switches{ font-size:10.5px; font-weight:600; color:var(--brand-yellow); margin-left:4px; }
+
+  /* Badge Power BI : icône générique maison (pas le logo Microsoft officiel), même esprit
+     que le badge Excel de l'Atelier TCD : pastille + petit pictogramme dans les couleurs DU. */
+  .pbi-badge{
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.25);
+    border-radius:14px; padding:4px 11px 4px 4px; font-size:11.5px; font-weight:600; color:#fff;
+    flex-shrink:0; white-space:nowrap;
+  }
+  .pbi-badge-icon{
+    width:20px; height:20px; border-radius:4px; background:#2B2B2B;
+    display:flex; align-items:flex-end; justify-content:center; gap:2px; padding:3px 4px 2px; flex-shrink:0;
+  }
+  .pbi-badge-icon span{ display:block; width:3px; border-radius:1px 1px 0 0; }
+  .pbi-badge-icon span:nth-child(1){ height:6px; background:var(--brand-yellow); }
+  .pbi-badge-icon span:nth-child(2){ height:11px; background:var(--accent); }
+  .pbi-badge-icon span:nth-child(3){ height:8px; background:var(--brand-orange); }
+
+  /* ---------- Onglets ---------- */
+  .tabbar{ background:var(--bg-dark-2); display:flex; gap:2px; overflow-x:auto; padding:0 16px; }
+  .tab-btn{
+    flex-shrink:0; padding:11px 16px; font-size:12.5px; font-weight:600; color:#CFE8DA;
+    background:transparent; border:none; border-bottom:3px solid transparent; cursor:pointer;
+    font-family:var(--sans); white-space:nowrap;
+  }
+  .tab-btn:hover{ background:rgba(255,255,255,.08); color:#fff; }
+  .tab-btn.active{ color:#fff; border-bottom-color:var(--accent); background:rgba(255,255,255,.07); }
+  .tab-btn.locked{ color:rgba(207,232,218,.45); cursor:not-allowed; }
+  .tab-btn.locked:hover{ background:transparent; color:rgba(207,232,218,.45); }
+
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  .panel{ background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius); }
+  .panel-title{
+    font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.03em;
+    color:var(--text-secondary); padding:10px 12px; border-bottom:1px solid var(--border);
+  }
+  button.primary{ font-family:var(--sans); font-size:12.5px; font-weight:600; padding:9px 18px; border-radius:var(--radius); border:1px solid var(--accent-dark); background:var(--accent); color:#3B2F00; cursor:pointer; }
+  button.primary:hover{ background:var(--accent-dark); color:#fff; }
+  button.primary:disabled{ opacity:.45; cursor:not-allowed; }
+  button.secondary{ font-family:var(--sans); font-size:12.5px; font-weight:600; padding:9px 18px; border-radius:var(--radius); border:1px solid var(--border-strong); background:#fff; color:var(--text-primary); cursor:pointer; }
+  button.secondary:hover{ background:#F3F2F1; }
+  button.ghost{ font-family:var(--sans); font-size:12px; font-weight:600; padding:6px 10px; border-radius:var(--radius); border:1px solid transparent; background:transparent; color:var(--data-blue); cursor:pointer; }
+  button.ghost:hover{ text-decoration:underline; }
+  button.ghost.flagged{ color:var(--brand-orange); }
+
+  /* ---------- Onglet Contexte ---------- */
+  .ctx-wrap{ padding:18px 16px 30px; }
+  .ctx-intro{ font-size:13.5px; line-height:1.65; margin-bottom:18px; }
+  .ctx-block{ background:var(--bg-surface); border:1px solid var(--border); border-radius:6px; padding:16px 18px; margin-bottom:16px; }
+  .ctx-block h2{ font-size:14.5px; margin:0 0 10px; }
+  .ctx-block p{ font-size:13px; line-height:1.65; margin:0 0 10px; }
+  .ctx-block ul{ margin:0 0 8px; padding-left:20px; font-size:13px; line-height:1.7; }
+  .ctx-block li{ margin-bottom:4px; }
+  table.domains{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px; }
+  table.domains th, table.domains td{ border:1px solid var(--border); padding:8px 10px; text-align:left; }
+  table.domains th{ background:#F7F6F5; font-weight:600; }
+  table.domains .dom-dot{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:7px; vertical-align:middle; }
+  .ctx-warning{
+    background:var(--error-bg); border:1px solid #F1C0C0; border-left:4px solid var(--error);
+    border-radius:var(--radius); padding:12px 14px; font-size:12.5px; line-height:1.6; color:#5C1414; margin-bottom:16px;
+  }
+  .ctx-links{ font-size:12.5px; line-height:1.9; }
+  .ctx-links a{ color:var(--data-blue); }
+  .ctx-cta{ text-align:center; padding:10px 0 4px; }
+
+  /* ---------- Onglet Examen blanc ---------- */
+  .scope-note{
+    background:#FFF9E6; border:1px solid #EEDD9C; color:#5C4A00; font-size:12.5px;
+    padding:10px 14px; line-height:1.5; border-radius:var(--radius); margin:14px 14px 0;
+  }
+  .exam-topbar{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:12px 14px;
+  }
+  .exam-progress{ font-size:12.5px; color:var(--text-secondary); font-weight:600; }
+
+  .exam-layout{ display:grid; grid-template-columns:190px 1fr; gap:14px; padding:0 14px 20px; align-items:start; }
+  @media (max-width:820px){ .exam-layout{ grid-template-columns:1fr; } }
+
+  .palette-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; padding:10px; }
+  @media (max-width:820px){ .palette-grid{ grid-template-columns:repeat(10,1fr); } }
+  .pal-btn{
+    width:100%; aspect-ratio:1; border-radius:4px; border:1.5px solid var(--border-strong); background:#fff;
+    font-size:11px; font-weight:700; color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .pal-btn:hover{ border-color:var(--data-blue); }
+  .pal-btn.answered{ background:var(--data-blue); border-color:var(--data-blue); color:#fff; }
+  .pal-btn.current{ box-shadow:0 0 0 2px var(--accent); border-color:var(--accent-dark); }
+  .pal-btn.flagged::after{
+    content:''; position:absolute; top:-3px; right:-3px; width:8px; height:8px; border-radius:50%;
+    background:var(--brand-orange); border:1.5px solid #fff;
+  }
+  .pal-btn.aided::before{
+    content:'ⓘ'; position:absolute; bottom:-4px; left:-4px; width:13px; height:13px; border-radius:50%;
+    background:#fff; border:1.5px solid var(--text-secondary); color:var(--text-secondary);
+    font-size:8.5px; line-height:10px; text-align:center;
+  }
+  .pal-btn.sectionlock{ opacity:.4; cursor:not-allowed; background:#F3F2F1; }
+  .pal-btn.sectionlock:hover{ border-color:var(--border-strong); }
+  .palette-legend{ font-size:10.5px; color:var(--text-secondary); line-height:1.7; padding:0 10px 10px; }
+  .palette-legend .lg-item{ display:flex; align-items:center; gap:6px; margin-bottom:2px; }
+  .palette-legend .lg-swatch{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+
+  .qcard{ padding:18px 20px; }
+  .q-eyebrow{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .q-domain-tag{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:3px 9px; border-radius:10px; color:#fff; }
+  .q-num{ font-size:12px; color:var(--text-secondary); font-weight:600; }
+  .scenario-box{
+    background:#F0F6F2; border:1px solid #CFE4D6; border-left:4px solid var(--data-blue);
+    border-radius:var(--radius); padding:11px 14px; font-size:12.5px; line-height:1.6; margin-bottom:14px; color:#1E4A30;
+  }
+  .scenario-box .sc-title{ font-weight:700; margin-bottom:4px; color:var(--bg-dark); }
+  .q-prompt{ font-size:14.5px; line-height:1.6; margin-bottom:6px; color:var(--text-primary); }
+  .q-instr{ font-size:11.5px; color:var(--text-secondary); font-style:italic; margin-bottom:12px; }
+
+  .q-options{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .opt-btn{
+    display:flex; align-items:flex-start; gap:10px; text-align:left; width:100%;
+    background:#fff; border:1.5px solid var(--border-strong); border-radius:6px; padding:10px 13px;
+    font-size:13px; line-height:1.5; color:var(--text-primary); cursor:pointer; font-family:var(--sans);
+  }
+  .opt-btn:hover{ border-color:var(--data-blue); background:#F7FBF9; }
+  .opt-btn.sel{ border-color:var(--data-blue); background:#EAF6EF; }
+  .opt-mark{
+    flex-shrink:0; width:19px; height:19px; border:1.5px solid var(--border-strong); display:flex; align-items:center;
+    justify-content:center; font-size:11px; font-weight:700; color:#fff; margin-top:1px;
+  }
+  .opt-btn[data-shape="round"] .opt-mark{ border-radius:50%; }
+  .opt-btn[data-shape="square"] .opt-mark{ border-radius:3px; }
+  .opt-btn.sel .opt-mark{ background:var(--data-blue); border-color:var(--data-blue); }
+
+  /* ---------- Question de type "ordre" (liste ordonnée) ---------- */
+  .order-list{ display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
+  .order-item{
+    display:flex; align-items:center; gap:10px; background:#fff; border:1.5px solid var(--border-strong);
+    border-radius:6px; padding:9px 12px; cursor:grab; user-select:none;
+  }
+  .order-item.dragover{ border-color:var(--data-blue); background:#F7FBF9; }
+  .order-item:active{ cursor:grabbing; }
+  .order-num{
+    flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--data-blue); color:#fff;
+    font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  }
+  .order-text{ flex:1; font-size:13px; line-height:1.5; }
+  .order-controls{ display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
+  .order-btn{
+    width:22px; height:18px; border:1px solid var(--border-strong); background:#fff; border-radius:3px;
+    font-size:10px; line-height:1; cursor:pointer; color:var(--text-secondary); padding:0;
+  }
+  .order-btn:hover{ border-color:var(--data-blue); color:var(--data-blue); }
+  .order-btn:disabled{ opacity:.35; cursor:not-allowed; }
+
+  /* ---------- Question de type "association" (glisser-déposer) ---------- */
+  .match-wrap{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px; }
+  @media (max-width:640px){ .match-wrap{ grid-template-columns:1fr; } }
+  .match-col-title{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); margin-bottom:7px; }
+  .match-pool{ display:flex; flex-direction:column; gap:7px; min-height:40px; }
+  .match-chip{
+    display:flex; align-items:center; justify-content:space-between; gap:8px; background:#fff;
+    border:1.5px solid var(--data-blue); border-radius:6px; padding:8px 11px; font-size:12.5px;
+    color:var(--text-primary); cursor:grab; font-weight:600;
+  }
+  .match-chip:active{ cursor:grabbing; }
+  .match-chip.armed{ background:#EAF6EF; box-shadow:0 0 0 2px var(--data-blue); }
+  .match-chip.placed{ border-color:var(--border-strong); cursor:default; font-weight:400; }
+  .match-remove{ flex-shrink:0; cursor:pointer; color:var(--text-secondary); font-weight:700; padding:0 3px; border-radius:50%; }
+  .match-remove:hover{ color:var(--error); background:var(--error-bg); }
+  .match-targets{ display:flex; flex-direction:column; gap:8px; }
+  .match-target{
+    border:1.5px dashed var(--border-strong); border-radius:6px; padding:8px 10px; min-height:52px;
+    background:#FAFAF9; transition:background .1s,border-color .1s;
+  }
+  .match-target.dragover{ border-color:var(--accent); background:#FFF9E6; }
+  .match-target-label{ font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:5px; }
+  .match-empty{ font-size:11.5px; color:var(--text-secondary); font-style:italic; padding:4px 2px; cursor:pointer; }
+  .match-pool-empty{ font-size:11.5px; color:var(--text-secondary); font-style:italic; }
+
+  .exam-reminder{
+    background:var(--error-bg); border:1px solid #F1C0C0; border-radius:var(--radius);
+    padding:9px 12px; font-size:11.5px; line-height:1.55; color:#5C1414; margin-bottom:14px;
+  }
+
+  /* ---------- Indice / Solution (utilisation = question non comptabilisée) ---------- */
+  .help-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .help-box{
+    border-radius:var(--radius); padding:9px 11px; font-size:12px; line-height:1.6; margin-bottom:10px;
+  }
+  .help-box.hint{ background:#FFF9E6; border:1px solid #EEDD9C; color:#5C4A00; }
+  .help-box.sol{ background:var(--success-bg); border:1px solid #C3E6C3; color:#1E4A30; }
+  .aided-note{
+    background:#F3F2F1; border:1px dashed var(--border-strong); border-radius:var(--radius);
+    padding:8px 11px; font-size:11.5px; line-height:1.5; color:var(--text-secondary); margin-bottom:12px;
+  }
+  .q-nav{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .q-nav-left, .q-nav-right{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  .finish-confirm{
+    background:#FFF9E6; border:1px solid #EEDD9C; color:#5C4A00; border-radius:var(--radius);
+    padding:12px 14px; font-size:12.5px; line-height:1.6; margin:0 14px 16px; display:none;
+  }
+  .finish-confirm.show{ display:block; }
+  .finish-confirm .fc-actions{ margin-top:8px; display:flex; gap:8px; }
+
+  .tabswitch-alert{
+    display:none; position:fixed; top:0; left:0; right:0; z-index:300;
+    background:var(--error); border-bottom:3px solid #6E0000;
+    color:#fff; padding:14px 18px; font-size:13.5px; font-weight:600; line-height:1.5;
+    box-shadow:0 4px 18px rgba(0,0,0,.35);
+  }
+  .tabswitch-alert.show{ display:flex; align-items:center; gap:12px; animation:tsaDrop .35s ease-out; }
+  .tabswitch-alert .tsa-icon{ font-size:22px; flex-shrink:0; animation:tsaPulse 1s ease-in-out infinite; }
+  .tabswitch-alert .tsa-text{ flex:1; }
+  .tabswitch-alert .tsa-close{
+    flex-shrink:0; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.4); color:#fff;
+    border-radius:4px; padding:5px 11px; font-size:12px; font-weight:700; cursor:pointer; font-family:var(--sans);
+  }
+  .tabswitch-alert .tsa-close:hover{ background:rgba(255,255,255,.3); }
+  @keyframes tsaDrop{ from{ transform:translateY(-100%); } to{ transform:translateY(0); } }
+  @keyframes tsaPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.18); } }
+
+  .recap-learn-link, .recap-link{ display:inline-block; margin-top:6px; font-size:12px; }
+  .recap-learn-link a, .recap-link a{ color:var(--data-blue); }
+
+  /* ---------- Écran de révision de la mise en situation d'ouverture ---------- */
+  .review-intro{ font-size:13px; line-height:1.6; margin-bottom:14px; color:var(--text-primary); }
+  .review-q-item{ border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:10px; }
+  .review-q-item .rq-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .review-q-item .rq-prompt{ font-size:12.5px; line-height:1.55; margin-bottom:5px; }
+  .review-q-item .rq-answer{ font-size:12px; color:var(--text-secondary); }
+  .review-warning{ background:#FFF9E6; border:1px solid #EEDD9C; color:#5C4A00; border-radius:var(--radius); padding:9px 12px; font-size:12px; margin-bottom:14px; }
+
+  /* ---------- Récap ---------- */
+  .recap-wrap{ padding:16px 14px 30px; }
+  .recap-locked{ text-align:center; padding:50px 14px; color:var(--text-secondary); font-size:13.5px; }
+  .recap-session{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .recap-field{ flex:1; min-width:200px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius); padding:9px 12px; }
+  .recap-field label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); margin-bottom:3px; }
+  .recap-field input{ width:100%; border:none; outline:none; font-size:13px; font-family:var(--sans); color:var(--text-primary); background:transparent; }
+
+  .score-banner{ background:var(--bg-surface); border:2px solid var(--data-blue); border-radius:8px; padding:18px 20px; margin-bottom:16px; display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+  .score-banner .sb-big{ font-size:32px; font-weight:800; color:var(--bg-dark); font-family:var(--sans); line-height:1; }
+  .score-banner .sb-lbl{ font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-secondary); margin-top:4px; }
+  .score-banner .sb-pass{ font-size:12.5px; font-weight:700; padding:4px 11px; border-radius:12px; }
+  .score-banner .sb-pass.ok{ background:var(--success-bg); color:var(--success); }
+  .score-banner .sb-pass.ko{ background:var(--error-bg); color:var(--error); }
+  .score-banner .sb-msg{ flex:1; min-width:220px; font-size:12.5px; line-height:1.6; color:var(--text-primary); }
+  .score-banner .sb-time{ font-size:11.5px; color:var(--text-secondary); }
+
+  .domain-scores{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px; }
+  @media (max-width:700px){ .domain-scores{ grid-template-columns:1fr 1fr; } }
+  .ds-card{ background:var(--bg-surface); border:1px solid var(--border); border-radius:6px; padding:11px 13px; }
+  .ds-card .ds-label{ font-size:11px; font-weight:700; margin-bottom:6px; }
+  .ds-card .ds-bar-track{ height:7px; border-radius:4px; background:#EFEEEC; overflow:hidden; margin-bottom:5px; }
+  .ds-card .ds-bar-fill{ height:100%; border-radius:4px; }
+  .ds-card .ds-nb{ font-size:11px; color:var(--text-secondary); }
+
+  .recap-actions{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+
+  .recap-q{ background:var(--bg-surface); border:1px solid var(--border); border-radius:6px; padding:14px 16px; margin-bottom:10px; page-break-inside:avoid; }
+  .recap-q.wrong{ border-left:4px solid var(--error); }
+  .recap-q.right{ border-left:4px solid var(--success); }
+  .recap-q-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .recap-q-mark{ font-size:13px; font-weight:800; }
+  .recap-q-mark.ok{ color:var(--success); }
+  .recap-q-mark.ko{ color:var(--error); }
+  .recap-scenario{ font-size:11.5px; color:var(--text-secondary); font-style:italic; margin-bottom:6px; }
+  .recap-prompt{ font-size:13px; line-height:1.55; margin-bottom:8px; }
+  .recap-answers{ font-size:12px; line-height:1.7; margin-bottom:6px; }
+  .recap-answers .ra-you{ color:var(--text-primary); }
+  .recap-answers .ra-correct{ color:var(--success); font-weight:600; }
+  .recap-explain{ background:#F3F2F1; border-radius:var(--radius); padding:9px 11px; font-size:12px; line-height:1.6; }
+
+  /* ---------- Impression du récap ---------- */
+  @media print{
+    body{ background:#fff; }
+    .app-header, .tabbar, .no-print{ display:none !important; }
+    .wrap{ width:100%; max-width:none; }
+    .tab-panel{ display:none !important; }
+    .tab-panel#tab-recap{ display:block !important; }
+    .recap-wrap{ padding:0; }
+    .recap-q{ break-inside:avoid; border:1px solid #ccc; }
+    .score-banner{ border-color:#888; }
+    a{ color:inherit; text-decoration:none; }
+    @page{ margin:12mm; size:A4; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header no-print">
+<div class="topbar">
+  <img class="logo-img" alt="Logo Data Unchained" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAGkAaQDACIAAREBAhEB/9sAQwAIBgYHBgUIBwcHCQkICgwUDQwLCwwZEhMPFB0aHx4dGhwcICQuJyAiLCMcHCg3KSwwMTQ0NB8nOT04MjwuMzQy/9sAQwEJCQkMCwwYDQ0YMiEcITIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIy/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMAAAERAhEAPwD3+iiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKjmuIrdd0siqO2ep/CsubXB0gi/F/wDAf41lVr06KvUdiowlLZGxTHljiAMjqgP944rm5dQupTkzMPZTj+VVupya86pm9NfBFv8AA6I4WT3Z08moWkeN06nP935v5Uz+1bL/AJ7f+On/AArm6K5ZZvVv7sVb+vQ0WFj1Z0g1SzJx53/jp/wqZbu3YgCeIk9BvFcrRThnE18cU/TT/MTwsejOworko5ZIiTHIyE9dpxV2LWLpD85WQccEY/lXXTzajKymmvxX+f4GcsNJbanQUVVsr5b1GIQqy9QeetWq9GE41IqUXdM52nF2YUUUVYgopvmJ5hj3r5gG7bnnHrj0p1ABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFQXV1FaR75DyeijqaTaSuwSuSu6xoXdgqjqSayLvWScpbDH+2R/IVRu72W7fLnCA/Kg6Cq1eJis0bfLQ27/5HbTw1tZis7OxZ2LMepJyaSiivGbbd2dSVgooopAFFFFABRRRQAUUVJBEZ50iXqxxnHT3oSbdkBv6XD5NimRgv85/Hp+mKu0gAAAAwB0FLX2NGmqVNQXQ8qcuaTYUUVU1O7+w6ZcXOcMiHbkZ+Y8D9SK0lJRTbdkhJNuyOE12+e412eaN2Xym2RkN028ZBHvk/jVvTfFd5auEuybmHAHOAy++e/4/nXP0V8G8xxCqyqwk1dt2vda/htpt0Pd+r03BQkr2PT9P1S01OLfbS5I+8h4ZfqP69KuV5PDNLbzLLC7JIpyGU4IrstF8UpckW9+VjlxhZeiv9fQ/p9K+jwOc08RJU6i5ZP7n/lfovxuedXwcqa5o6o6aiiivaOIKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAa5ZUYqu5gOFzjJrlrmaWednmzv6Y6bfaurrL1PTvN3XEIJk/iX1Ht715+Y0atWl+7e267/wDDdjehOMZe8YdFFFfMnoBRRRQAUUUUAFFFFABRRRQAVqaLDuneYjhBgfU/5/Wsuuk0yHybFPV/nP49P0xXdl1L2mIV+mv9fMxry5YMuUUUV9QecFcv4zu9lrb2inmRt7YPYdMj0JP6V1FedeJLv7Xrc5BJWI+UuR0x1/XNedmtdUcJLu9F8/8AgXZ04SHPVXlqZNFFFfCHthRRRQB03h7xGbXZZ3rEwdI5D/B7H2/l9OnagggEHIPevJK6nwzrzRvHp102Y2O2Jyfun+6fb0/zj6PKM0cWsPV1T0T7eXp27em3n4vC3vUh8zsqKKK+pPLCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAILy8t7C0kurqVYoIxl3bt/j9KoaD4hsvEVtLNZiRPKfYyS7Qw4yDgE8Hn8jXAfETXzfakNKgdTbWpBcjB3S4OefYHGOOc57VymnaneaTdi6sZ2hmAK7gAcg9iDwR9fQVDnqeViMyVKtyJXS3/AOB6f8DQ+gKKwfCviWLxHp7OU8u6hwJ4wDtyc4Kn0ODx1GPoTvVd7npQnGpFSi7phRRRQWYuq6eQzXMQyp5dR296ya7CsDU7AwOZo1/cseQP4T/hXg5jgWm61Pbr/n/W3pt20K1/ckZ1FFFeOdQUVLDby3DbYoyx746D8a1odEjXBmkLHj5V4HuP84rejhqtb+HG5EqkYfEzEorp49PtI87YEOf73zfzp/2S2/594v8AvgV2/wBkV+6/H/Ix+tQ7M5WiupNnbMpBt4sEY4UCqkui275MbPGT0HUD+v61M8qxEVdWfo/87FLEwZi28JuJ0iXqxxn0HrXWdKzbDTGtblpHZGABC4HP19v/AK9aVejlmHlRhJzVm3+Rz4iopNJBRRRXpnOVr+6FlYT3Jx+7QkA9Cew/E4FeXEkkknJPUmu18ZXZisIbVSQZn3Nj+6vY/iR+VcTXyvEGI5qkaKe2r16vy8l+Z6uAp2i5vqFFFFfOneFFFFABRRRQB3vhjWDqFobedy1zCOWY8uvY/h0P4etb1cF4c0rUJL6C9iXyoUbPmOPvDoQB3yCef1rva+4yjEVK+GTqJ6aXfX/htv1ve3i4unGFT3fu7BRRRXqHKFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABWB4v1z+w9ClkimRLyX5LdWGSTkbiB7Ak5PGceuDv143481VtS8SzRLJugtP3KAZADD75we+7IyOoUVMnZHLjK/sKLkt9l6/1qcxRRRWJ8oT2l3cWF3FdWsrRTxHcjr2/xHt3r1/wd4mTXtOWKeVf7RhH75du3cM8OB3HTOOh7AEV4zU9pd3FhdxXVrK0U8R3I69v8R7d6qMrHXg8XLDzvvHqv19T6EormPDHjO01/Zayr5GoBMtGfuyEddhz+ODz9cE109ap3Pp6dSFSPNB3QUjKHUqwBUjBB70tFMs5rULM2c2BzG3KH+lOsdPe8O8sFiDYJ7n6VvzQpPE0bjKsPypYolhiWNB8qjArx3lcXX5vsb/8AA9P+G8zq+svkt1FjjSKNY41CqowAKdRRXrpJKyOVu4UUUUwCiiigAooooAKKKKAK17p9rqEXl3UKyAdCeq/Q9R0ri9Z8MzaeGnti01sBk5+8n19R713tFcGMy2hik3JWl36/Pv8AP5WN6OInSej07HklFdL4l0H7LJ9rsom8l8mRFGRGfX2B59hj3Armq+KxOGqYeo6dRa/n5o9qnUjUjzRCilVWd1RFLMxwABkk10+leEZJds2oExp1ESn5j9T2/n9KKGFrYh8tKN/677BOpCmrydjAs7C51CbyraJpG7kdF+p7V2Ol+FLa0xJebbmb+6R8i/h3/H8q3La2gtIVht4ljjXoFH+cmpa+pwWSUqL56vvP8Pu6+v4XPLrY2U9IaL8Qooor2ziCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAoa3qI0nRLy+JUNDGSm4EgueFBx6sQK8FkkeaV5ZXZ5HJZmY5LE9ST3NepfEzUTb6Lb2KFg11LlsAYKJgkH8Sp49DXldZTetjwM2qt1FTT0Wvz/AK/MKKKKg8kKKKKACvW/AHiC71nT7i3vD5klpsAmJ+Z1bON3uNvXv9eT5NHG80qRRIzyOQqqoyWJ6ADua910DQ7fw/pa2UDM5zvkkb+NyACcdhwOPbv1q4XueplUajqtxfu9f0NSiiitT6EKKKKACiiigAooooAKKKKACiiigAooooAKKKKAEdFkRkdQysMFSMgj0ri5vCFy2qOkTKloTuWQnOB/dx1JFdrRXLisHSxSiqq2d/8Agej62NaVaVJtx6mfpujWelp+4TdIRgyvyx/w/CtCiitaNGnRjyU1ZETnKbvJ3CiiitSQoqvd31pYRiS8uobdCcBpXCgn0Ga5bUPiTolqn+iCa8kIJGxCi59CWwR+ANROrCHxyS9WXClOp8CudjRXkOo/ErWrtiLNYbKPORtXe+MdCW4/ICrPw+1u6n8UGG+v7mfzrdkjWWRnBYEN39g3+TXGsyoOahG7v5f52Ot5fWUHOVlY9VooorvOEKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA8s+J88ra3Z25b90ltvVcdGZiCf/AB1fyrh66v4i3f2jxZJFs2/ZoUiznO7I359vv4/CuUrGW58rj5KWJk1/VlYKKKKk5AooooA674c2lvd+JmaeJZDBA0se7+FwygH6jJ/n2r12vKPhj/yMlx/15t/6Gler1rDY+gyhL2Lfn+iCiiirPVCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKoahrWmaUD9uvoIGC79jP8AOR6hep6HoKv15L8UP+Rmtv8ArzX/ANDesMTW9hSdS17G2Hpe1qqDdrm/qPxP06AlLC0mumBxvc+WhGOo6n8wK5G/8f8AiC+3Kt0lqjLtKW6bfx3HLA/Q1zFFfPVcyxFTS9vT+rnu08BQh0v6/wBWJJp5bmZpp5XllblndizH6k1HRRXC227s60klZBWp4akeLxPpbRuyE3UakqccFgCPoQSPxrLqeyuTZ39vdBdxhlWQLnGcHOP0oTad0DSasz6Jooor7Y+RCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAOK17wAdb1q41EakIfO2/u/I3YwoXruHpWb/wqtv+gwP/AAG/+yr0eiocEcksBh5ScnHV+b/zPOf+FVn/AKDI/wDAb/7Oj/hVZ/6DI/8AAb/7OvRqKORE/wBnYb+X8X/mec/8KrP/AEGf/JX/AOzo/wCFV/8AUZ/8lf8A7OvRqKfIg/s7Dfy/i/8AM5Twx4K/4RzUpLz+0PtG+ExbPJ2YyQc53H0rq6KKaSWx0UaMKMeWmrIKKKKZqFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAV5L8UP8AkZrb/rzX/wBDevWq8t+J9jdNq9vfLbyNai2WNpQuVVg7cE9vvDr1rhzL/dZfL80dmA/3iPz/ACZwNFFFfLH0YUUUUAFFFOjjeWRY40Z3chVVRkknoAKAPo6iiivtz5AKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigDIvvC2h6lk3OmW5YsXLxr5bMT1JK4J6965W8+FdowU2OpTxEA5E6B8ntyNuP1r0Giuapg6FR3lH9PyOini61NWjL9fzPFNR8Ba/pwLi1F1GACWtm39TjG3hj+Vc9PBNbTNDcRPFKv3kkUqw+oNfRlQXVlaX0Yju7aG4QHcFljDgH1wa86pk8f8Al3L7/wCv0O6nmr+3H7j52ra8IWhvfFumRB9u2YS5xn7nz4/HbivS7/4eaBeZMUMto5YsTBIcH8GyAPYYqDw14E/4R/WjfPeJdKImVMxbSrEjkcntkfjXNHK60akVJJx0vr0/BnS8wpSg3F2dna/9WOyooor6M8AKKKKACiiigAooooAKKKKACio5biGDHnTRx56b2Az+dRf2hZf8/lv/AN/V/wAaALNFVv7Rsf8An8t/+/q/40f2jY/8/tv/AN/V/wAaALNFVf7Ssf8An9t/+/q/40f2lYf8/tt/39X/ABoAtUVV/tOw/wCf22/7+r/jR/adh/z/AFt/39X/ABoAtUVV/tPT/wDn+tv+/q/40n9qaf8A8/1r/wB/l/xoAt0VU/tTT/8An/tf+/y/40javpqKWbULRVAySZlAA/OgD55/4WX4w/6DT/8AfmP/AOJpf+FmeMP+gy//AH4j/wDia5byZf8Ank//AHyaPJl/55P/AN8msrs8f2s/5mdV/wALN8Yf9Blv+/EX/wATS/8ACzvGP/QZb/wHi/8Aia5TyZf+eT/98mjyZf8Ank//AHyaLsPaz/mZ1f8Aws/xj/0GT/4DRf8AxFL/AMLQ8Zf9Bj/yWh/+IrkWVkOGUqfcYpKLsPaz/mZ9V+Hrqa+8NaVd3L7557OGWR8AbmZAScDgcmtKsfwn/wAidof/AGD4P/Ra1sVotj1abvBN9goooplhRRRQAUUUUAFFFFABRRRQBR1qR4tC1CSN2R0tpGVlOCCFOCDXjv8Ab2sf9Ba+/wDAh/8AGvYNe/5F7U/+vSX/ANANeH0AaH9vax/0Fr7/AMCH/wAaP7e1j/oLX3/gQ/8AjWfRQBof29rH/QWvv/Ah/wDGj+3tY/6C19/4EP8A41n0UAaH9vax/wBBa+/8CH/xr1TwfPNc+FrKa4lkllbfueRizH52HJNeN17B4I/5FCx/7af+jGoA6CiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA8v8AjD00b/tv/wC068ur1H4w9NG/7b/+068uoAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAFBIBAJwetRtFG5JZFJPU45p9FD1JcU90d/ofxQutLsbWxuNNglt7eJIUMTlGCqABnOcnj2ru9H8f6Bq+1BdfZZz/yyufk/I9D+deC0UMaSSsj6gBBAIOQehFLXz5oXjDWfD7Ktrcl7cdbeb5k/D0/DFereGvH+l6+Vt5T9jvTwIpG+Vz/ALLd/p1oGdbRRRQAUUUUAFFFFABRRRQBn69/yL2p/wDXpL/6Aa8Pr3DXv+Re1P8A69Jf/QDXh9ABRRRQAUUUUAFeweCP+RQsf+2n/oxq8fr2DwR/yKFj/wBtP/RjUAdBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAeX/GHpo3/bf/2nXl1eo/GHpo3/AG3/APadeXUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAHfeEfiPc6YUstYZ7mz6LMeZIv8A4ofr/KvXbW6gvbaO5tZkmhkGUdDkEV8yV03hHxjd+GLvad01hIf3sGen+0vof5/qAD3uiq2n39tqljFeWcolglXKsP5H0PtVmgAooooAKKKKAM/Xv+Re1P8A69Jf/QDXh9e4a9/yL2p/9ekv/oBrw+gAooooAKKKKACvYPBH/IoWP/bT/wBGNXj9ev8AgdgfCNkB2MgP/fbUAdDRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAeX/ABh6aN/23/8AadeXV6j8Yemjf9t//adeXUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQB1XgrxfL4av/KmLPp0zDzU67D/fHv6+o/CvdIpY54klidXjdQyspyCD0Ir5hr0/4Y+KmDjQLx8qctaux6dyn8yPx9qAPUqKKKACiiigDP17/kXtT/69Jf8A0A14fXuGvf8AIvan/wBekv8A6Aa8PoAKKKKACiiigAr13wL/AMina/7z/wDoRryKvXfAv/IpWv8AvSf+hmqWzE90dHRRRUjCiiigAooooAKKKKACiiigAooooAKKKKACiiigDH13wzpniP7P/aMcj+Ru2bHK43Yz0+grH/4Vl4a/595/+/7V2FFAHH/8Ky8M/wDPvP8A9/2o/wCFZeGf+faf/v8AtXYUUAcf/wAKy8M/8+0//f8Aal/4Vn4Z/wCfab/v+1dfRQByH/Cs/DP/AD6zf9/2o/4Vn4Z/59Zv+/7f4119FAHIf8Kz8M/8+s3/AH/b/Gj/AIVp4Y/59Jv+/wC3+NdfRQByP/CtPDH/AD6S/wDf9v8AGsjxP4D0DS/D11eWtrIs0ezaTMxHLgHjPoa9Frn/ABv/AMihff8AbP8A9GLQB4v9htv+ef8A48aPsNt/zz/8eNWKKAK/2G2/55/+PGj7Dbf88/8Ax41YooApPpsZ+47Kc9+RVSSxnj527h6rzWxRQBz1FemQeALbXvCNtf2TeRqTBydx+SXDsMH0OAORXnV5ZXOn3clrdwvDPGcMjjkUAQUUUUAFFFFABUkE0ltPHPC5SWNg6MOqkcg1HRQB9E+F9cTxDoNvfrgSEbJkH8Ljr/j9CK2K8a+F2uGx1x9Llb9zej5M9pAOPzGR+Vey0AFFFFAGfr3/ACL2p/8AXpL/AOgGvD69w17/AJF7U/8Ar0l/9ANeH0AFFFFABRRRQAV694G/5FK0/wB6T/0M15DXr3gb/kUbP6yf+htTXUTOiooopDCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACuf8b/APIoX3/bP/0YtdBXP+N/+RQvv+2f/oxaAPH6KKKACiiigAooooA9g8Ef8ihY/wDbT/0Y1ReMvCcPibTTsCpfxDMEp7/7J9j+lS+CP+RQsf8Atp/6MaugoA+Yri3mtbiS3njaOaNirowwVI7VHXqPxV8PZWLXbdOmIrnA/wC+W/p+VeXUAFFFFABRRRQBNaXMtleQXUJxLDIsiH0IORX0lp97HqOnW17D/q541kX2BGcV8z17d8MdQ+2eEEgJy9pK0X4H5h/6Fj8KAOzooooAz9e/5F7U/wDr0l/9ANeH17hr3/Ivan/16S/+gGvD6ACiiigAooooAK9f8D/8ijZfWT/0Nq8gr1/wR/yKFj/20/8ARjUAdDRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAVz/jf/kUL7/tn/wCjFroK5/xv/wAihff9s/8A0YtAHj9FFFABRRRQAUUUUAeweCP+RQsf+2n/AKMaugrn/BH/ACKFj/20/wDRjV0FAFa/sotR0+4spxmKeMxt+I61823dtJZXs9rKMSQyNG/1Bwa+m68H+IdoLTxrfbRhZtko/FRn9c0ActRRRQAUUUUAFemfCC5xc6pak/eSOQD6Eg/zFeZ12/wrlMfi5kB4ktXU/mp/pQB7VRRRQBn69/yL2p/9ekv/AKAa8Pr3DXv+Re1P/r0l/wDQDXh9ABRRRQAUUUUAFeweCP8AkULH/tp/6MavH69g8Ef8ihY/9tP/AEY1AHQUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFc/43/5FC+/7Z/8Aoxa6CsvxJBHceGtSSVdyi3dwM45Ubh+oFAHidFFFABRRRQAUUUUAeweCP+RQsf8Atp/6MaugrnPAsqSeE7VFYExs6sAeh3E/yIro6GrBe4V4v8VgB4tiI6m0Qn/vpq9orw74mXAn8aToP+WMUcf6bv8A2agDj6KKKACiiigArr/hmSPG1uB0MUgP/fJrkK7T4XJv8Yqf7lvIf5D+tAHttFFFAGfr3/Ivan/16S/+gGvD69p8U3K2nhfUZGBIMJj49X+Uf+hV4tQAUUUUAFFFFABXr/gj/kULH/tp/wCjGryCvYPBH/IoWP8A20/9GNQB0FFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABVPVoJLnRr63hXdLLbyIi5xklSAOauUUAfP9FWL6ym06+ns7hcSwuVbg4PuM9j1Hsar0AFFFFABRRRQB6F8Nb7MV9YMyjDCZB3OeG/Dhfzrvq8O0XU5NI1a3vI3dVRx5gT+NM/MvPqK9uilSeFJYmDxuoZWHQg8g0xCyOsUbSOwVFBZiegAr5u1m/Oqa1e3xzieZnAPYE8D8sV638TPEP9l6J/Z0D4ub4FTjqsf8R/Hp+deLUhhRRRQAUUUUAFejfCK236vqN1j/VwLHn/AHmz/wCyV5zXsnwosPs/h24vGGGupyAfVVGB+pagDvaKKKAOM+I1+YNHt7JSwa5ky2AMFV5IP4lT+FeZVseJ9X/trXJrlTmBf3cP+4Oh6A8kk89M47Vj0AFFFFABRRRQAV7V4YtktPDGnRoWIMCyfN6v8x/VjXjdrbveXkNtFjzJpFjXceMk4Ga95AAAAGAOgoAWiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA8t+Ienm215LwBtl3GDkkffX5SAOvTb+dcjXrnjjS11Dw7NKse6e1/fIRgHaPvcnttycdyoryOgAooooAKKKKACuy8LeNINF0ue11Jj5MKl7fYnJJJJT8SeM+/PSuNpCAQQRkHqDQBR13WrnX9Wm1C6IDPwqDoijoorNq7c2DIS8Q3J/d7iqVABRRRQAUUUUAKqlmCqCWJwAO9fR3h/Tf7H8P2NhxuhiAfH948t+pNeNfD7Rjq/iq3dlzb2n7+QnpkfdH54/AGvd6ACuI8deJjaRvo9pgyyx/v5Mg7FP8OPUj16A++Qvi3xobCQ2GlSKblT+9mwGEf+yM8E+vp069PN5JHlkaSR2d3JZmY5JJ6kmgBtFFFABRRRQAUUUUAdJ4GsvtniiBiqMlurTMH9uBj3DMp/CvXK4/4eab9m0WS+ZstePwAeAqEgduud34YrsKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKK8w+MJIGjYP8Az3/9kry7J9TQB9QUV8v5PqaTNAH1DRXy9RQB9Q0ZHrXy9RQB9QZHqKNw9RXy/RQB9Qbl9R+dG5f7w/Ovl+igD6dkEUsbRyBHRwVZWwQQeoIrxjxFo/8AYesSWiuXhIDxOcZZT647ggjt0zjmuJqxZ3HkS/MfkbhuKANmiiigAooooAKKKKACqs9jHMSw+Rz1I6H8KtUUAY8tjNHkhd6+q/4VXIIJBGCOxroKa8aPjeitjpkZoAwKUAkgAEk9AK3Ps8P/ADxj/wC+RQIIgQREgI6EKKAO28H6vo3hPw+BM7z6hcsJJkgTJQY+UEnA4HXnILGqWt+NdS1dHgjxaWrDDRxnLMO4Zu/fpjrzmuaooAKKKKACiiigAooooAKvaPp7arrFrZANiWQBtpAIXqxGfQAmqNer+CNA/srS/tVxDtvbnk7h8yJ2X8ep6dQD0oA6WCCO2t4reFdsUSBEXOcADAHNSUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQB5f8AGHpo3/bf/wBp15dXqPxh6aN/23/9p15dQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQBqWFzvXynI3KPl9xV2ufBIIIOCOhFa9nciePDH94Oo9fegCzRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFdN4U8Kya3cC4uVZLCM/MehkP8AdH9TQBZ8D+G4tVne/vED2sDbVjOCJH68j0GRx3z9RXqNMiijgiSKJFSNAFVVGAAOwp9ABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAHl/xh6aN/wBt/wD2nXl1eo/GHpo3/bf/ANp15dQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUoJBBBwR0IpKKANS0vvNIjlwG7H1q7XPVbt7+SM4ky6+/UUAa1FRxTJMm5GB9R3FSUAFFFFABRRRQAUUUUAFFFFABRRRQAUVb0/TL3VJ/JsrZ5n77eg+pPA/GvQdC8AW9mwn1VkupRgrEufLUg9T/e7cEY68GgDnvC3g6bVpVur+OSGxXBAIKtN3GP8AZ9/y9R6lFFHBEkUSKkaDaqqMACn0UAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAHl/xh6aN/23/9p15dX0J4j8Kaf4o+zfbpLhPs+7Z5LAZ3YznIP90Vhf8ACp9A/wCfjUP+/qf/ABNAHjFFez/8Ko8P/wDPfUP+/q//ABNH/CqPD/8Az3v/APv6v/xNAHjFFe0f8Ko8P/8APe//AO/q/wDxNH/CqPD/APz2v/8Av6v/AMTQB4vRXtH/AAqnw/8A89r/AP7+r/8AE0f8Kp8P/wDPa/8A+/q//E0AeL0V7R/wqnw//wA9b7/v6v8A8TS/8Kp8Pf8APW+/7+r/APE0AeLUV7T/AMKq8Pf89L7/AL+r/wDE0f8ACqvD3/PS+/7+r/8AE0AeLUV7T/wqrw9/z0vv+/q//E0v/CqvD39++/7+j/4mgDxWivav+FV+Hv797/39H/xNPj+F3hxD8y3T+zTf4AUAeJUV71B8PfC8DBhpgcj/AJ6Su36ZxWzaaNpdhg2mnWsBHeOFQfzxQB4NpnhXX9SZXs9NuNp6SMPLX/vpsCu5svhrqbWTNeahbJc4ysaoSPoW4x+ANenUUAeJ6n4d1TSGf7VaSeUnPnIN0eM4B3Dpn0ODyOKy6+gKqXWl6ffPvurK3nfbt3yRBmA9MnmgDwqivWrnwFoM8YWOGa3IOd0UpJPt82RVRvhvpJHy3V6D7sh/9loA8wor0n/hWtju/wCP+4x6bVqVfhvpQ+9d3h+jKP8A2WgDzGivWbbwDoMCFZIZrgk53SykEe3y4rXsdC0rTfLNpYQRvHnbJsy4znPzHnue9AHkml+G9W1cK9paMYSQPOf5U64yCeuMHOM12Wk/DqCIiTVZ/Pb/AJ4wkqnfq3U9umPxruaKYiK2tbezgWG2hjhiXokagCpaKKV7jCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD/2Q==">
+  <div class="brand-text">
+    <span class="brand-name">Data Unchained</span>
+    <h1>PL-300 · Examen Blanc</h1>
+  </div>
+  <div class="header-timer no-print" id="headerTimerWrap">⏱ <span id="examTimer">100:00</span><span class="ht-switches" id="headerSwitches" style="display:none;"></span></div>
+  <div class="topbar-right">
+    <span class="pbi-badge" title="Entraînement conçu pour la certification PL-300 (Power BI Data Analyst)">
+      <span class="pbi-badge-icon"><span></span><span></span><span></span></span>Power BI
+    </span>
+    <span class="sub">Prépare la certification Power BI Data Analyst Associate</span>
+  </div>
+</div>
+
+<div class="tabbar">
+  <button class="tab-btn active" data-tab="contexte">📋 Contexte</button>
+  <button class="tab-btn" data-tab="examen">⏱ Examen blanc</button>
+  <button class="tab-btn locked" data-tab="recap" id="tabBtnRecap" title="Termine l'examen pour accéder au récapitulatif">🏁 Récap</button>
+</div>
+</div><!-- /app-header -->
+
+<div class="tabswitch-alert" id="tabSwitchAlert">
+  <span class="tsa-icon">⚠️</span>
+  <span class="tsa-text" id="tabSwitchAlertText"></span>
+  <button type="button" class="tsa-close" id="tabSwitchAlertClose">✕ Fermer</button>
+</div>
+
+<div class="wrap">
+
+<!-- ========== ONGLET CONTEXTE ========== -->
+<div class="tab-panel active" id="tab-contexte">
+  <div class="ctx-wrap">
+    <div class="ctx-intro">Cet outil te fait passer un examen blanc dans les conditions du véritable examen <b>PL-300 : Microsoft Power BI Data Analyst</b>, celui qui mène à la certification <b>Microsoft Certified: Power BI Data Analyst Associate</b>.</div>
+
+    <div class="ctx-block">
+      <h2>🎯 Objectif</h2>
+      <p>Te familiariser avec le format, le rythme et le niveau d'exigence de l'examen officiel : 40 questions à traiter en 100 minutes, avec un mélange de QCM à réponse unique, de QCM à choix multiples, de <b>listes à remettre dans l'ordre</b>, d'<b>associations à relier</b> et de mini mises en situation (plusieurs questions liées à un même scénario métier) — les mêmes formats que ceux du véritable examen PL-300. L'objectif n'est pas seulement de valider ou d'invalider une réponse, mais de comprendre pourquoi, grâce aux corrections détaillées du récapitulatif final.</p>
+    </div>
+
+    <div class="ctx-block">
+      <h2>📚 Ce que couvre l'examen</h2>
+      <p>Les 40 questions sont réparties selon les 4 domaines officiels de l'examen PL-300, dans des proportions proches de la pondération réelle :</p>
+      <div id="domainsTable"></div>
+    </div>
+
+    <div class="ctx-block">
+      <h2>🗺 Déroulement</h2>
+      <ul>
+        <li>Dès que tu ouvres l'onglet <b>Examen blanc</b>, le chronomètre de <b>100 minutes</b> démarre automatiquement et ne se met jamais en pause, comme dans un vrai centre d'examen. Il reste affiché en permanence dans le bandeau supérieur, quel que soit l'onglet consulté.</li>
+        <li>Si tu changes de fenêtre ou d'onglet pendant l'examen, un signal d'alerte s'affiche à ton retour. Ce n'est pas une vraie surveillance (impossible à mettre en place dans un simple outil web), mais un rappel pédagogique : à l'examen officiel, ce comportement est repéré et peut entraîner une disqualification.</li>
+        <li>Comme à l'examen réel, l'épreuve <b>s'ouvre par une mise en situation</b> (3 questions liées à un même scénario métier). Tu peux naviguer librement entre ces 3 questions, mais pas encore vers le reste de l'examen. À la fin de la mise en situation, un <b>écran de révision</b> récapitule tes réponses et te permet de les corriger une dernière fois. Une fois validée, cette section <b>se verrouille définitivement</b> : impossible d'y revenir, exactement comme à l'examen officiel.</li>
+        <li>Une fois la mise en situation d'ouverture validée, une palette à gauche liste les 37 questions restantes (dont une seconde mise en situation, mêlée au reste) : navigue librement dans l'ordre que tu veux, reviens en arrière, et marque une question « à revoir » si tu veux la retraiter avant de terminer.</li>
+        <li>Aucune correction ne s'affiche pendant l'examen : comme à l'examen réel, tu découvres tes résultats seulement à la fin.</li>
+        <li>Chaque question propose un bouton <b>💡 Indice</b> et un bouton <b>👁 Voir la solution</b>, que l'examen officiel ne propose évidemment pas. Tu peux t'en servir librement pour apprendre, mais toute question sur laquelle tu as consulté l'indice ou la solution est automatiquement comptée comme non acquise dans ton score final, même si ta réponse finale est juste.</li>
+        <li>Tu termines l'examen soit en cliquant sur <b>Terminer l'examen</b>, soit automatiquement si le temps s'écoule.</li>
+        <li>L'onglet <b>Récap</b> se débloque alors : score global, score par domaine, détail des 40 questions avec ta réponse, la bonne réponse et une explication. Le récapitulatif est imprimable (bouton dédié).</li>
+        <li>Le seuil de réussite officiel est de <b>700 / 1000</b>, soit l'équivalent de <b>70 %</b> de bonnes réponses. Le score affiché ici est indicatif : l'algorithme de notation réel de Microsoft n'est pas public et peut pondérer les questions différemment.</li>
+      </ul>
+    </div>
+
+    <div class="ctx-warning">
+      🔒 <b>Rappel important :</b> lors de l'examen PL-300 officiel, tu ne peux ouvrir ni Power BI Desktop, ni Power BI Service, ni aucune intelligence artificielle pour t'aider. L'examen se déroule sous surveillance (centre Pearson VUE ou surveillance à distance par webcam). Ce rappel apparaît aussi sur chaque question de cet examen blanc, pour que le réflexe soit pris avant le jour J.
+    </div>
+
+    <div class="ctx-block">
+      <h2>📘 Pour aller plus loin</h2>
+      <div class="ctx-links" id="ctxLinks"></div>
+    </div>
+
+    <div class="ctx-cta">
+      <button class="primary" id="btnGoExam">Aller à l'onglet Examen blanc →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ONGLET EXAMEN BLANC ========== -->
+<div class="tab-panel" id="tab-examen">
+  <div class="scope-note">
+    <b>Comment ça marche :</b> l'examen s'ouvre par une mise en situation (3 questions liées), à valider via l'écran de révision avant de passer à la suite — cette section se verrouille ensuite définitivement, comme à l'examen officiel. Une fois validée, navigue librement dans le reste des questions grâce à la palette à gauche. Le bouton 🚩 marque une question à revoir. Les boutons 💡 <b>Indice</b> et 👁 <b>Voir la solution</b> t'aident si besoin, mais rendent la question non comptabilisée dans ton score, même si tu réponds juste ensuite (repère-les sur la palette avec le petit ⓘ). Le chronomètre ne s'arrête jamais une fois lancé. Clique sur <b>Terminer l'examen</b> quand tu as fini, ou laisse le temps s'écouler pour une clôture automatique.
+  </div>
+
+  <div class="exam-topbar">
+    <div class="exam-progress" id="examProgress">Question 1 / 40</div>
+  </div>
+
+  <div class="exam-layout">
+    <div class="panel">
+      <div class="panel-title">Navigation</div>
+      <div class="palette-grid" id="paletteGrid"></div>
+      <div class="palette-legend">
+        <div class="lg-item"><span class="lg-swatch" style="background:var(--data-blue);"></span>Répondue</div>
+        <div class="lg-item"><span class="lg-swatch" style="background:#fff;border:1.5px solid var(--border-strong);"></span>Sans réponse</div>
+        <div class="lg-item"><span class="lg-swatch" style="background:var(--brand-orange);border-radius:50%;width:8px;height:8px;"></span>Marquée à revoir</div>
+        <div class="lg-item"><span class="lg-swatch" style="background:#fff;border:1.5px solid var(--text-secondary);border-radius:50%;width:8px;height:8px;"></span>Aide utilisée (ne compte pas)</div>
+      </div>
+    </div>
+
+    <div class="panel qcard" id="qcard"></div>
+  </div>
+
+  <div class="finish-confirm" id="finishConfirm">
+    <span id="finishConfirmText"></span>
+    <div class="fc-actions">
+      <button class="primary" id="btnFinishConfirmYes">Oui, terminer l'examen</button>
+      <button class="secondary" id="btnFinishConfirmNo">Annuler</button>
+    </div>
+  </div>
+
+  <div style="padding:0 14px 24px; text-align:center;">
+    <button class="primary" id="btnFinishExam">🏁 Terminer l'examen</button>
+  </div>
+</div>
+
+<!-- ========== ONGLET RÉCAP ========== -->
+<div class="tab-panel" id="tab-recap">
+  <div class="recap-wrap" id="recapWrap">
+    <div class="recap-locked">Termine l'examen blanc (onglet <b>Examen blanc</b>) pour accéder à ton récapitulatif.</div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<div class="app-footer no-print">Data Unchained · PL-300 Examen Blanc · <span id="appVersion"></span></div>
+
+<script>
+/* =========================================================
+   1. DONNÉES — questions, domaines, mises en situation
+   ========================================================= */
+const APP_VERSION = '1.0.0';
+const EXAM_DURATION_SEC = 100 * 60; // 100 minutes, comme l'examen officiel
+
+const QUESTIONS = [{"domain": "prep", "type": "single", "scenario": "case-a", "prompt": "Le volume de la base SQL Server du stock est très important. Tu veux que les visuels du rapport interrogent toujours les données de stock en direct, sans les dupliquer dans le fichier Power BI. Quel mode de connexion choisis-tu pour cette table ?", "options": ["Import", "DirectQuery", "Connexion Live vers un modèle Analysis Services", "Mode Dual"], "correct": 1, "explain": "Le mode DirectQuery interroge la source à chaque interaction avec le rapport, sans copier les données dans le modèle. C'est le choix adapté quand on veut des données toujours à jour sans duplication, au prix d'une dépendance aux performances de la source.", "hint": "Cherche le mode qui n'importe jamais les données dans le fichier Power BI : chaque interaction avec le rapport interroge la source.", "link": "https://learn.microsoft.com/fr-fr/power-bi/connect-data/desktop-directquery-about"}, {"domain": "prep", "type": "single", "scenario": "case-a", "prompt": "Tu dois combiner la table des ventes (Excel) et la table du stock (SQL) pour ajouter, dans la table des ventes, la quantité en stock correspondant à chaque produit vendu. Quelle opération Power Query utilises-tu ?", "options": ["Ajouter (Append) les deux requêtes", "Fusionner (Merge) les deux requêtes sur la colonne Produit", "Dupliquer la requête Stock", "Référencer la requête Ventes"], "correct": 1, "explain": "Une fusion (Merge) rapproche deux tables sur une colonne commune et ajoute les colonnes de l'une à l'autre, ligne par ligne. Un ajout (Append) empile les lignes de deux tables ayant la même structure, ce qui ne convient pas ici.", "hint": "L'opération qui rapproche deux tables sur une colonne commune, ligne par ligne, n'est pas celle qui empile simplement les lignes les unes sous les autres.", "link": "https://learn.microsoft.com/fr-fr/power-query/merge-queries-overview"}, {"domain": "model", "type": "single", "scenario": "case-a", "prompt": "Vélocia veut analyser les ventes à la fois par date de vente et par date de livraison, sans dupliquer physiquement la table de dates dans le modèle. Comment mets-tu en place la table de dates dans le modèle pour couvrir ces deux usages ?", "options": ["Créer deux tables de dates distinctes, une par usage", "Créer une seule table de dates utilisée comme dimension à rôles multiples, avec une relation active et l'autre activée via DAX (USERELATIONSHIP)", "Ajouter deux colonnes de date dans la table de faits, sans aucune relation", "Fusionner les deux dates en une seule colonne dans Power Query"], "correct": 1, "explain": "Une dimension à rôles multiples (role-playing dimension) permet de réutiliser une seule table de dates pour plusieurs relations avec la table de faits. En général, une seule relation est active ; les autres sont activées ponctuellement dans les mesures DAX avec USERELATIONSHIP.", "hint": "Une seule table de dates peut jouer plusieurs rôles dans le modèle grâce à plusieurs relations, dont une seule est active par défaut.", "link": "https://learn.microsoft.com/fr-fr/dax/userelationship-function-dax"}, {"domain": "prep", "type": "single", "scenario": null, "prompt": "Ton service veut construire un nouveau rapport en réutilisant un modèle sémantique déjà publié dans le service Power BI, avec ses mesures et ses relations, sans dupliquer les données ni tout redéfinir. Que fais-tu ?", "options": ["Importer complètement les données du modèle sémantique dans un nouveau fichier", "Se connecter au modèle sémantique partagé (shared semantic model) déjà publié", "Utiliser le mode DirectQuery directement sur la base source du modèle sémantique", "Exporter le modèle sémantique au format CSV puis le réimporter"], "correct": 1, "explain": "Se connecter à un modèle sémantique partagé permet de réutiliser un modèle déjà publié (mesures, relations, hiérarchies) pour construire un nouveau rapport, sans dupliquer les données ni redéfinir le modèle.", "hint": "Pense à la fonctionnalité qui permet de repartir directement d'un modèle déjà publié dans le service, sans dupliquer les données ni refaire les relations.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "model", "type": "single", "scenario": null, "prompt": "La table Produit contient une ligne par produit, et la table Ventes contient plusieurs lignes pour chaque produit vendu. Quelle cardinalité choisis-tu pour la relation entre ces deux tables ?", "options": ["Un-à-un (1:1)", "Un-à-plusieurs (1:*), du côté Produit vers Ventes", "Plusieurs-à-plusieurs (*:*)", "Plusieurs-à-un (*:1), du côté Produit vers Ventes"], "correct": 1, "explain": "Chaque produit apparaît une seule fois dans la dimension Produit mais plusieurs fois dans les faits de vente : c'est la définition même d'une relation un-à-plusieurs, le « un » étant du côté de la dimension.", "hint": "Repère quelle table contient une ligne unique par produit : c'est toujours ce côté-là qui porte le « un » de la relation.", "link": "https://learn.microsoft.com/fr-fr/power-bi/transform-model/desktop-create-and-manage-relationships"}, {"domain": "viz", "type": "single", "scenario": null, "prompt": "Tu veux comparer la répartition en pourcentage du chiffre d'affaires entre 4 catégories de produits, à un instant donné. Quel visuel est le plus adapté ?", "options": ["Un graphique en courbes", "Un graphique en secteurs (camembert) ou en anneau", "Une carte (visuel KPI) sans axe de comparaison", "Une matrice sans aucune mise en forme"], "correct": 1, "explain": "Un graphique en secteurs (ou en anneau) montre naturellement une répartition en proportions d'un tout à un instant donné ; un graphique en courbes convient mieux à une évolution dans le temps.", "hint": "Le mot clé est « répartition d'un tout » à un instant T, pas une évolution : pense aux visuels qui montrent des parts d'un ensemble.", "link": "https://learn.microsoft.com/fr-fr/power-bi/visuals/power-bi-visualizations-overview"}, {"domain": "prep", "type": "single", "scenario": null, "prompt": "Dans Power Query, certaines étapes de transformation sont traduites en requête SQL et exécutées directement par la base de données source, plutôt que par le moteur Power Query lui-même. Comment s'appelle ce mécanisme ?", "options": ["Le repliement de requête (query folding)", "Le chargement incrémentiel", "La vue en cascade", "L'agrégation automatique"], "correct": 0, "explain": "Le query folding traduit les étapes appliquées dans Power Query en instructions exécutées par la source (par exemple en SQL). Le calcul est délégué à la base plutôt qu'exécuté ligne à ligne par Power BI, ce qui améliore fortement les performances.", "hint": "Le nom anglais de ce mécanisme évoque l'idée qu'une étape est « repliée » directement dans la requête envoyée à la source.", "link": "https://learn.microsoft.com/fr-fr/power-query/query-folding-basics"}, {"domain": "manage", "type": "single", "scenario": null, "prompt": "Un collègue doit pouvoir modifier les rapports et republier le contenu d'un espace de travail (workspace), mais ne doit surtout pas pouvoir gérer les accès des autres utilisateurs. Quel rôle lui attribues-tu ?", "options": ["Viewer", "Contributor", "Member", "Admin"], "correct": 1, "explain": "Le rôle Contributor permet de créer, modifier et publier du contenu, mais ne donne aucun droit de gestion des accès. Le rôle Member, lui, peut déjà ajouter d'autres utilisateurs (Member, Contributor ou Viewer), ce qui ne convient pas ici.", "hint": "Élimine d'abord les rôles qui peuvent gérer d'autres utilisateurs : il n'en reste alors que deux, dont un seul peut aussi modifier le contenu.", "link": "https://learn.microsoft.com/fr-fr/power-bi/collaborate-share/service-roles-new-workspaces"}, {"domain": "model", "type": "single", "scenario": null, "prompt": "Tu as deux tables de faits, Ventes et Objectifs, reliées chacune à la dimension Produit. Un filtre posé sur la table Ventes doit aussi affecter les valeurs affichées depuis Objectifs. Que configures-tu sur la relation entre Produit et chaque table de faits ?", "options": ["Passer la cardinalité de la relation en plusieurs-à-plusieurs", "Activer le filtrage croisé bidirectionnel (both) sur la relation concernée", "Supprimer complètement la relation entre Produit et Objectifs", "Ajouter une colonne calculée dans Objectifs"], "correct": 1, "explain": "Par défaut, le filtre circule dans un seul sens (de la dimension vers les faits). Activer le filtrage croisé bidirectionnel sur la relation permet à un filtre posé côté d'une table de faits de se propager, via la dimension commune, jusqu'à l'autre table de faits.", "hint": "Le filtre doit remonter depuis une table de faits vers l'autre en passant par la dimension commune : il faut changer le sens de circulation du filtre.", "link": "https://learn.microsoft.com/fr-fr/power-bi/transform-model/desktop-create-and-manage-relationships"}, {"domain": "viz", "type": "single", "scenario": null, "prompt": "Tu veux qu'une cellule de chiffre d'affaires dans un tableau s'affiche automatiquement en rouge si l'objectif n'est pas atteint, et en vert sinon, sans créer de colonne visible supplémentaire. Quelle fonctionnalité utilises-tu ?", "options": ["La mise en forme conditionnelle, basée sur une règle ou un champ", "Un signet (bookmark)", "Un filtre au niveau du visuel", "Une infobulle personnalisée"], "correct": 0, "explain": "La mise en forme conditionnelle applique une couleur, une icône ou une barre de données selon la valeur d'une mesure ou une règle définie, directement sur les cellules d'un visuel existant, sans colonne supplémentaire visible.", "hint": "Cette fonctionnalité s'applique directement sur les cellules d'un visuel existant, sans qu'il soit nécessaire d'ajouter la moindre colonne.", "link": "https://learn.microsoft.com/fr-fr/power-bi/visuals/power-bi-visualization-conditional-formatting"}, {"domain": "prep", "type": "single", "scenario": null, "prompt": "Tu as une requête Ventes déjà nettoyée. Tu veux créer une seconde requête qui applique des étapes supplémentaires, sans dupliquer les étapes de nettoyage ni recharger deux fois les données brutes dans le modèle. Que fais-tu ?", "options": ["Dupliquer la requête Ventes", "Référencer la requête Ventes (Reference)", "Fusionner la requête Ventes avec elle-même", "Créer un paramètre à partir de la requête Ventes"], "correct": 1, "explain": "Référencer une requête crée une nouvelle requête qui part du résultat de la requête source, sans en recopier les étapes. Toute modification de la requête d'origine se répercute automatiquement, contrairement à la duplication qui copie les étapes de façon indépendante.", "hint": "Il existe une opération qui part du résultat d'une requête existante sans en recopier les étapes, contrairement à la duplication.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "viz", "type": "single", "scenario": null, "prompt": "Tu veux proposer un bouton qui, au clic, bascule l'affichage d'une page entre une « Vue mensuelle » et une « Vue annuelle », en mémorisant l'état des filtres et des sélections à chaque fois. Quelle fonctionnalité utilises-tu ?", "options": ["Les signets (bookmarks) associés à des boutons", "Le drillthrough", "Les infobulles personnalisées", "La synchronisation des segments"], "correct": 0, "explain": "Un signet capture l'état d'une page (filtres, visuels affichés, sélections) à un instant donné. Associé à un bouton, il permet de basculer instantanément entre plusieurs vues prédéfinies d'une même page.", "hint": "Cette fonctionnalité capture l'état complet d'une page (filtres, sélections) à un instant donné, pour le restituer d'un simple clic.", "link": "https://learn.microsoft.com/fr-fr/power-bi/create-reports/desktop-bookmarks"}, {"domain": "prep", "type": "single", "scenario": null, "prompt": "Une colonne Prix contient quelques lignes en erreur suite à un changement de type de données. Tu veux conserver toutes les lignes, mais remplacer les erreurs par une valeur nulle plutôt que de perdre ces lignes. Quelle action utilises-tu dans Power Query ?", "options": ["Supprimer les erreurs (Remove Errors)", "Remplacer les erreurs (Replace Errors)", "Supprimer les doublons", "Modifier le type de colonne en texte"], "correct": 1, "explain": "« Remplacer les erreurs » substitue une valeur définie (par exemple null) aux cellules en erreur tout en conservant la ligne. « Supprimer les erreurs » retire entièrement les lignes concernées, ce qui n'est pas souhaité ici.", "hint": "Il existe une action qui garde la ligne mais remplace la valeur en erreur, à distinguer de celle qui supprime la ligne entière.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "manage", "type": "single", "scenario": null, "prompt": "Tu configures un rôle de sécurité au niveau des lignes qui filtre la table Vendeur avec la règle [Email] = USERPRINCIPALNAME(). Une fois ce rôle publié dans le service Power BI, que dois-tu encore faire pour qu'il s'applique réellement ?", "options": ["Rien, il s'applique automatiquement à tout le monde dès la publication", "Attribuer (assigner) les utilisateurs ou groupes concernés à ce rôle, depuis les paramètres de sécurité du modèle sémantique dans le service", "Republier le rapport en DirectQuery", "Activer le filtrage croisé bidirectionnel sur toutes les relations"], "correct": 1, "explain": "Définir un rôle RLS dans Power BI Desktop ne suffit pas : une fois le modèle publié, il faut assigner les utilisateurs ou groupes concernés à ce rôle dans les paramètres de sécurité du modèle sémantique côté service, sinon aucun filtrage ne s'applique.", "hint": "Créer le rôle DAX dans Power BI Desktop ne suffit pas : il manque une étape côté service, sur les utilisateurs eux-mêmes.", "link": "https://learn.microsoft.com/fr-fr/fabric/security/service-admin-row-level-security"}, {"domain": "model", "type": "single", "scenario": null, "prompt": "Tu veux ajouter à ta table Ventes un champ « Marge » qui doit apparaître ligne par ligne dans la table de données et pouvoir servir d'axe pour trier ou trancher un visuel (par exemple en Légende). Que crées-tu ?", "options": ["Une mesure DAX", "Une colonne calculée DAX", "Une colonne ajoutée uniquement dans Power Query", "Un groupe de calcul"], "correct": 1, "explain": "Une colonne calculée est évaluée ligne par ligne et stockée dans le modèle, ce qui permet de l'utiliser comme n'importe quelle colonne (filtrer, trancher un axe). Une mesure se calcule dynamiquement selon le contexte de filtre et ne peut pas être placée en axe de tri.", "hint": "On cherche un champ stocké ligne par ligne, capable de servir d'axe dans un visuel, pas un calcul qui se recalcule selon le contexte de filtre.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "viz", "type": "single", "scenario": null, "prompt": "Quand un utilisateur survole une barre d'un graphique, tu veux afficher un mini rapport avec plusieurs visuels supplémentaires (courbe d'évolution, KPI) plutôt qu'une simple valeur. Que configures-tu ?", "options": ["Une infobulle personnalisée (report page tooltip)", "Un signet", "Une hiérarchie de drillthrough", "Un slicer synchronisé"], "correct": 0, "explain": "Une page dédiée peut être configurée comme infobulle de rapport (report page tooltip) : elle s'affiche au survol d'un point de données et peut contenir plusieurs visuels, contrairement à l'infobulle par défaut limitée à quelques valeurs.", "hint": "Une page entière du rapport peut être transformée en infobulle qui s'affiche au survol, avec plusieurs visuels à l'intérieur.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "prep", "type": "single", "scenario": null, "prompt": "Dans un modèle en étoile, une table contient des mesures numériques comme le montant des ventes et la quantité, avec des clés étrangères vers les tables Produit, Client et Date. Quel est le rôle de cette table ?", "options": ["Une table de dimension", "Une table de faits", "Une table de paramètres", "Une table de correspondance (bridge table)"], "correct": 1, "explain": "Une table de faits regroupe les mesures quantitatives et les clés étrangères vers les dimensions. Les tables de dimension décrivent, elles, les axes d'analyse (produit, client, date) avec des attributs descriptifs.", "hint": "Cette table regroupe des mesures numériques et des clés étrangères vers d'autres tables : ce n'est pas elle qui décrit les axes d'analyse.", "link": "https://learn.microsoft.com/fr-fr/power-bi/guidance/star-schema"}, {"domain": "model", "type": "multi", "scenario": null, "prompt": "Parmi les affirmations suivantes sur la fonction CALCULATE en DAX, lesquelles sont vraies ? (2 réponses)", "options": ["CALCULATE modifie le contexte de filtre dans lequel une expression est évaluée.", "CALCULATE ne peut être utilisée que dans une colonne calculée, jamais dans une mesure.", "Les arguments filtres de CALCULATE peuvent remplacer un filtre déjà actif sur une colonne.", "CALCULATE réactive automatiquement toutes les relations inactives du modèle, sans instruction supplémentaire."], "correct": [0, 2], "explain": "CALCULATE est la fonction centrale pour manipuler le contexte de filtre en DAX, et ses arguments peuvent modifier ou remplacer un filtre déjà en place. Elle s'utilise couramment dans les mesures (l'affirmation B est fausse), et activer une relation inactive nécessite explicitement USERELATIONSHIP (l'affirmation D est fausse).", "hint": "CALCULATE sert avant tout à changer le contexte de filtre, et elle s'utilise très couramment dans les mesures, pas seulement dans les colonnes calculées.", "link": "https://learn.microsoft.com/fr-fr/dax/calculate-function-dax"}, {"domain": "viz", "type": "single", "scenario": null, "prompt": "Sur une page avec un graphique en barres et une carte, tu veux qu'un clic sur une barre filtre la carte, mais qu'un clic sur la carte ne filtre jamais le graphique en barres. Où configures-tu ce comportement ?", "options": ["Dans les paramètres de mise en forme conditionnelle", "Dans le volet Modifier les interactions (Format > Modifier les interactions)", "Dans les paramètres de la passerelle (gateway)", "Dans Power Query"], "correct": 1, "explain": "Le mode « Modifier les interactions », accessible depuis le ruban Format, permet de définir précisément, pour chaque visuel sélectionné, comment il réagit (filtre, surbrillance ou aucun effet) aux clics sur les autres visuels de la page.", "hint": "Il existe un mode dédié, accessible depuis le ruban Format, pour régler précisément comment chaque visuel réagit aux clics sur les autres.", "link": "https://learn.microsoft.com/fr-fr/power-bi/create-reports/service-reports-visual-interactions"}, {"domain": "prep", "type": "single", "scenario": null, "prompt": "Un fichier source présente un mois par colonne (Janvier, Février, Mars...) avec les ventes en valeur. Pour analyser les ventes par mois dans un visuel Power BI, quelle transformation appliques-tu en premier dans Power Query ?", "options": ["Pivoter les colonnes", "Dépivoter les colonnes (Unpivot)", "Transposer le tableau", "Grouper par mois"], "correct": 1, "explain": "Dépivoter les colonnes transforme des colonnes de mois en une seule colonne Attribut / Valeur (Mois, Ventes), ce qui donne une structure de table longue exploitable par les visuels Power BI, à l'inverse d'un tableau croisé large.", "hint": "La structure large (un mois par colonne) doit devenir une structure longue (une ligne par mois) avant d'être exploitable dans un visuel.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "manage", "type": "multi", "scenario": null, "prompt": "Parmi les affirmations suivantes sur la passerelle de données (gateway) Power BI, lesquelles sont vraies ? (2 réponses)", "options": ["Une passerelle est nécessaire pour actualiser un modèle connecté à une source hébergée sur le réseau local de l'entreprise (on-premises).", "Une passerelle est toujours obligatoire, même si toutes les sources de données sont uniquement dans le cloud.", "Une passerelle personnelle (personal gateway) ne peut être utilisée que par l'utilisateur qui l'a installée, contrairement à une passerelle standard partagée par plusieurs utilisateurs.", "Une passerelle remplace complètement le besoin d'un modèle de données dans Power BI."], "correct": [0, 2], "explain": "La passerelle sert de pont sécurisé entre le service Power BI et les sources situées sur le réseau local ; elle n'est pas nécessaire quand toutes les sources sont déjà dans le cloud (l'affirmation B est fausse). La version « personnelle » est limitée à son installateur, alors que la version standard peut être partagée en entreprise ; elle ne remplace en rien le modèle de données (l'affirmation D est fausse).", "hint": "Une passerelle sert de pont vers des sources sur le réseau local : elle n'est donc utile que dans ce cas précis, et existe en deux variantes selon le nombre d'utilisateurs.", "link": "https://learn.microsoft.com/fr-fr/data-integration/gateway/service-gateway-onprem"}, {"domain": "model", "type": "single", "scenario": null, "prompt": "Tu veux comparer les ventes du mois en cours à celles du même mois l'année précédente, à l'aide d'une fonction DAX de veille temporelle. Laquelle utilises-tu ?", "options": ["TOTALYTD", "SAMEPERIODLASTYEAR", "ALL", "RELATED"], "correct": 1, "explain": "SAMEPERIODLASTYEAR décale la période filtrée d'un an en arrière et nécessite une table de dates marquée comme table de dates dans le modèle. TOTALYTD calcule un cumul depuis le début de l'année, ce qui répond à un autre besoin.", "hint": "On cherche une fonction qui décale directement la période d'un an en arrière, pas une fonction de cumul depuis le début de l'année.", "link": "https://learn.microsoft.com/fr-fr/dax/sameperiodlastyear-function-dax"}, {"domain": "viz", "type": "single", "scenario": null, "prompt": "Un directeur commercial constate un pic inhabituel de ventes sur un magasin et veut que Power BI lui explique automatiquement les facteurs qui contribuent le plus à cette variation, sans créer de nouveau visuel. Quelle fonctionnalité utilises-tu ?", "options": ["La fonctionnalité Analyser (clic droit sur un point de données puis « Analyser »)", "Le regroupement (grouping) manuel", "Un signet", "Le mode Présentation"], "correct": 0, "explain": "La fonctionnalité « Analyser », accessible par clic droit sur un point de données, explique automatiquement une augmentation ou une diminution en identifiant les catégories qui y contribuent le plus, sans configuration préalable d'un nouveau visuel.", "hint": "Un clic droit sur un point de données propose une fonctionnalité qui explique automatiquement une variation, sans construire de nouveau visuel.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "prep", "type": "single", "scenario": null, "prompt": "Pour relier une table de faits Commandes à une table de dimension Client, quelle condition la colonne de jointure doit-elle remplir côté table de dimension ?", "options": ["Contenir des valeurs dupliquées", "Contenir des valeurs uniques (clé primaire)", "Être obligatoirement de type texte", "Être triée par ordre alphabétique"], "correct": 1, "explain": "Côté table « un » d'une relation un-à-plusieurs, la colonne de jointure doit contenir des valeurs uniques (clé primaire). C'est ce qui permet à Power BI de propager correctement les filtres vers la table de faits.", "hint": "Côté dimension, la colonne de jointure doit garantir qu'une valeur donnée n'apparaît qu'une seule fois.", "link": "https://learn.microsoft.com/fr-fr/power-bi/transform-model/desktop-create-and-manage-relationships"}, {"domain": "model", "type": "single", "scenario": null, "prompt": "Le champ « Niveau de stock » représente une quantité mesurée à un instant donné (comme un solde bancaire) : l'additionner sur plusieurs mois n'a pas de sens, mais on veut afficher le stock à la fin d'un mois ou d'un trimestre donné. Quel type de mesure crées-tu ?", "options": ["Une mesure additive classique (SUM)", "Une mesure semi-additive, par exemple avec CALCULATE et LASTDATE", "Une colonne calculée", "Une mesure de type COUNT"], "correct": 1, "explain": "Une mesure semi-additive s'additionne sur certains axes (produit, entrepôt) mais pas sur le temps. On la construit typiquement avec CALCULATE combinée à une fonction comme LASTDATE, pour ne récupérer que la dernière valeur connue de la période.", "hint": "On cherche une mesure qui ne s'additionne pas dans le temps mais qui peut afficher la dernière valeur connue d'une période : pense à une fonction qui capture une seule date.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "manage", "type": "order", "scenario": null, "prompt": "Remets dans l'ordre logique les grandes étapes d'un projet Power BI typique, de la connexion aux données jusqu'au partage du rapport final.", "items": ["Se connecter aux sources de données et les transformer dans Power Query", "Modéliser les données : construire les relations et les mesures DAX", "Créer les visuels et construire les pages du rapport", "Publier le modèle et le rapport dans le service Power BI", "Partager le rapport et configurer la sécurité (RLS, accès à l'espace de travail)"], "shuffle": [3, 0, 4, 1, 2], "explain": "Ce découpage correspond aux 4 grands domaines de compétence de l'examen PL-300 : préparer, modéliser, visualiser, puis gérer et sécuriser. Chaque étape s'appuie sur la précédente : impossible de modéliser des données qu'on n'a pas encore connectées, ni de sécuriser un rapport qui n'a pas encore été publié.", "hint": "Retrouve les 4 domaines de l'examen PL-300 dans l'ordre où ils s'enchaînent naturellement sur un vrai projet.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "manage", "type": "single", "scenario": null, "prompt": "Un rapport contient des données financières confidentielles. Tu veux que cette classification de confidentialité suive automatiquement le rapport, même s'il est exporté en PDF ou en Excel par un utilisateur autorisé. Quelle fonctionnalité appliques-tu ?", "options": ["Un signet", "Une étiquette de confidentialité (sensitivity label)", "Un rôle de sécurité au niveau des lignes (RLS)", "Un abonnement (subscription)"], "correct": 1, "explain": "Une étiquette de confidentialité, issue de Microsoft Purview Information Protection, classe le contenu et applique des protections qui suivent les données même lors d'un export vers un autre format, contrairement à une règle RLS qui ne s'applique qu'à l'intérieur du modèle.", "hint": "On cherche une classification qui protège le contenu même après un export vers un autre format, contrairement à une règle limitée à l'intérieur du modèle.", "link": "https://learn.microsoft.com/fr-fr/power-bi/enterprise/service-security-sensitivity-label-overview"}, {"domain": "model", "type": "single", "scenario": null, "prompt": "Ton modèle contient dix mesures de ventes différentes. Tu veux pouvoir appliquer à n'importe laquelle d'entre elles, au choix de l'utilisateur, un même jeu de calculs (valeur brute, % de croissance, cumul annuel) sans tripler chaque mesure. Quelle fonctionnalité utilises-tu ?", "options": ["Les colonnes calculées", "Les groupes de calcul (calculation groups)", "Les paramètres de champ (field parameters) uniquement", "Les hiérarchies"], "correct": 1, "explain": "Un groupe de calcul définit un ensemble d'éléments de calcul (comme « % de croissance » ou « cumul annuel ») applicables à n'importe quelle mesure existante, ce qui évite de dupliquer chaque mesure pour chaque variante de calcul.", "hint": "Cette fonctionnalité permet d'appliquer un même jeu de calculs à n'importe quelle mesure existante, sans dupliquer chaque mesure.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "viz", "type": "single", "scenario": "case-b", "prompt": "Sur la page d'accueil du rapport, tu veux permettre à un utilisateur de cliquer sur une région pour ouvrir automatiquement une page détaillée filtrée sur cette région, sans passer par un slicer. Quelle fonctionnalité configures-tu ?", "options": ["Un signet (bookmark)", "Une navigation par drillthrough", "Une infobulle personnalisée", "Un slicer synchronisé"], "correct": 1, "explain": "Le drillthrough permet de définir une page cible filtrée automatiquement sur la valeur cliquée dans une autre page : c'est l'outil adapté pour naviguer d'une vue de synthèse vers une vue détaillée déjà filtrée.", "hint": "On cherche une navigation qui ouvre automatiquement une page cible déjà filtrée sur la valeur cliquée, sans passer par un segment.", "link": "https://learn.microsoft.com/fr-fr/power-bi/create-reports/desktop-drillthrough"}, {"domain": "viz", "type": "single", "scenario": "case-b", "prompt": "Pour la page d'évolution des effectifs dans le temps, la direction souhaite un visuel qui projette une tendance probable pour les 6 prochains mois à partir de l'historique. Quelle fonctionnalité utilises-tu ?", "options": ["Les infobulles personnalisées", "Le regroupement (grouping)", "Les lignes de prévision (forecasting) sur un graphique en courbes", "Les signets"], "correct": 2, "explain": "La fonctionnalité de prévision (forecasting), disponible sur les visuels de type courbe, projette une tendance future à partir des données historiques avec un intervalle de confiance : c'est l'outil dédié à ce besoin.", "hint": "Cette fonctionnalité, disponible sur les graphiques en courbes, projette une tendance future avec un intervalle de confiance.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "manage", "type": "single", "scenario": "case-b", "prompt": "Chaque directeur régional doit voir uniquement les effectifs de sa région lorsqu'il ouvre le rapport, avec le même fichier publié pour tout le monde. Quelle solution mets-tu en place ?", "options": ["Créer un rapport distinct par région", "Configurer la sécurité au niveau des lignes (RLS) avec un rôle filtrant la table Région, puis assigner chaque directeur à sa région", "Restreindre l'accès au workspace à un directeur à la fois", "Utiliser un filtre de page verrouillé"], "correct": 1, "explain": "La sécurité au niveau des lignes permet de définir un rôle avec une règle de filtre DAX sur la table Région, puis d'assigner les utilisateurs concernés à ce rôle dans le service Power BI. Un seul modèle sert alors des vues différentes selon qui se connecte.", "hint": "Un seul rapport doit montrer des données différentes selon qui se connecte : la solution repose sur un rôle de sécurité filtrant, assigné à chaque utilisateur.", "link": "https://learn.microsoft.com/fr-fr/fabric/security/service-admin-row-level-security"}, {"domain": "prep", "type": "multi", "scenario": null, "prompt": "Parmi les affirmations suivantes sur le choix du type de données d'une colonne dans Power BI, lesquelles sont vraies ? (2 réponses)", "options": ["Un type de données mal choisi peut empêcher certaines agrégations (somme, moyenne) sur une colonne numérique stockée en texte.", "Le type de données n'a aucun impact sur les performances du modèle.", "Une colonne de type date permet d'utiliser les fonctions de veille temporelle DAX associées à une hiérarchie de dates.", "Il est impossible de changer le type d'une colonne après le chargement des données dans le modèle."], "correct": [0, 2], "explain": "Un mauvais typage empêche les agrégations numériques attendues et prive les colonnes de date des fonctionnalités de hiérarchie et de veille temporelle. Le type de données influence aussi la compression et donc les performances (l'affirmation B est fausse), et il reste modifiable à tout moment côté Power Query ou modèle (l'affirmation D est fausse).", "hint": "Un mauvais type de colonne peut bloquer une agrégation numérique et priver une colonne date de ses fonctionnalités de hiérarchie ; le type reste par ailleurs toujours modifiable et influence bien les performances.", "link": "https://learn.microsoft.com/fr-fr/power-bi/"}, {"domain": "model", "type": "match", "scenario": null, "prompt": "Associe chaque fonction DAX à la catégorie qui décrit le mieux son rôle.", "items": ["SUM", "CALCULATE", "SAMEPERIODLASTYEAR", "RELATED"], "targets": ["Agrégation simple d'une colonne", "Modification du contexte de filtre", "Veille temporelle", "Récupération d'une valeur via une relation"], "correct": [0, 1, 2, 3], "explain": "SUM agrège simplement une colonne numérique. CALCULATE modifie le contexte de filtre dans lequel une expression est évaluée : c'est la fonction la plus centrale du langage DAX. SAMEPERIODLASTYEAR décale une période d'un an en arrière, une fonction de veille temporelle. RELATED va chercher une valeur dans une table liée par une relation, sans avoir besoin d'écrire de jointure.", "hint": "Une seule de ces quatre fonctions sert à changer le contexte de filtre ; une seule décale une période dans le temps ; une seule traverse une relation.", "link": "https://learn.microsoft.com/fr-fr/dax/dax-function-reference"}, {"domain": "viz", "type": "single", "scenario": null, "prompt": "Un rapport contient 3 pages, chacune avec un segment (slicer) Année visible. Une sélection d'année faite sur n'importe quelle page doit s'appliquer automatiquement aux deux autres, sans dupliquer le segment. Que fais-tu ?", "options": ["Recréer manuellement le même segment sur chaque page", "Utiliser le volet Synchroniser les segments (Sync slicers), en activant la synchronisation et la visibilité sur les pages concernées", "Copier-coller le visuel segment sur chaque page : la synchronisation s'active alors automatiquement", "Créer un filtre au niveau du rapport à la place du segment"], "correct": 1, "explain": "Le volet Synchroniser les segments relie des segments basés sur le même champ (ou un champ équivalent) entre plusieurs pages, sans dupliquer les filtres manuellement. Le simple copier-coller d'un visuel ne suffit pas : il faut activer la synchronisation explicitement dans le volet dédié.", "hint": "Il existe un volet dédié à la synchronisation des segments entre plusieurs pages, distinct du simple copier-coller d'un visuel.", "link": "https://learn.microsoft.com/fr-fr/power-bi/visuals/power-bi-visualization-slicers"}, {"domain": "manage", "type": "single", "scenario": null, "prompt": "Tu veux distribuer une sélection organisée de rapports et de tableaux de bord à un large groupe d'utilisateurs, avec une page d'accueil personnalisée et une navigation simplifiée, sans leur donner accès à l'espace de travail où tu développes encore tes rapports. Que publies-tu ?", "options": ["Un accès direct au workspace de développement en rôle Viewer", "Une application Power BI (app)", "Un abonnement par e-mail", "Un flux de données (dataflow)"], "correct": 1, "explain": "Une application Power BI regroupe une sélection de contenus d'un espace de travail dans une interface de consultation dédiée, avec sa propre page d'accueil et sa navigation, sans exposer aux utilisateurs finaux l'espace de travail où le contenu est en cours de développement.", "hint": "On cherche un mode de distribution qui crée une interface de consultation séparée, avec sa propre page d'accueil, sans exposer l'espace de travail de développement.", "link": "https://learn.microsoft.com/fr-fr/power-bi/collaborate-share/service-create-distribute-apps"}, {"domain": "model", "type": "multi", "scenario": null, "prompt": "Parmi les actions suivantes, lesquelles améliorent les performances d'un modèle Power BI volumineux ? (2 réponses)", "options": ["Supprimer les colonnes et les lignes inutiles avant le chargement dans le modèle.", "Ajouter le plus grand nombre possible de colonnes calculées pour anticiper tous les besoins futurs.", "Réduire la granularité des données importées quand le détail ligne à ligne n'est pas nécessaire à l'analyse.", "Activer le filtrage croisé bidirectionnel sur toutes les relations du modèle par précaution."], "correct": [0, 2], "explain": "Réduire le nombre de colonnes, de lignes et le niveau de détail limite la taille du modèle et accélère les calculs. Multiplier les colonnes calculées et activer le filtrage bidirectionnel partout, au contraire, alourdit le modèle et peut créer des ambiguïtés de filtrage.", "hint": "Les deux bonnes réponses réduisent la quantité de données chargées ; les deux autres, au contraire, ajoutent du poids ou de la complexité au modèle.", "link": "https://learn.microsoft.com/fr-fr/power-bi/guidance/import-modeling-data-reduction"}, {"domain": "viz", "type": "single", "scenario": null, "prompt": "Le service comptabilité a besoin d'un état imprimable, précis au pixel près, avec plusieurs pages de tableaux détaillés destinés à l'impression papier. Quel type de rapport Power BI est le plus adapté à ce besoin plutôt qu'un rapport interactif classique ?", "options": ["Un rapport paginé (paginated report)", "Un tableau de bord (dashboard)", "Une application Power BI (app)", "Un flux de données (dataflow)"], "correct": 0, "explain": "Un rapport paginé est conçu pour un rendu fidèle à l'impression et à l'export (PDF, Word), avec une mise en page précise sur plusieurs pages. Les rapports interactifs classiques sont optimisés pour l'exploration à l'écran, pas pour un rendu imprimé pixel perfect.", "hint": "On cherche un type de rapport pensé pour l'impression et l'export fidèle, pas pour l'exploration interactive à l'écran.", "link": "https://learn.microsoft.com/fr-fr/power-bi/paginated-reports/report-builder-power-bi"}, {"domain": "prep", "type": "single", "scenario": null, "prompt": "Le même rapport doit pouvoir être rechargé pour différents environnements (Test, Production) en changeant uniquement le nom du serveur de base de données, sans modifier chaque requête une par une. Que mets-tu en place dans Power Query ?", "options": ["Un paramètre (parameter) référencé dans les requêtes concernées", "Une colonne calculée", "Un rôle de sécurité", "Un signet"], "correct": 0, "explain": "Un paramètre centralise une valeur (ici le nom du serveur) réutilisée dans une ou plusieurs requêtes. Changer sa valeur une seule fois suffit à répercuter le changement partout où il est utilisé, sans toucher à chaque requête.", "hint": "On cherche un élément Power Query qui centralise une valeur réutilisable dans plusieurs requêtes, modifiable en un seul endroit.", "link": "https://learn.microsoft.com/fr-fr/power-query/power-query-query-parameters"}, {"domain": "prep", "type": "single", "scenario": null, "prompt": "Pourquoi privilégie-t-on un schéma en étoile (tables de faits reliées à des tables de dimension) plutôt qu'une seule grande table plate dans un modèle Power BI ?", "options": ["Parce que Power BI n'accepte pas les tables uniques", "Parce qu'il simplifie les relations, réduit la redondance et améliore les performances des calculs DAX", "Parce qu'il évite complètement d'utiliser DAX", "Parce qu'il supprime le besoin d'une table de dates"], "correct": 1, "explain": "Un schéma en étoile limite la duplication des attributs descriptifs, clarifie le sens des relations et permet au moteur DAX d'optimiser ses calculs. Une table plate unique mélange faits et dimensions et complique les agrégations et les filtres.", "hint": "Élimine les affirmations absolues (« n'accepte pas », « évite complètement », « supprime le besoin ») : il en reste une seule, plus nuancée.", "link": "https://learn.microsoft.com/fr-fr/power-bi/guidance/star-schema"}, {"domain": "manage", "type": "single", "scenario": null, "prompt": "Un modèle sémantique en mode Import se connecte à une base de données hébergée sur le réseau local de l'entreprise. Pour que son actualisation planifiée fonctionne dans le service Power BI, quel élément doit être configuré en amont ?", "options": ["Un abonnement (subscription)", "Une passerelle de données (gateway) associée à la source", "Un signet", "Une étiquette de confidentialité"], "correct": 1, "explain": "Sans passerelle configurée et associée à la source on-premises, le service Power BI ne peut pas atteindre la base de données au moment de l'actualisation planifiée, même si celle-ci est correctement programmée dans les paramètres du modèle.", "hint": "La base est sur le réseau local de l'entreprise, pas dans le cloud : il faut un pont sécurisé entre le service Power BI et cette source.", "link": "https://learn.microsoft.com/fr-fr/data-integration/gateway/service-gateway-onprem"}];
+const DOMAINS = {"prep": {"label": "Préparer les données", "short": "Préparer", "color": "var(--brand-orange)"}, "model": {"label": "Modéliser les données", "short": "Modéliser", "color": "var(--data-blue)"}, "viz": {"label": "Visualiser et analyser", "short": "Visualiser", "color": "var(--accent-dark)"}, "manage": {"label": "Gérer et sécuriser Power BI", "short": "Gérer", "color": "var(--bg-dark-2)"}};
+const SCENARIOS = {"case-a": {"title": "Mise en situation — Vélocia", "text": "Tu es analyste de données chez Vélocia, une chaîne de magasins de vélos. Le service commercial te transmet chaque semaine un export Excel des ventes par magasin. L'équipe logistique te donne un accès direct à une base SQL Server hébergée sur site, qui contient le stock en temps réel. Les deux sources doivent être combinées dans un même modèle, avec une table de dates commune pour analyser les ventes par période, magasin et catégorie de produit."}, "case-b": {"title": "Mise en situation — Norda RH", "text": "Tu prépares un rapport Power BI Service pour la direction RH de l'entreprise Norda. Le rapport doit permettre à chaque directeur régional de ne voir que les effectifs de sa région. Il doit aussi inclure une page dédiée à l'évolution des effectifs dans le temps, que les utilisateurs pourront explorer en détail sans quitter la page de synthèse."}};
+const DOMAIN_KEYS = ['prep','model','viz','manage'];
+// Les CASE_STUDY_LEAD_COUNT premières questions forment la mise en situation d'ouverture,
+// exactement comme dans l'examen officiel : questions groupées, écran de révision dédié,
+// puis section verrouillée (plus de retour possible) une fois validée.
+const CASE_STUDY_LEAD_COUNT = QUESTIONS.filter(q=>q.scenario==='case-a').length;
+
+/* =========================================================
+   2. ÉTAT
+   ========================================================= */
+let state = {
+  current: 0,                         // index de la question affichée
+  answers: {},                        // qIndex -> nombre (single) ou tableau de nombres (multi)
+  flagged: new Set(),
+  helped: new Set(),                  // questions où l'indice ou la solution a été consulté(e) : ne comptent plus
+  hintOpen: new Set(),                // indice actuellement déplié (affichage seulement)
+  solOpen: new Set(),                 // solution actuellement dépliée (affichage seulement)
+  caseStudyDone: false,               // mise en situation d'ouverture validée -> section verrouillée
+  reviewScreen: false,                // écran de révision de la mise en situation actuellement affiché
+  tabSwitches: 0,                     // nombre de changements de fenêtre/onglet détectés pendant l'examen
+  started: false,
+  finished: false,
+  remaining: EXAM_DURATION_SEC,
+  timeUsed: 0,
+  timerHandle: null,
+  finishConfirmPending: false,
+};
+
+/* =========================================================
+   3. ONGLET CONTEXTE — tableau des domaines + liens
+   ========================================================= */
+function renderDomainsTable(){
+  const rows = DOMAIN_KEYS.map(k=>{
+    const d = DOMAINS[k];
+    const n = QUESTIONS.filter(q=>q.domain===k).length;
+    return `<tr><td><span class="dom-dot" style="background:${d.color};"></span>${d.label}</td><td>${n} question(s)</td></tr>`;
+  }).join('');
+  document.getElementById('domainsTable').innerHTML =
+    `<table class="domains"><thead><tr><th>Domaine officiel PL-300</th><th>Dans cet examen blanc</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function renderCtxLinks(){
+  document.getElementById('ctxLinks').innerHTML =
+    '<a href="https://learn.microsoft.com/en-us/credentials/certifications/power-bi-data-analyst-associate/" target="_blank" rel="noopener noreferrer">📘 Certification Microsoft Certified: Power BI Data Analyst Associate (Microsoft Learn)</a><br>' +
+    '<a href="https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/pl-300" target="_blank" rel="noopener noreferrer">📘 Guide d\'étude officiel de l\'examen PL-300 (Microsoft Learn)</a>';
+}
+
+/* =========================================================
+   4. ONGLET EXAMEN BLANC — palette
+   ========================================================= */
+function renderPalette(){
+  const grid = document.getElementById('paletteGrid');
+  grid.innerHTML = QUESTIONS.map((q,i)=>{
+    let cls = 'pal-btn';
+    if(isQuestionAnswered(i)) cls += ' answered';
+    if(i===state.current && !state.reviewScreen) cls += ' current';
+    if(state.flagged.has(i)) cls += ' flagged';
+    if(state.helped.has(i)) cls += ' aided';
+    const inLeadSection = i < CASE_STUDY_LEAD_COUNT;
+    const locked = state.finished ? false : (inLeadSection ? state.caseStudyDone : !state.caseStudyDone);
+    if(locked && !state.finished) cls += ' sectionlock';
+    const title = locked ? (inLeadSection ? "Section verrouillée : mise en situation déjà validée" : "Termine d'abord la mise en situation d'ouverture") : '';
+    return `<button type="button" class="${cls}" data-idx="${i}" ${(state.finished || locked)?'disabled':''} title="${title}">${i+1}</button>`;
+  }).join('');
+  grid.querySelectorAll('.pal-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ gotoQuestion(parseInt(btn.dataset.idx)); });
+  });
+}
+function gotoQuestion(idx){
+  state.reviewScreen = false;
+  state.current = idx;
+  renderQuestion();
+  renderPalette();
+}
+
+/* =========================================================
+   5. ONGLET EXAMEN BLANC — carte question
+   ========================================================= */
+function selectSingle(qIdx, optIdx){
+  if(state.finished) return;
+  state.answers[qIdx] = optIdx;
+  renderQuestion();
+  renderPalette();
+}
+function toggleMulti(qIdx, optIdx){
+  if(state.finished) return;
+  const cur = Array.isArray(state.answers[qIdx]) ? state.answers[qIdx].slice() : [];
+  const pos = cur.indexOf(optIdx);
+  if(pos>=0) cur.splice(pos,1); else cur.push(optIdx);
+  state.answers[qIdx] = cur;
+  renderQuestion();
+  renderPalette();
+}
+// Questions de type "ordre" : state.answers[qIdx] est un tableau d'index (vers q.items),
+// représentant l'arrangement actuel de l'apprenant, position par position.
+function moveOrderItem(qIdx, fromPos, toPos){
+  if(state.finished) return;
+  const q = QUESTIONS[qIdx];
+  const arr = (state.answers[qIdx] || q.shuffle).slice();
+  if(toPos<0 || toPos>=arr.length) return;
+  const [moved] = arr.splice(fromPos, 1);
+  arr.splice(toPos, 0, moved);
+  state.answers[qIdx] = arr;
+  renderQuestion();
+  renderPalette();
+}
+// Questions de type "association" : state.answers[qIdx] est un tableau parallèle à
+// q.items, où chaque valeur est l'index de la cible (q.targets) assignée, ou -1 si
+// l'élément n'est pas encore placé.
+let matchArmed = {}; // sélection transitoire (clic) par question, non comptée dans le score
+function assignMatch(qIdx, itemIdx, targetIdx){
+  if(state.finished) return;
+  const q = QUESTIONS[qIdx];
+  const arr = (state.answers[qIdx] || new Array(q.items.length).fill(-1)).slice();
+  // Une cible ne peut recevoir qu'un seul élément : celui déjà en place, s'il y en a un,
+  // retourne dans le réservoir.
+  const prevOccupant = arr.findIndex(v=>v===targetIdx);
+  if(prevOccupant>=0) arr[prevOccupant] = -1;
+  arr[itemIdx] = targetIdx;
+  state.answers[qIdx] = arr;
+  delete matchArmed[qIdx];
+  renderQuestion();
+  renderPalette();
+}
+function unassignMatch(qIdx, itemIdx){
+  if(state.finished) return;
+  const q = QUESTIONS[qIdx];
+  const arr = (state.answers[qIdx] || new Array(q.items.length).fill(-1)).slice();
+  arr[itemIdx] = -1;
+  state.answers[qIdx] = arr;
+  renderQuestion();
+  renderPalette();
+}
+function armMatchItem(qIdx, itemIdx){
+  if(state.finished) return;
+  matchArmed[qIdx] = (matchArmed[qIdx]===itemIdx) ? undefined : itemIdx;
+  renderQuestion();
+}
+function toggleFlag(qIdx){
+  if(state.flagged.has(qIdx)) state.flagged.delete(qIdx); else state.flagged.add(qIdx);
+  renderQuestion();
+  renderPalette();
+}
+// Déplier l'indice ou la solution marque définitivement la question comme « aidée » :
+// elle ne rapportera aucun point au récap, même en cas de bonne réponse ensuite.
+// Replier la boîte n'annule pas ce marquage (l'apprenant a déjà vu l'information).
+function toggleHint(qIdx){
+  if(state.hintOpen.has(qIdx)) state.hintOpen.delete(qIdx);
+  else { state.hintOpen.add(qIdx); state.helped.add(qIdx); }
+  renderQuestion();
+  renderPalette();
+}
+function toggleSol(qIdx){
+  if(state.solOpen.has(qIdx)) state.solOpen.delete(qIdx);
+  else { state.solOpen.add(qIdx); state.helped.add(qIdx); }
+  renderQuestion();
+  renderPalette();
+}
+
+/* =========================================================
+   5bis. FORMATAGE DES RÉPONSES — commun à toutes les questions,
+   quel que soit leur type (single / multi / order / match).
+   Utilisé à la fois par la boîte "Voir la solution" et par le récap.
+   ========================================================= */
+const OPT_LETTERS = ['A','B','C','D','E'];
+function isQuestionAnswered(i){
+  const q = QUESTIONS[i];
+  const a = state.answers[i];
+  if(a===undefined) return false;
+  if(q.type==='multi') return Array.isArray(a) && a.length>0;
+  if(q.type==='match') return Array.isArray(a) && a.every(v=>v!==-1);
+  return true; // single & order (dès que l'apprenant a réellement interagi)
+}
+function formatAnswer(q, given){
+  if(q.type==='single'){
+    return (given===undefined) ? 'Sans réponse' : OPT_LETTERS[given]+'. '+q.options[given];
+  }
+  if(q.type==='multi'){
+    return (!given || given.length===0) ? 'Sans réponse' : given.map(x=>OPT_LETTERS[x]+'. '+q.options[x]).join(' · ');
+  }
+  if(q.type==='order'){
+    const arr = given || q.shuffle;
+    return arr.map((origIdx,pos)=> (pos+1)+') '+q.items[origIdx]).join('  →  ');
+  }
+  if(q.type==='match'){
+    const arr = given || new Array(q.items.length).fill(-1);
+    return q.items.map((text,idx)=> text+' → '+(arr[idx]===-1 ? '(non assigné)' : q.targets[arr[idx]])).join(' · ');
+  }
+  return 'Sans réponse';
+}
+function formatCorrectAnswer(q){
+  if(q.type==='single') return OPT_LETTERS[q.correct]+'. '+q.options[q.correct];
+  if(q.type==='multi') return q.correct.map(x=>OPT_LETTERS[x]+'. '+q.options[x]).join(' · ');
+  if(q.type==='order') return q.items.map((text,idx)=>(idx+1)+') '+text).join('  →  ');
+  if(q.type==='match') return q.items.map((text,idx)=>text+' → '+q.targets[q.correct[idx]]).join(' · ');
+  return '';
+}
+
+function renderQuestion(){
+  if(state.reviewScreen){ renderReviewScreen(); return; }
+  const i = state.current;
+  const q = QUESTIONS[i];
+  const d = DOMAINS[q.domain];
+  document.getElementById('examProgress').textContent = `Question ${i+1} / ${QUESTIONS.length}`;
+
+  let scenarioHtml = '';
+  if(q.scenario){
+    const sc = SCENARIOS[q.scenario];
+    scenarioHtml = `<div class="scenario-box"><div class="sc-title">🗂 ${sc.title}</div>${sc.text}</div>`;
+  }
+
+  const isMulti = q.type === 'multi';
+  const shape = isMulti ? 'square' : 'round';
+  const selected = state.answers[i];
+
+  let instrText = 'Choisis une seule réponse.';
+  if(q.type==='multi') instrText = 'Choisis toutes les réponses correctes (plusieurs réponses attendues).';
+  else if(q.type==='order') instrText = 'Fais glisser les étapes, ou utilise les flèches ▲▼, pour les remettre dans le bon ordre.';
+  else if(q.type==='match') instrText = 'Fais glisser chaque élément vers sa catégorie, ou clique sur un élément puis sur sa catégorie.';
+
+  let bodyHtml = '';
+  if(q.type==='single' || q.type==='multi'){
+    bodyHtml = `<div class="q-options">${q.options.map((optText, oi)=>{
+      const isSel = isMulti ? (Array.isArray(selected) && selected.includes(oi)) : (selected===oi);
+      return `<button type="button" class="opt-btn ${isSel?'sel':''}" data-shape="${shape}" data-opt="${oi}">
+        <span class="opt-mark">${isSel ? (isMulti?'✓':'●') : OPT_LETTERS[oi]}</span>
+        <span>${optText}</span>
+      </button>`;
+    }).join('')}</div>`;
+  } else if(q.type==='order'){
+    const arr = selected || q.shuffle;
+    bodyHtml = `<div class="order-list" id="orderList">${arr.map((origIdx,pos)=>`
+      <div class="order-item" draggable="true" data-pos="${pos}">
+        <span class="order-num">${pos+1}</span>
+        <span class="order-text">${q.items[origIdx]}</span>
+        <span class="order-controls">
+          <button type="button" class="order-btn" data-dir="up" data-pos="${pos}" ${pos===0?'disabled':''}>▲</button>
+          <button type="button" class="order-btn" data-dir="down" data-pos="${pos}" ${pos===arr.length-1?'disabled':''}>▼</button>
+        </span>
+      </div>`).join('')}</div>`;
+  } else if(q.type==='match'){
+    const arr = selected || new Array(q.items.length).fill(-1);
+    const armed = matchArmed[i];
+    const poolHtml = q.items.map((text, idx)=> arr[idx]!==-1 ? '' : `
+      <div class="match-chip ${armed===idx?'armed':''}" draggable="true" data-item="${idx}">${text}</div>`).join('');
+    const poolEmpty = q.items.every((_,idx)=>arr[idx]!==-1) ? '<div class="match-pool-empty">Tous les éléments sont placés.</div>' : '';
+    const targetsHtml = q.targets.map((label, tIdx)=>{
+      const occ = arr.findIndex(v=>v===tIdx);
+      const inner = occ>=0
+        ? `<div class="match-chip placed" draggable="true" data-item="${occ}">${q.items[occ]}<span class="match-remove" data-item="${occ}">✕</span></div>`
+        : `<div class="match-empty" data-target="${tIdx}">Dépose ou clique ici</div>`;
+      return `<div class="match-target" data-target="${tIdx}"><div class="match-target-label">${label}</div>${inner}</div>`;
+    }).join('');
+    bodyHtml = `<div class="match-wrap" id="matchWrap">
+      <div><div class="match-col-title">Éléments</div><div class="match-pool">${poolHtml}${poolEmpty}</div></div>
+      <div><div class="match-col-title">Catégories</div><div class="match-targets">${targetsHtml}</div></div>
+    </div>`;
+  }
+
+  const helpHtml = state.finished ? '' : `
+    <div class="help-row">
+      <button type="button" class="ghost" id="btnHint">💡 ${state.hintOpen.has(i) ? "Masquer l'indice" : 'Indice'}</button>
+      <button type="button" class="ghost" id="btnSol">👁 ${state.solOpen.has(i) ? 'Masquer la solution' : 'Voir la solution'}</button>
+    </div>
+    ${state.hintOpen.has(i) ? `<div class="help-box hint">💡 ${q.hint}</div>` : ''}
+    ${state.solOpen.has(i) ? `<div class="help-box sol">✅ Bonne réponse : ${formatCorrectAnswer(q)}<br>${q.explain}</div>` : ''}
+    ${state.helped.has(i) ? `<div class="aided-note">ℹ️ Indice ou solution consulté(e) sur cette question : elle ne comptera pas dans ton score final, même si ta réponse est juste.</div>` : ''}
+  `;
+
+  // Dans la mise en situation d'ouverture (non encore validée), la dernière question
+  // propose de terminer la section plutôt que de continuer normalement vers la suite.
+  const isLastOfLeadSection = (i === CASE_STUDY_LEAD_COUNT - 1) && !state.caseStudyDone;
+  const isLastQuestion = (i === QUESTIONS.length - 1) && !isLastOfLeadSection && !state.finished;
+  const nextLabel = isLastOfLeadSection ? 'Terminer la mise en situation →' : (isLastQuestion ? '🏁 Terminer l\'examen' : 'Suivante →');
+  const nextDisabled = state.finished && i===QUESTIONS.length-1;
+
+  const card = document.getElementById('qcard');
+  card.innerHTML = `
+    <div class="q-eyebrow">
+      <span class="q-domain-tag" style="background:${d.color};">${d.label}</span>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="q-num">Question ${i+1} / ${QUESTIONS.length}</span>
+        <button type="button" class="ghost ${state.flagged.has(i)?'flagged':''}" id="btnFlag">${state.flagged.has(i) ? '🚩 Marquée à revoir' : '🚩 Marquer à revoir'}</button>
+      </div>
+    </div>
+    ${scenarioHtml}
+    <div class="q-prompt">${q.prompt}</div>
+    <div class="q-instr">${instrText}</div>
+    ${bodyHtml}
+    ${helpHtml}
+    <div class="exam-reminder">🔒 Rappel : à l'examen PL-300 officiel, impossible d'ouvrir Power BI ou une IA pour t'aider : tu es surveillé(e) pendant toute la session.</div>
+    <div class="q-nav">
+      <div class="q-nav-left">
+        <button type="button" class="secondary" id="btnPrev" ${i===0?'disabled':''}>← Précédente</button>
+      </div>
+      <div class="q-nav-right">
+        <button type="button" class="${isLastQuestion?'primary':'secondary'}" id="btnNext" ${nextDisabled?'disabled':''}>${nextLabel}</button>
+      </div>
+    </div>
+  `;
+
+  if(q.type==='single' || q.type==='multi'){
+    card.querySelectorAll('.opt-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const oi = parseInt(btn.dataset.opt);
+        if(isMulti) toggleMulti(i, oi); else selectSingle(i, oi);
+      });
+    });
+  } else if(q.type==='order'){
+    const list = document.getElementById('orderList');
+    list.querySelectorAll('.order-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const pos = parseInt(btn.dataset.pos);
+        const dir = btn.dataset.dir==='up' ? -1 : 1;
+        moveOrderItem(i, pos, pos+dir);
+      });
+    });
+    let dragPos = null;
+    list.querySelectorAll('.order-item').forEach(el=>{
+      el.addEventListener('dragstart', ()=>{ dragPos = parseInt(el.dataset.pos); });
+      el.addEventListener('dragover', e=>{ e.preventDefault(); el.classList.add('dragover'); });
+      el.addEventListener('dragleave', ()=> el.classList.remove('dragover'));
+      el.addEventListener('drop', e=>{
+        e.preventDefault(); el.classList.remove('dragover');
+        const toPos = parseInt(el.dataset.pos);
+        if(dragPos!==null && dragPos!==toPos) moveOrderItem(i, dragPos, toPos);
+        dragPos = null;
+      });
+    });
+  } else if(q.type==='match'){
+    const wrap = document.getElementById('matchWrap');
+    let dragItem = null;
+    wrap.querySelectorAll('.match-chip:not(.placed)').forEach(chip=>{
+      chip.addEventListener('click', ()=> armMatchItem(i, parseInt(chip.dataset.item)));
+      chip.addEventListener('dragstart', ()=>{ dragItem = parseInt(chip.dataset.item); });
+    });
+    wrap.querySelectorAll('.match-chip.placed').forEach(chip=>{
+      chip.addEventListener('dragstart', ()=>{ dragItem = parseInt(chip.dataset.item); });
+    });
+    wrap.querySelectorAll('.match-remove').forEach(btn=>{
+      btn.addEventListener('click', e=>{ e.stopPropagation(); unassignMatch(i, parseInt(btn.dataset.item)); });
+    });
+    wrap.querySelectorAll('.match-target').forEach(zone=>{
+      zone.addEventListener('click', ()=>{
+        const tIdx = parseInt(zone.dataset.target);
+        if(matchArmed[i]!==undefined) assignMatch(i, matchArmed[i], tIdx);
+      });
+      zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', ()=> zone.classList.remove('dragover'));
+      zone.addEventListener('drop', e=>{
+        e.preventDefault(); zone.classList.remove('dragover');
+        const tIdx = parseInt(zone.dataset.target);
+        if(dragItem!==null) assignMatch(i, dragItem, tIdx);
+        dragItem = null;
+      });
+    });
+  }
+
+  document.getElementById('btnFlag').addEventListener('click', ()=> toggleFlag(i));
+  const btnHint = document.getElementById('btnHint');
+  const btnSol = document.getElementById('btnSol');
+  if(btnHint) btnHint.addEventListener('click', ()=> toggleHint(i));
+  if(btnSol) btnSol.addEventListener('click', ()=> toggleSol(i));
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  if(btnPrev) btnPrev.addEventListener('click', ()=>{ if(state.current>0){ gotoQuestion(state.current-1); } });
+  if(btnNext) btnNext.addEventListener('click', ()=>{
+    if(isLastOfLeadSection){
+      state.reviewScreen = true; renderQuestion(); renderPalette();
+    } else if(isLastQuestion){
+      requestFinishExam();
+    } else if(state.current<QUESTIONS.length-1){
+      gotoQuestion(state.current+1);
+    }
+  });
+
+  if(state.finished){
+    card.querySelectorAll('.opt-btn, .order-btn, .match-chip, .match-target, .match-remove').forEach(b=> b.style.pointerEvents='none');
+  }
+}
+
+/* =========================================================
+   5bis. ÉCRAN DE RÉVISION DE LA MISE EN SITUATION D'OUVERTURE
+   ========================================================= */
+function renderReviewScreen(){
+  document.getElementById('examProgress').textContent = `Révision de la mise en situation`;
+  const sc = SCENARIOS['case-a'];
+  const letters = ['A','B','C','D','E'];
+  let unanswered = 0;
+
+  const itemsHtml = Array.from({length: CASE_STUDY_LEAD_COUNT}, (_,i)=>i).map(i=>{
+    const q = QUESTIONS[i];
+    const d = DOMAINS[q.domain];
+    const given = state.answers[i];
+    const isEmpty = given===undefined || (Array.isArray(given) && given.length===0);
+    if(isEmpty) unanswered++;
+    const answerLabel = isEmpty ? 'Sans réponse'
+      : (Array.isArray(given) ? given.map(x=>letters[x]+'. '+q.options[x]).join(' · ') : letters[given]+'. '+q.options[given]);
+    return `<div class="review-q-item">
+      <div class="rq-head">
+        <span class="q-domain-tag" style="background:${d.color};">${d.label}</span>
+        <button type="button" class="ghost" data-goto="${i}">✏️ Modifier cette réponse</button>
+      </div>
+      <div class="rq-prompt">Question ${i+1} — ${q.prompt}</div>
+      <div class="rq-answer">Ta réponse : ${answerLabel}</div>
+    </div>`;
+  }).join('');
+
+  const warningHtml = unanswered>0
+    ? `<div class="review-warning">Il reste ${unanswered} question(s) sans réponse dans cette mise en situation. Tu peux encore les modifier avant de valider.</div>`
+    : '';
+
+  const card = document.getElementById('qcard');
+  card.innerHTML = `
+    <div class="q-eyebrow"><span class="q-domain-tag" style="background:var(--data-blue);">Écran de révision</span></div>
+    <div class="scenario-box"><div class="sc-title">🗂 ${sc.title}</div>${sc.text}</div>
+    <div class="review-intro">Voici les ${CASE_STUDY_LEAD_COUNT} questions de cette mise en situation. Relis-les et modifie tes réponses si besoin : <b>une fois validée, cette section se ferme et tu ne pourras plus y revenir</b>, exactement comme à l'examen officiel.</div>
+    ${warningHtml}
+    ${itemsHtml}
+    <div class="q-nav">
+      <div class="q-nav-left"></div>
+      <div class="q-nav-right"><button type="button" class="primary" id="btnValidateSection">✅ Valider et passer à la suite</button></div>
+    </div>
+  `;
+  card.querySelectorAll('[data-goto]').forEach(btn=>{
+    btn.addEventListener('click', ()=> gotoQuestion(parseInt(btn.dataset.goto)));
+  });
+  document.getElementById('btnValidateSection').addEventListener('click', ()=>{
+    state.caseStudyDone = true;
+    state.reviewScreen = false;
+    state.current = CASE_STUDY_LEAD_COUNT;
+    renderQuestion();
+    renderPalette();
+  });
+}
+
+/* =========================================================
+   6. CHRONOMÈTRE
+   ========================================================= */
+function formatTime(sec){
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec/60), s = sec%60;
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+function updateTimerDisplay(){
+  const el = document.getElementById('examTimer');
+  const wrap = document.getElementById('headerTimerWrap');
+  el.textContent = formatTime(state.remaining);
+  wrap.classList.toggle('low', state.remaining <= 5*60);
+}
+function updateHeaderSwitchesBadge(){
+  const badge = document.getElementById('headerSwitches');
+  if(state.tabSwitches > 0){
+    badge.style.display = 'inline';
+    badge.textContent = '· ⚠ ' + state.tabSwitches;
+    badge.title = state.tabSwitches + ' changement(s) de fenêtre détecté(s) pendant l\'examen';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+function startTimer(){
+  if(state.started || state.finished) return;
+  state.started = true;
+  document.getElementById('headerTimerWrap').style.display = 'inline-flex';
+  state.timerHandle = setInterval(()=>{
+    state.remaining -= 1;
+    state.timeUsed += 1;
+    if(state.remaining <= 0){
+      state.remaining = 0;
+      updateTimerDisplay();
+      finishExam(true);
+      return;
+    }
+    updateTimerDisplay();
+  }, 1000);
+  updateTimerDisplay();
+}
+
+/* =========================================================
+   6bis. DÉTECTION DE CHANGEMENT DE FENÊTRE / ONGLET
+   Signal informatif, pas un vrai contrôle anti-fraude : on ne peut détecter que
+   la perte de focus de l'onglet, pas ce qui se passe en dehors. Objectif : faire
+   prendre conscience que ce comportement serait repéré à l'examen officiel.
+   ========================================================= */
+let tabSwitchAlertTimeout = null;
+function showTabSwitchAlert(){
+  const el = document.getElementById('tabSwitchAlert');
+  const txt = document.getElementById('tabSwitchAlertText');
+  if(!el || !txt) return;
+  txt.textContent = `Changement de fenêtre ou d'onglet détecté (${state.tabSwitches} au total pendant cet examen). À l'examen PL-300 officiel, ce comportement est repéré par la surveillance et peut entraîner ta disqualification.`;
+  el.classList.add('show');
+  clearTimeout(tabSwitchAlertTimeout);
+  tabSwitchAlertTimeout = setTimeout(()=> el.classList.remove('show'), 15000);
+}
+document.getElementById('tabSwitchAlertClose').addEventListener('click', ()=>{
+  clearTimeout(tabSwitchAlertTimeout);
+  document.getElementById('tabSwitchAlert').classList.remove('show');
+});
+document.addEventListener('visibilitychange', ()=>{
+  if(!state.started || state.finished) return;
+  if(document.hidden){
+    state.tabSwitches += 1;
+    updateHeaderSwitchesBadge();
+  } else if(state.tabSwitches > 0){
+    showTabSwitchAlert();
+  }
+});
+
+/* =========================================================
+   7. TERMINER L'EXAMEN
+   ========================================================= */
+function countUnanswered(){
+  let n = 0;
+  QUESTIONS.forEach((q,i)=>{ if(!isQuestionAnswered(i)) n++; });
+  return n;
+}
+function requestFinishExam(){
+  if(state.finished) return;
+  const unanswered = countUnanswered();
+  const box = document.getElementById('finishConfirm');
+  if(unanswered>0 && !state.finishConfirmPending){
+    state.finishConfirmPending = true;
+    document.getElementById('finishConfirmText').textContent =
+      `Il reste ${unanswered} question(s) sans réponse. Tu peux encore y retourner, ou terminer quand même : ces questions compteront comme fausses.`;
+    box.classList.add('show');
+    return;
+  }
+  finishExam(false);
+}
+document.getElementById('btnFinishExam').addEventListener('click', requestFinishExam);
+document.getElementById('btnFinishConfirmYes').addEventListener('click', ()=>{ finishExam(false); });
+document.getElementById('btnFinishConfirmNo').addEventListener('click', ()=>{
+  state.finishConfirmPending = false;
+  document.getElementById('finishConfirm').classList.remove('show');
+});
+
+function isCorrect(q, given){
+  if(q.type==='order' && given===undefined) given = q.shuffle; // une disposition par défaut existe toujours
+  if(given===undefined) return false;
+  if(q.type==='multi'){
+    const g = Array.isArray(given) ? given.slice().sort() : [];
+    const c = q.correct.slice().sort();
+    return g.length===c.length && g.every((v,idx)=>v===c[idx]);
+  }
+  if(q.type==='order'){
+    return Array.isArray(given) && given.length===q.items.length && given.every((v,idx)=>v===idx);
+  }
+  if(q.type==='match'){
+    return Array.isArray(given) && q.correct.every((c,idx)=> given[idx]===c);
+  }
+  return given === q.correct;
+}
+
+function finishExam(timeUp){
+  if(state.finished) return;
+  state.finished = true;
+  state.reviewScreen = false;
+  if(state.timerHandle) clearInterval(state.timerHandle);
+  document.getElementById('headerTimerWrap').style.display = 'none';
+  document.getElementById('finishConfirm').classList.remove('show');
+  document.getElementById('btnFinishExam').disabled = true;
+  document.getElementById('tabBtnRecap').classList.remove('locked');
+  document.getElementById('tabBtnRecap').removeAttribute('title');
+  renderPalette();
+  renderQuestion();
+  renderRecap(timeUp);
+  switchTab('recap');
+}
+
+/* =========================================================
+   8. RÉCAP
+   ========================================================= */
+function renderRecap(timeUp){
+  let correctCount = 0;
+  const domainStats = {}; DOMAIN_KEYS.forEach(k=> domainStats[k] = {correct:0, total:0});
+
+  const qRows = QUESTIONS.map((q,i)=>{
+    const given = state.answers[i];
+    const rawOk = isCorrect(q, given);
+    const aided = state.helped.has(i);
+    const scored = rawOk && !aided;
+    domainStats[q.domain].total++;
+    if(scored){ correctCount++; domainStats[q.domain].correct++; }
+
+    const givenLabel = formatAnswer(q, given);
+    const correctLabel = formatCorrectAnswer(q);
+
+    const d = DOMAINS[q.domain];
+    const scenarioLine = q.scenario ? `<div class="recap-scenario">🗂 ${SCENARIOS[q.scenario].title}</div>` : '';
+    const rowClass = aided ? 'wrong' : (rawOk ? 'right' : 'wrong');
+    const markLabel = aided
+      ? `ℹ️ Aide utilisée — non comptabilisée${rawOk ? ' (réponse par ailleurs juste)' : ''}`
+      : (rawOk ? '✓ Correct' : '✗ Incorrect');
+    const markClass = aided ? 'ko' : (rawOk ? 'ok' : 'ko');
+
+    return `<div class="recap-q ${rowClass}">
+      <div class="recap-q-head">
+        <span class="q-domain-tag" style="background:${d.color};">${d.label}</span>
+        <span class="recap-q-mark ${markClass}">${markLabel} — Question ${i+1}</span>
+      </div>
+      ${scenarioLine}
+      <div class="recap-prompt">${q.prompt}</div>
+      <div class="recap-answers">
+        <div class="ra-you">Ta réponse : ${givenLabel}</div>
+        ${(rawOk && !aided) ? '' : `<div class="ra-correct">Bonne réponse : ${correctLabel}</div>`}
+      </div>
+      <div class="recap-explain">💡 ${q.explain}</div>
+      ${q.link ? `<div class="recap-link"><a href="${q.link}" target="_blank" rel="noopener noreferrer">📘 Approfondir sur Microsoft Learn</a></div>` : ''}
+    </div>`;
+  }).join('');
+
+  const total = QUESTIONS.length;
+  const pct = Math.round((correctCount/total)*100);
+  const scaled = Math.round((correctCount/total)*1000);
+  const passed = pct >= 70;
+
+  let msg = '';
+  if(pct>=85) msg = "Excellente maîtrise des 4 domaines : tu es prêt(e) à te confronter à l'examen officiel dans de bonnes conditions.";
+  else if(pct>=70) msg = "Le seuil indicatif de réussite est atteint. Revois les quelques questions manquées avant de te présenter à l'examen.";
+  else if(pct>=50) msg = "Les bases sont là, mais il reste du travail sur plusieurs domaines avant l'examen officiel.";
+  else msg = "Plusieurs domaines demandent encore beaucoup de révision : reprends les modules Microsoft Learn correspondants avant de retenter.";
+  if(timeUp) msg = "⏱ Temps écoulé : l'examen a été clôturé automatiquement, comme le ferait le système le jour de l'examen officiel. " + msg;
+
+  const domainCards = DOMAIN_KEYS.map(k=>{
+    const d = DOMAINS[k];
+    const s = domainStats[k];
+    const dpct = s.total ? Math.round((s.correct/s.total)*100) : 0;
+    return `<div class="ds-card">
+      <div class="ds-label">${d.label}</div>
+      <div class="ds-bar-track"><div class="ds-bar-fill" style="width:${dpct}%; background:${d.color};"></div></div>
+      <div class="ds-nb">${s.correct} / ${s.total} (${dpct} %)</div>
+    </div>`;
+  }).join('');
+
+  const wrap = document.getElementById('recapWrap');
+  wrap.innerHTML = `
+    <div class="recap-session no-print">
+      <div class="recap-field"><label>Ton nom</label><input type="text" id="recapNom" placeholder="Ex : Camille Dupont"></div>
+      <div class="recap-field"><label>Date</label><input type="text" id="recapDate" placeholder="Ex : 04/09/2026"></div>
+    </div>
+    <div class="score-banner">
+      <div><div class="sb-big">${correctCount} / ${total}</div><div class="sb-lbl">Score obtenu (${pct} %)</div></div>
+      <span class="sb-pass ${passed?'ok':'ko'}">${passed?'Seuil atteint (≥ 70 %)':'Seuil non atteint (< 70 %)'}</span>
+      <div class="sb-msg">${msg}<div class="sb-time" style="margin-top:6px;">Score indicatif sur l'échelle officielle : ${scaled} / 1000 (seuil de réussite réel : 700 / 1000). Temps utilisé : ${formatTime(state.timeUsed)} / 100:00.${state.tabSwitches>0 ? ` · ⚠️ ${state.tabSwitches} changement(s) de fenêtre détecté(s) pendant l'examen (comportement repéré à l'examen officiel).` : ''}</div></div>
+    </div>
+    <div class="domain-scores">${domainCards}</div>
+    <div class="recap-actions no-print">
+      <button class="primary" id="btnPrintRecap">🖨 Imprimer le récapitulatif</button>
+      <button class="secondary" id="btnRestartExam">↺ Recommencer l'examen</button>
+    </div>
+    ${qRows}
+  `;
+  document.getElementById('btnPrintRecap').addEventListener('click', ()=> window.print());
+  document.getElementById('btnRestartExam').addEventListener('click', restartExam);
+}
+
+function restartExam(){
+  if(state.timerHandle) clearInterval(state.timerHandle);
+  matchArmed = {};
+  state = {
+    current:0, answers:{}, flagged:new Set(), helped:new Set(), hintOpen:new Set(), solOpen:new Set(),
+    caseStudyDone:false, reviewScreen:false, tabSwitches:0,
+    started:false, finished:false,
+    remaining:EXAM_DURATION_SEC, timeUsed:0, timerHandle:null, finishConfirmPending:false,
+  };
+  document.getElementById('headerTimerWrap').style.display = 'none';
+  updateHeaderSwitchesBadge();
+  document.getElementById('btnFinishExam').disabled = false;
+  document.getElementById('tabBtnRecap').classList.add('locked');
+  document.getElementById('tabBtnRecap').title = "Termine l'examen pour accéder au récapitulatif";
+  document.getElementById('recapWrap').innerHTML = '<div class="recap-locked">Termine l\'examen blanc (onglet <b>Examen blanc</b>) pour accéder à ton récapitulatif.</div>';
+  updateTimerDisplay();
+  renderPalette();
+  renderQuestion();
+  switchTab('contexte');
+}
+
+/* =========================================================
+   9. ONGLETS
+   ========================================================= */
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='examen') startTimer();
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    if(btn.classList.contains('locked')) return;
+    switchTab(btn.dataset.tab);
+  });
+});
+document.getElementById('btnGoExam').addEventListener('click', ()=> switchTab('examen'));
+
+/* =========================================================
+   10. INITIALISATION
+   ========================================================= */
+renderDomainsTable();
+renderCtxLinks();
+renderPalette();
+renderQuestion();
+updateTimerDisplay();
+document.getElementById('appVersion').textContent = 'v' + APP_VERSION;
+</script>
+</body>
+</html>
