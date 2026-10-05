@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<!--
+  Data Unchained · Test de positionnement Excel
+  Version : 1.5.0
+
+  Historique :
+    1.0.0 : Version initiale. 3 onglets (Accueil, Test, Révisions), 20 questions QCM réparties
+            en 5 niveaux de difficulté croissante, jauge de niveau mise à jour en direct
+            (Débutant à Expert), onglet Révisions limité aux questions en erreur.
+    1.1.0 : Banque de questions élargie à 60 (12 par niveau, contre 4 auparavant). À chaque
+            lancement du test, 4 questions sont piochées au hasard par niveau (20 au total),
+            pour varier le contenu d'une session à l'autre.
+    1.2.0 : Détection des changements de fenêtre ou d'onglet pendant le test (API de
+            visibilité du navigateur, signal pédagogique et non une surveillance), avec
+            bandeau d'alerte au retour sur l'onglet et rappel du compteur dans la restitution
+            finale. Ajout d'une fonction d'export du résultat : lien mailto préparé (score,
+            niveau, changements de fenêtre, questions à revoir) et bouton de copie du résumé
+            dans le presse-papiers en repli. Correction : la puce de niveau agrandie du
+            résultat final affichait un attribut style dupliqué (fond transparent au lieu de
+            la couleur du niveau) depuis la version 1.0.0.
+    1.2.1 : Mode d'emploi de l'Accueil allégé visuellement : passage d'une liste à puces à
+            des lignes avec icônes, une par consigne.
+    1.2.2 : La jauge de niveau est désormais aussi affichée directement dans la carte de
+            restitution finale (onglet Test), à côté du score, pour ne plus dépendre du
+            panneau latéral. Mise en page à deux colonnes, qui repasse en une seule colonne
+            sur petit écran.
+    1.3.0 : Banque de questions élargie à 80 (16 par niveau, contre 12 auparavant). Ajout
+            d'un message d'encouragement adapté au score dans la restitution finale (5
+            paliers, du sans-faute au tout premier essai), repris dans le résumé exporté.
+            En cas de score parfait (20/20), une pluie de confettis en canvas fête
+            l'événement (respecte prefers-reduced-motion, aucune dépendance externe).
+    1.4.0 : Mini-vue façon Excel (lettres de colonnes, numéros de ligne, cellule mise en
+            évidence) associée à 49 des 80 questions, pour un repère visuel familier.
+            Valeurs régénérées à chaque tirage (gridGen). 5 questions parmi les plus
+            fondamentales (ordre des opérations, SI, MOYENNE, ARRONDI, RECHERCHEV) sont
+            désormais entièrement dynamiques : énoncé, grille, options et bonne réponse
+            recalculés à chaque session, donc jamais deux fois le même exemple.
+    1.4.1 : Détection de changement de fenêtre renforcée : en plus de l'API de visibilité
+            (onglet masqué, changement d'onglet), le test surveille désormais aussi la perte
+            de focus de la fenêtre (blur/focus, document.hasFocus()), pour repérer les cas où
+            la page reste visible à l'écran mais n'est plus active (écran partagé, second
+            moniteur, application ouverte à côté). Un délai de 400 ms avant de compter évite
+            les faux positifs d'un clic bref hors de la page.
+    1.5.0 : Barème (points par niveau, total sur 100) affiché sur la page d'Accueil. Ajout
+            d'un bouton 50/50 par question, qui élimine 2 des 3 mauvaises réponses ; s'il
+            est utilisé, la question ne rapporte plus que la moitié de ses points (arrondi),
+            même en cas de bonne réponse.
+-->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Unchained : Test de positionnement Excel</title>
+<style>
+  :root{
+    --bg-canvas:#F3F2F1;
+    --bg-surface:#FFFFFF;
+    --bg-dark:#175B36;
+    --bg-dark-2:#1F7A47;
+    --accent:#DDA40D;
+    --accent-dark:#B98C0A;
+    --data-blue:#1D8A57;
+    --brand-yellow:#F3D163;
+    --brand-orange:#B95E01;
+    --text-primary:#333333;
+    --text-secondary:#6B6B6B;
+    --border:#E1DFDD;
+    --border-strong:#C8C6C4;
+    --error:#A80000;
+    --error-bg:#FDF3F3;
+    --success:#1D8A57;
+    --success-bg:#EAF6EF;
+    --radius:4px;
+    --hdr-h:110px;
+    --mono:'Cascadia Code','Consolas','SFMono-Regular',Menlo,monospace;
+    --sans:'Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg-canvas); color:var(--text-primary); font-family:var(--sans); }
+  .wrap{ width:min(1600px,94vw); margin:0 auto; }
+  .app-footer{ text-align:center; font-size:11px; color:var(--text-secondary); padding:6px 14px 26px; }
+  .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  :focus-visible{ outline:2px solid var(--accent-dark); outline-offset:2px; }
+
+  /* ---------- Bandeau supérieur figé ---------- */
+  .app-header{ position:sticky; top:0; z-index:100; box-shadow:0 2px 10px rgba(0,0,0,.15); }
+  .topbar{ background:var(--bg-dark); color:#fff; padding:12px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .topbar .logo-img{ width:38px; height:38px; display:block; flex-shrink:0; border-radius:6px; }
+  .topbar .brand-text{ display:flex; flex-direction:column; gap:1px; }
+  .topbar .brand-name{ font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-yellow); }
+  .topbar h1{ font-size:17px; margin:0; font-weight:600; }
+  .topbar-right{ margin-left:auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .topbar .sub{ font-size:12.5px; color:#CFE8DA; }
+  @media (max-width:640px){ .topbar-right{ margin-left:0; width:100%; justify-content:space-between; } }
+
+  /* Badge Excel : icône générique maison (pas le logo Microsoft) */
+  .excel-badge{ display:inline-flex; align-items:center; gap:7px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.25);
+    border-radius:14px; padding:3px 11px 3px 4px; font-size:11.5px; font-weight:600; color:#fff; flex-shrink:0; white-space:nowrap; }
+  .excel-badge-icon{ width:19px; height:19px; border-radius:4px; background:#1D6F42; color:#fff; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:12px; font-family:Georgia,'Times New Roman',serif; flex-shrink:0; }
+
+  /* ---------- Onglets ---------- */
+  .tabbar{ background:var(--bg-dark-2); display:flex; gap:2px; overflow-x:auto; padding:0 16px; }
+  .tab-btn{ flex-shrink:0; padding:11px 16px; font-size:12.5px; font-weight:600; color:#CFE8DA; background:transparent; border:none;
+    border-bottom:3px solid transparent; cursor:pointer; font-family:var(--sans); white-space:nowrap; border-radius:0; }
+  .tab-btn:hover{ background:rgba(255,255,255,.08); color:#fff; }
+  .tab-btn.active{ color:#fff; border-bottom-color:var(--accent); background:rgba(255,255,255,.07); }
+  .tab-badge{ display:inline-block; min-width:18px; padding:0 6px; margin-left:6px; border-radius:9px; background:var(--accent); color:#3B2F00; font-size:11px; font-weight:700; text-align:center; line-height:18px; }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* ---------- Composants ---------- */
+  .panel{ background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius); }
+  .panel-title{ font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary);
+    padding:10px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  button{ font-family:var(--sans); font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:var(--radius);
+    border:1px solid var(--border-strong); background:#fff; cursor:pointer; color:var(--text-primary); }
+  button:hover{ background:#F3F2F1; }
+  button.primary{ background:var(--accent); border-color:var(--accent-dark); color:#3B2F00; }
+  button.primary:hover{ background:var(--accent-dark); color:#fff; }
+  button.big{ font-size:14px; padding:10px 20px; }
+  button.ghost{ background:transparent; border-color:transparent; color:var(--data-blue); padding:4px 6px; }
+  button.ghost:hover{ text-decoration:underline; background:transparent; }
+  code{ font-family:var(--mono); background:#F3F2F1; padding:1px 5px; border-radius:3px; font-size:.92em; word-break:break-word; }
+  .lvl-chip{ display:inline-block; padding:2px 10px; border-radius:12px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+
+  /* ---------- Accueil ---------- */
+  .home{ padding:14px; display:grid; gap:14px; }
+  .hero{ display:grid; grid-template-columns:1.15fr 1fr; gap:20px; padding:24px; align-items:center; }
+  @media (max-width:900px){ .hero{ grid-template-columns:1fr; padding:16px; } }
+  .hero h2{ font-size:26px; line-height:1.2; margin:0 0 10px; font-weight:600; color:var(--bg-dark); }
+  .hero p{ font-size:14px; line-height:1.65; margin:0 0 12px; max-width:62ch; }
+  .analogy{ background:#FFF9E6; border:1px solid #EEDD9C; border-radius:var(--radius); padding:12px 14px; font-size:13px; line-height:1.6; color:#5C4A00; }
+  .hero .analogy{ margin:0 0 16px; }
+  .hero-gauge{ max-width:420px; width:100%; margin:0 auto; }
+  .steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:900px){ .steps{ grid-template-columns:1fr; } }
+  .step{ padding:16px; }
+  .step-num{ width:28px; height:28px; border-radius:50%; background:var(--bg-dark); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
+  .step h3{ margin:0 0 6px; font-size:15px; font-weight:600; }
+  .step p{ margin:0; font-size:13px; line-height:1.6; color:var(--text-primary); }
+  .home-cols{ display:grid; grid-template-columns:1.2fr 1fr; gap:14px; }
+  @media (max-width:900px){ .home-cols{ grid-template-columns:1fr; } }
+  .home-block{ padding:16px; }
+  .home-block h3{ margin:0 0 10px; font-size:15px; font-weight:600; }
+  .lvl-row{ display:flex; gap:12px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--border); }
+  .lvl-row:first-of-type{ border-top:none; }
+  .lvl-swatch{ width:14px; height:34px; border-radius:3px; flex-shrink:0; margin-top:2px; }
+  .lvl-row b{ font-size:13.5px; }
+  .lvl-row .range{ font-size:11.5px; color:var(--text-secondary); margin-left:6px; }
+  .lvl-row p{ margin:2px 0 0; font-size:12.5px; line-height:1.55; color:var(--text-primary); }
+  .rule-row{ display:flex; gap:10px; align-items:flex-start; padding:7px 0; border-top:1px solid var(--border); }
+  .rule-row:first-of-type{ border-top:none; padding-top:0; }
+  .rule-row .ri{ width:20px; flex-shrink:0; font-size:15px; line-height:1.5; text-align:center; }
+  .rule-row p{ margin:0; font-size:12.5px; line-height:1.55; color:var(--text-primary); }
+
+  /* ---------- Test ---------- */
+  .test-layout{ display:grid; grid-template-columns:330px 1fr; gap:14px; padding:14px; align-items:start; }
+  @media (max-width:900px){ .test-layout{ grid-template-columns:1fr; } }
+  .gauge-card{ position:sticky; top:calc(var(--hdr-h) + 14px); padding:14px 14px 12px; }
+  @media (max-width:900px){ .gauge-card{ position:static; } }
+  .gauge-card svg, .hero-gauge svg{ width:100%; height:auto; display:block; }
+  .gauge-level{ text-align:center; margin:2px 0 10px; }
+  .gauge-level .lvl-chip{ font-size:14px; padding:4px 16px; }
+  .gauge-level .hint{ display:block; font-size:11.5px; color:var(--text-secondary); margin-top:5px; }
+  .legend{ display:grid; gap:3px; }
+  .legend-row{ display:flex; align-items:center; gap:8px; font-size:12px; padding:4px 6px; border-radius:3px; border:1px solid transparent; color:var(--text-secondary); }
+  .legend-row .sw{ width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+  .legend-row .rg{ margin-left:auto; font-size:11px; }
+  .legend-row.current{ border-color:var(--border-strong); background:#FAFAF9; color:var(--text-primary); font-weight:700; }
+  .g-seg{ transition:opacity .4s; }
+  .needle{ transition:transform 1s cubic-bezier(.3,1.4,.5,1); }
+  @media (prefers-reduced-motion:reduce){ .needle, .g-seg{ transition:none; } }
+
+  .q-card{ padding:18px; }
+  .q-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .q-count{ font-size:12px; font-weight:700; color:var(--accent-dark); text-transform:uppercase; letter-spacing:.03em; }
+  .dots{ display:flex; gap:4px; flex-wrap:wrap; margin-bottom:14px; }
+  .dot{ width:12px; height:12px; border-radius:50%; background:#E8E6E4; border:1.5px solid transparent; }
+  .dot.ok{ background:var(--success); }
+  .dot.ko{ background:var(--error); }
+  .dot.cur{ background:#fff; border-color:var(--accent-dark); box-shadow:0 0 0 2px #FBF0D9; }
+  .q-text{ font-size:16px; line-height:1.55; font-weight:600; margin:0 0 12px; }
+  .q-table-wrap{ overflow-x:auto; margin:0 0 12px; }
+  table.mini{ border-collapse:collapse; font-size:12.5px; }
+  table.mini th, table.mini td{ border:1px solid var(--border-strong); padding:5px 12px; text-align:left; }
+  table.mini th{ background:#F7F6F5; }
+
+  /* ---------- Mini-vue façon Excel (illustration des questions) ---------- */
+  table.xl-grid{ border-collapse:collapse; font-size:12px; }
+  table.xl-grid th, table.xl-grid td{ border:1px solid var(--border-strong); padding:4px 11px; min-width:38px; }
+  table.xl-grid thead th{ background:#EDECEB; color:var(--text-secondary); font-weight:700; text-align:center; }
+  table.xl-grid th.xl-corner{ background:#E1DFDD; }
+  table.xl-grid tbody th{ background:#EDECEB; color:var(--text-secondary); font-weight:700; text-align:center; }
+  table.xl-grid td{ background:#fff; white-space:nowrap; }
+  table.xl-grid td.xl-a-left{ text-align:left; }
+  table.xl-grid td.xl-a-right{ text-align:right; }
+  table.xl-grid td.xl-headcell{ font-weight:700; background:#FAFAF9; }
+  table.xl-grid td.xl-hl{ background:#FFF3CE; box-shadow:inset 0 0 0 2px var(--accent-dark); font-weight:700; }
+  .q-note{ font-size:11.5px; color:var(--text-secondary); margin:4px 0 0; }
+  .opts{ display:grid; gap:8px; margin:0 0 12px; }
+  .opt{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 12px; min-height:46px; font-size:13.5px; font-weight:500; line-height:1.45;
+    background:#fff; border:1.5px solid var(--border-strong); border-radius:6px; }
+  .opt:hover:not(:disabled){ border-color:var(--accent-dark); background:#FFFCF2; }
+  .opt .letter{ width:24px; height:24px; border-radius:50%; background:#F3F2F1; border:1px solid var(--border-strong); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; }
+  .opt:disabled{ cursor:default; opacity:.6; }
+  .opt.picked-ok{ background:var(--success-bg); border-color:var(--success); opacity:1; }
+  .opt.picked-ko{ background:var(--error-bg); border-color:var(--error); opacity:1; }
+  .opt.picked-ok .letter{ background:var(--success); color:#fff; border-color:var(--success); }
+  .opt.picked-ko .letter{ background:var(--error); color:#fff; border-color:var(--error); }
+  .fb{ border-radius:var(--radius); padding:10px 12px; font-size:13px; line-height:1.55; margin-bottom:12px; }
+  .fb.ok{ background:var(--success-bg); border:1px solid #C3E6C3; color:#14603C; }
+  .fb.ko{ background:var(--error-bg); border:1px solid #F1C0C0; color:#7A1212; }
+  .q-actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between; align-items:center; }
+
+  .result-card{ padding:22px; }
+  .result-card h2{ margin:0 0 6px; font-size:22px; font-weight:600; color:var(--bg-dark); }
+  .result-top{ display:flex; gap:24px; align-items:center; justify-content:space-between; flex-wrap:wrap-reverse; margin-bottom:10px; }
+  .result-top-text{ flex:1; min-width:280px; }
+  .result-gauge{ width:220px; flex-shrink:0; margin:0 auto; }
+  .result-gauge svg{ width:100%; height:auto; display:block; }
+  .result-big{ display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin:10px 0 14px; }
+  .result-big .score{ font-size:34px; font-weight:700; }
+  .result-big .score small{ font-size:15px; font-weight:600; color:var(--text-secondary); }
+  .breakdown{ display:grid; gap:8px; margin:14px 0; }
+  .bd-row{ display:grid; grid-template-columns:120px 1fr auto; gap:10px; align-items:center; font-size:12.5px; }
+  .bd-bar{ display:flex; gap:4px; }
+  .bd-cell{ height:14px; flex:1; border-radius:3px; background:#E8E6E4; }
+  .result-msg{ font-size:13.5px; line-height:1.65; margin:0 0 16px; }
+  .encourage{ display:flex; align-items:center; gap:10px; background:#FFF9E6; border:1px solid #EEDD9C; border-left:4px solid var(--accent);
+    border-radius:var(--radius); padding:10px 14px; font-size:14px; font-weight:600; line-height:1.5; color:#5C4A00; margin:0 0 12px; }
+  .encourage .enc-icon{ font-size:20px; flex-shrink:0; }
+
+  /* ---------- Révisions ---------- */
+  .rev-wrap{ padding:14px; display:grid; gap:14px; }
+  .goal{ padding:16px 18px; border-left:5px solid var(--accent); }
+  .goal h2{ margin:0 0 6px; font-size:17px; font-weight:600; }
+  .goal p{ margin:0 0 6px; font-size:13.5px; line-height:1.65; }
+  .rev-list{ display:grid; gap:12px; }
+  .rev-card{ padding:16px; border-left:5px solid var(--error); }
+  .rev-top{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+  .rev-theme{ font-size:12px; font-weight:700; color:var(--text-secondary); }
+  .rev-q{ font-size:14.5px; font-weight:600; line-height:1.55; margin:0 0 10px; }
+  .ans{ font-size:13px; line-height:1.55; padding:8px 10px; border-radius:var(--radius); margin-bottom:6px; }
+  .ans.ko{ background:var(--error-bg); border:1px solid #F1C0C0; }
+  .ans.ok{ background:var(--success-bg); border:1px solid #C3E6C3; }
+  .ans b{ font-weight:700; }
+  .why{ font-size:13px; line-height:1.65; margin:10px 0 6px; }
+  .tip{ background:#F3F2F1; border-radius:var(--radius); padding:9px 11px; font-size:12.5px; line-height:1.6; margin-top:8px; }
+  .rev-link{ display:inline-block; margin-top:8px; font-size:12.5px; color:var(--data-blue); }
+  .empty{ padding:34px 18px; text-align:center; }
+  .empty .big{ font-size:34px; margin-bottom:8px; }
+  .empty p{ font-size:13.5px; line-height:1.6; max-width:56ch; margin:0 auto 14px; color:var(--text-primary); }
+  .scroll-anchor{ scroll-margin-top:calc(var(--hdr-h) + 10px); }
+
+  /* ---------- Alerte changement de fenêtre / onglet ---------- */
+  .switch-alert{
+    display:none; position:fixed; top:0; left:0; right:0; z-index:300;
+    background:var(--error); border-bottom:3px solid #6E0000;
+    color:#fff; padding:14px 18px; font-size:13.5px; font-weight:600; line-height:1.5;
+    box-shadow:0 4px 18px rgba(0,0,0,.35);
+  }
+  .switch-alert.show{ display:flex; align-items:center; gap:12px; animation:saDrop .35s ease-out; }
+  .switch-alert .sa-icon{ font-size:22px; flex-shrink:0; animation:saPulse 1s ease-in-out infinite; }
+  .switch-alert .sa-text{ flex:1; }
+  .switch-alert .sa-close{
+    flex-shrink:0; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.4); color:#fff;
+    border-radius:4px; padding:5px 11px; font-size:12px; font-weight:700; cursor:pointer; font-family:var(--sans);
+  }
+  .switch-alert .sa-close:hover{ background:rgba(255,255,255,.3); }
+  @keyframes saDrop{ from{ transform:translateY(-100%); } to{ transform:translateY(0); } }
+  @keyframes saPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.18); } }
+  @media (prefers-reduced-motion:reduce){ .switch-alert .sa-icon{ animation:none; } .switch-alert.show{ animation:none; } }
+
+  /* ---------- Export du résultat ---------- */
+  .export-block{ padding:16px; margin-top:14px; }
+  .export-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+  .export-field{ flex:1; min-width:220px; }
+  .export-field label{ display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:4px; }
+  .export-field input{ width:100%; padding:7px 9px; border:1px solid var(--border-strong); border-radius:var(--radius); font-family:var(--sans); font-size:13px; }
+  .export-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .export-note{ font-size:11.5px; color:var(--text-secondary); margin:10px 0 0; line-height:1.55; }
+</style>
+</head>
+<body>
+
+<div class="switch-alert" id="switchAlert" role="alert" aria-live="assertive">
+  <span class="sa-icon" aria-hidden="true">⚠️</span>
+  <span class="sa-text" id="switchAlertText"></span>
+  <button type="button" class="sa-close" id="switchAlertClose">Fermer</button>
+</div>
+
+<div class="app-header" id="appHeader">
+<div class="topbar">
+  <img class="logo-img" alt="Logo Data Unchained" src="data:image/png;base64,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">
+  <div class="brand-text">
+    <span class="brand-name">Data Unchained</span>
+    <h1>Test de positionnement Excel</h1>
+  </div>
+  <div class="topbar-right">
+    <span class="excel-badge" title="Test conçu pour Excel"><span class="excel-badge-icon">X</span>Excel</span>
+    <span class="sub">20 questions, une jauge de niveau en direct</span>
+  </div>
+</div>
+<div class="tabbar" role="tablist">
+  <button class="tab-btn active" role="tab" data-tab="accueil">🏠 Accueil</button>
+  <button class="tab-btn" role="tab" data-tab="test">📝 Test</button>
+  <button class="tab-btn" role="tab" data-tab="revisions">📚 Révisions<span class="tab-badge" id="revBadge" hidden></span></button>
+</div>
+</div><!-- /app-header -->
+
+<div class="wrap">
+
+<!-- ========== ONGLET ACCUEIL ========== -->
+<div class="tab-panel active" id="tab-accueil">
+  <div class="home">
+    <section class="panel hero">
+      <div>
+        <h2>Où en es-tu vraiment sur Excel ?</h2>
+        <p>Vingt questions, une jauge qui grimpe au fil de tes réponses, et à la fin une liste de révisions taillée sur tes erreurs.</p>
+        <div class="analogy">💡 <b>Analogie :</b> pense au test de vue chez l'opticien. Les premières lignes sont grosses et faciles, les dernières minuscules. Tu lis aussi loin que tu peux, et on note où tu t'arrêtes. Ici, les premières questions sont simples, les dernières demandent de vraies compétences.</div>
+        <button class="primary big" data-goto="test" id="homeCta">Commencer le test</button>
+      </div>
+      <div class="hero-gauge" id="heroGauge"></div>
+    </section>
+
+    <section class="steps">
+      <div class="panel step"><div class="step-num">1</div><h3>Réponds</h3><p>20 questions à choix multiples, une à la fois. Elles deviennent plus difficiles au fil du test.</p></div>
+      <div class="panel step"><div class="step-num">2</div><h3>Observe la jauge</h3><p>Elle grimpe à chaque bonne réponse. Plus la question est difficile, plus elle rapporte de points. Elle ne redescend jamais : une erreur ralentit simplement la montée.</p></div>
+      <div class="panel step"><div class="step-num">3</div><h3>Révise</h3><p>L'onglet Révisions ne garde que les questions où tu t'es trompé, avec la bonne réponse, l'explication et des pistes pour passer au niveau suivant.</p></div>
+    </section>
+
+    <div class="home-cols">
+      <section class="panel home-block">
+        <h3>Les 5 niveaux de la jauge</h3>
+        <p id="homeBareme" style="font-size:12px;color:var(--text-secondary);margin:0 0 10px;line-height:1.5;"></p>
+        <div id="homeLevels"></div>
+      </section>
+      <section class="panel home-block">
+        <h3>Mode d'emploi</h3>
+        <div class="rule-row"><span class="ri">⏱️</span><p>Compte une dizaine de minutes. Il n'y a pas de chronomètre.</p></div>
+        <div class="rule-row"><span class="ri">🔒</span><p>Une seule réponse par question, pas de retour en arrière une fois validée.</p></div>
+        <div class="rule-row"><span class="ri">🙈</span><p>Pendant le test, la bonne réponse reste cachée : elle t'attend dans l'onglet Révisions.</p></div>
+        <div class="rule-row"><span class="ri">🧠</span><p>Réponds sans aide, sans Excel ouvert à côté. Le test mesure ce que tu sais faire aujourd'hui, pas ce que tu peux retrouver en cherchant.</p></div>
+        <div class="rule-row"><span class="ri">🇫🇷</span><p>Excel en français (fonctions en français, point-virgule), avec quelques questions sur des fonctions récentes (2021, 2024, Microsoft 365).</p></div>
+        <div class="rule-row"><span class="ri">🪟</span><p>Le test repère les changements de fenêtre ou d'onglet, même en écran partagé ou avec plusieurs moniteurs. Pas de surveillance en direct : juste un compteur informatif dans ton résultat final.</p></div>
+        <div class="rule-row"><span class="ri">🎲</span><p>Les 20 questions sont tirées au hasard dans une banque plus large : deux tests se ressemblent rarement.</p></div>
+        <div class="rule-row"><span class="ri">🎯</span><p>Un bouton 50/50 est disponible sur chaque question pour éliminer deux mauvaises réponses. Si tu l'utilises, la question ne rapporte plus que la moitié de ses points.</p></div>
+        <div class="rule-row"><span class="ri">🔐</span><p>Rien n'est enregistré ni envoyé : tout reste dans ton navigateur. Si tu fermes la page, tu repars de zéro.</p></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ONGLET TEST ========== -->
+<div class="tab-panel" id="tab-test">
+  <div class="test-layout">
+    <aside class="panel gauge-card" aria-label="Jauge de niveau">
+      <div id="testGauge"></div>
+      <div class="gauge-level" id="gaugeLevel" aria-live="polite"></div>
+      <div class="legend" id="gaugeLegend"></div>
+    </aside>
+    <div class="scroll-anchor" id="testHost"></div>
+  </div>
+</div>
+
+<!-- ========== ONGLET RÉVISIONS ========== -->
+<div class="tab-panel" id="tab-revisions">
+  <div class="rev-wrap" id="revHost"></div>
+</div>
+
+</div><!-- /wrap -->
+
+<div class="app-footer">Data Unchained · Test de positionnement Excel · <span id="appVersion"></span></div>
+
+<script>
+/* =========================================================
+   1. DONNÉES : niveaux et questions
+   ========================================================= */
+const APP_VERSION = '1.5.0';
+
+// 5 niveaux, chacun couvre 20 % de la jauge (score sur 100).
+const LEVELS = [
+  { name:'Débutant',      color:'#B95E01', text:'#FFFFFF', desc:"Tu découvres Excel : saisie, formules de base, premiers réflexes." },
+  { name:'Élémentaire',   color:'#DDA40D', text:'#3B2F00', desc:"Tu fais tes calculs simples et tu recopies des formules sans souci." },
+  { name:'Intermédiaire', color:'#F3D163', text:'#3B2F00', desc:"Tu utilises SI, les références absolues, les fonctions à critères et la mise en forme conditionnelle." },
+  { name:'Avancé',        color:'#1D8A57', text:'#FFFFFF', desc:"Tu croises des tables, gères les erreurs et analyses avec des tableaux croisés dynamiques." },
+  { name:'Expert',        color:'#175B36', text:'#FFFFFF', desc:"Tu maîtrises les fonctions récentes, Power Query et le Modèle de données." },
+];
+
+// Points par question selon son niveau : 4 x (3+4+5+6+7) = 100
+const POINTS = [3, 4, 5, 6, 7];
+
+// Conseils pour passer au niveau suivant (index = niveau actuel)
+const NEXT_STEP = [
+  "Pour passer au niveau Élémentaire : sois à l'aise avec la saisie, le signe = des formules, la fonction SOMME et la recopie de formules.",
+  "Pour passer au niveau Intermédiaire : maîtrise la fonction SI, les références absolues ($), NB.SI et SOMME.SI, la mise en forme conditionnelle, les tris et les filtres.",
+  "Pour passer au niveau Avancé : travaille RECHERCHEV, les fonctions à critères multiples (SOMME.SI.ENS), les tableaux croisés dynamiques, le traitement des erreurs et les Tableaux Excel.",
+  "Pour passer au niveau Expert : explore RECHERCHEX, les fonctions matricielles dynamiques (FILTRE, UNIQUE, TRIER), LET, Power Query et le Modèle de données.",
+  "Tu es tout en haut de l'échelle de ce test. Pour aller plus loin : LAMBDA, Power Pivot et DAX, automatisation (Office Scripts, VBA).",
+];
+
+// Chaque option est un texte simple. {{...}} affiche un extrait de formule en police à chasse fixe.
+// answer = index de la bonne option dans la liste d'origine (les options sont mélangées à l'affichage).
+// POOL = banque complète (12 questions par niveau, 60 au total).
+// À chaque test, buildSession() pioche 4 questions au hasard par niveau (voir plus bas),
+// pour que l'apprenant ne retombe pas systématiquement sur les mêmes questions.
+// Utilitaires pour les mini-vues façon Excel qui illustrent certaines questions, et pour
+// les questions « dynamiques » dont les valeurs (et parfois la bonne réponse) sont
+// régénérées à chaque tirage. Rien n'est figé : deux passages du test se ressemblent rarement.
+function rInt(min, max){ return Math.floor(min + Math.random() * (max - min + 1)); }
+function rFloat(min, max, dec){ const v = min + Math.random() * (max - min); const p = Math.pow(10, dec); return Math.round(v * p) / p; }
+function rPick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+function rPickN(arr, n){ return shuffle(arr).slice(0, n); }
+const SAMPLE_NAMES = ['Marie','Julien','Chloé','Hugo','Sarah','Antoine','Léa','Nicolas','Camille','Louis','Emma','Thomas'];
+const SAMPLE_CITIES = ['Paris','Lyon','Marseille','Lille','Nantes','Bordeaux','Toulouse','Rennes'];
+const SAMPLE_SERVICES = ['Commercial','IT','RH','Marketing','Finance','Logistique'];
+const SAMPLE_REGIONS = ['Nord','Sud','Est','Ouest','Centre'];
+const SAMPLE_PRODUCTS = ['Cahier','Stylo','Classeur','Agenda','Gomme','Règle'];
+// Construit 4 options distinctes autour d'une valeur correcte, mélangées, et renvoie l'index
+// de la bonne réponse. Complète avec des valeurs voisines si les distracteurs fournis
+// entrent en collision entre eux ou avec la valeur correcte.
+function buildOptions(correctVal, wrongVals){
+  let vals = [correctVal];
+  wrongVals.forEach(w=>{ if(!vals.includes(w)) vals.push(w); });
+  let jitter = 1;
+  while(vals.length < 4){
+    const sign = vals.length % 2 === 0 ? 1 : -1;
+    const candidate = correctVal + sign * jitter;
+    if(!vals.includes(candidate)) vals.push(candidate);
+    jitter++;
+  }
+  const order = shuffle(vals.slice(0,4));
+  return { options: order.map(v=> String(v)), answer: order.indexOf(correctVal) };
+}
+// Rendu d'une mini-vue façon Excel : lettres de colonnes, numéros de ligne, cellule(s)
+// mise en évidence pour pointer ce que la formule référence. grid = { rows, header?, highlight?, forceAlign? }
+function renderGrid(grid){
+  if(!grid || !grid.rows || !grid.rows.length) return '';
+  const nCols = grid.rows[0].length;
+  const colLetters = Array.from({length:nCols}, (_,i)=> String.fromCharCode(65+i));
+  const hl = new Set(grid.highlight || []);
+  const head = `<tr><th class="xl-corner"></th>${colLetters.map(c=>`<th>${c}</th>`).join('')}</tr>`;
+  const body = grid.rows.map((row, ri)=>{
+    const rn = ri + 1;
+    const isHeadRow = !!grid.header && ri === 0;
+    const cells = colLetters.map((_,ci)=>{
+      const raw = row[ci];
+      const val = (raw===undefined || raw===null || raw==='') ? '' : String(raw);
+      const addr = colLetters[ci] + rn;
+      const looksNumeric = val !== '' && !isNaN(val.replace(',', '.')) && isFinite(val.replace(',', '.'));
+      const align = grid.forceAlign || (looksNumeric ? 'right' : 'left');
+      let cls = 'xl-a-' + align;
+      if(hl.has(addr)) cls += ' xl-hl';
+      if(isHeadRow) cls += ' xl-headcell';
+      return `<td class="${cls}">${esc(val)}</td>`;
+    }).join('');
+    return `<tr><th>${rn}</th>${cells}</tr>`;
+  }).join('');
+  return `<div class="q-table-wrap"><table class="mini xl-grid"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+}
+
+const QUESTIONS_PER_LEVEL = 4;
+const POOL = [
+  /* ----- Niveau 0 : Débutant ----- */
+  { level:0, theme:`Saisir une formule`,
+    q:`Quel caractère faut-il taper en premier dans une cellule pour qu'Excel comprenne que tu écris une formule ?`,
+    options:[`{{=}}`, `{{#}}`, `{{$}}`, `{{&}}`], answer:0,
+    why:`Le signe = dit à Excel « ce qui suit est un calcul, pas du texte ». Sans lui, Excel affiche simplement ce que tu as tapé.`,
+    tip:`Analogie : c'est le « Action ! » du réalisateur. Sans lui, la scène ne démarre pas.` },
+  { level:0, theme:`Fonction SOMME`,
+    gridGen(){ return { rows:[[rInt(5,60)],[rInt(5,60)],[rInt(5,60)]], highlight:['A1','A2','A3'] }; },
+    q:`Les cellules A1, A2 et A3 contiennent des nombres. Quelle formule calcule leur total ?`,
+    options:[`{{=SOMME(A1:A3)}}`, `{{=SOMME(A1;A3)}}`, `{{=TOTAL(A1:A3)}}`, `{{=A1:A3}}`], answer:0,
+    why:`Les deux-points désignent une plage : de A1 jusqu'à A3, toutes les cellules comprises. Le point-virgule sépare des cellules distinctes : {{SOMME(A1;A3)}} ignorerait A2.`,
+    tip:`Analogie : les deux-points veulent dire « de A1 à A3 », le point-virgule veut dire « A1 et A3 ».`,
+    link:{ label:`Fonction SOMME (Microsoft Support)`, url:`https://support.microsoft.com/fr-fr/Excel/functions/sum-function` } },
+  { level:0, theme:`Recopie de formules`,
+    gridGen(){ const rows=[1,2,3].map(()=>[rInt(5,50), rInt(5,50)]); return { rows, highlight:['B1','B2','B3'] }; },
+    q:`Tu sélectionnes une cellule qui contient une formule, puis tu tires le petit carré en bas à droite de la sélection vers le bas. Que se passe-t-il ?`,
+    options:[`La formule est recopiée dans les cellules du dessous, avec ses références qui s'adaptent`, `La cellule est supprimée`, `La colonne est triée par ordre croissant`, `Le contenu est converti en texte`], answer:0,
+    why:`Ce carré s'appelle la poignée de recopie. Elle prolonge le contenu ou la formule vers les cellules voisines, et les références relatives s'adaptent (A1 devient A2, puis A3...).`,
+    tip:`Double-clique sur la poignée pour recopier automatiquement jusqu'à la fin des données voisines.` },
+  { level:0, theme:`Affichage des cellules`,
+    q:`Une cellule affiche {{#####}} au lieu d'un nombre. Que signifie ce message ?`,
+    options:[`La colonne est trop étroite pour afficher le nombre en entier`, `La formule contient une erreur de syntaxe`, `Le fichier est corrompu`, `La cellule est protégée`], answer:0,
+    why:`Ce n'est pas une erreur de calcul : Excel manque simplement de place. Élargis la colonne (double-clic sur le bord de son en-tête) et le nombre réapparaît.`,
+    tip:`Analogie : c'est un gros colis qui ne rentre pas dans une petite boîte aux lettres.` },
+  { level:0, theme:`Ordre des opérations`, dynamic:true,
+    build(){
+      const a = rInt(1,9), b = rInt(1,9), c = rInt(1,9);
+      const correct = a + b*c;
+      const wrongs = [(a+b)*c, a*b + c, a+b+c];
+      const { options, answer } = buildOptions(correct, wrongs);
+      return {
+        level:0, theme:`Ordre des opérations`,
+        q:`Que renvoie la formule {{=${a}+${b}*${c}}} ?`,
+        options, answer,
+        why:`Excel respecte les priorités mathématiques : la multiplication se calcule avant l'addition. On a donc ${a} + (${b}×${c}) = ${a} + ${b*c} = ${correct}.`,
+        tip:`Pour forcer un autre ordre, ajoute des parenthèses : {{=(${a}+${b})*${c}}} donne ${(a+b)*c}.`,
+      };
+    } },
+  { level:0, theme:`Fonction MOYENNE`, dynamic:true,
+    build(){
+      let vals, avg;
+      for(let tries=0; tries<15; tries++){
+        avg = rInt(15,70);
+        const v1=rInt(5,avg*2), v2=rInt(5,avg*2), v3=rInt(5,avg*2);
+        const v4 = avg*4 - v1-v2-v3;
+        if(v4>=1 && v4<=200){ vals=[v1,v2,v3,v4]; break; }
+      }
+      if(!vals){ avg=30; vals=[25,28,31,36]; }
+      const wrongs = [avg*4, vals[0], Math.round(avg*4/3)];
+      const { options, answer } = buildOptions(avg, wrongs);
+      const grid = { rows: vals.map(v=>[v]), highlight:['A1','A2','A3','A4'] };
+      return {
+        level:0, theme:`Fonction MOYENNE`,
+        q:`Les cellules A1:A4 contiennent ${vals[0]}, ${vals[1]}, ${vals[2]} et ${vals[3]}. Que renvoie {{=MOYENNE(A1:A4)}} ?`,
+        grid, options, answer,
+        why:`MOYENNE additionne les valeurs puis divise par leur nombre : (${vals.join('+')})/4 = ${avg}.`,
+        tip:`Analogie : c'est comme partager équitablement un gâteau entre les cellules de la plage.`,
+      };
+    } },
+  { level:0, theme:`Nombres et texte`,
+    gridGen(){ return { rows:[[rInt(1,999), rPick(SAMPLE_NAMES)]], highlight:['A1','B1'] }; },
+    q:`Dans une cellule vide, tu tapes 12 et tu valides. De quel côté de la cellule le 12 s'aligne-t-il par défaut ?`,
+    options:[`À droite`, `À gauche`, `Au centre`, `Excel ne l'aligne jamais automatiquement`], answer:0,
+    why:`Par défaut, Excel aligne les nombres à droite et le texte à gauche. C'est un repère visuel utile : si un nombre s'aligne à gauche, c'est souvent qu'Excel l'a compris comme du texte.`,
+    tip:`Un nombre aligné à gauche est un signal d'alerte classique : vérifie qu'il n'y a pas d'espace ou de caractère caché devant.` },
+  { level:0, theme:`Annuler une action`,
+    q:`Tu viens de supprimer une donnée par erreur. Quel raccourci clavier annule cette dernière action ?`,
+    options:[`Ctrl+Z`, `Ctrl+X`, `Ctrl+A`, `Ctrl+P`], answer:0,
+    why:`Ctrl+Z annule la dernière action, autant de fois que tu le répètes. Ctrl+X coupe, Ctrl+A sélectionne tout, Ctrl+P imprime.`,
+    tip:`Ctrl+Y (ou Ctrl+Maj+Z sur certains claviers) fait l'inverse : rétablir une action annulée.` },
+  { level:0, theme:`Insérer une ligne`,
+    q:`Tu veux insérer une nouvelle ligne vide juste au-dessus de la ligne 5. Quelle est la manipulation correcte ?`,
+    options:[`Clic droit sur l'en-tête de la ligne 5, puis « Insérer »`, `Appuyer sur la touche Suppr`, `Double-cliquer sur la cellule A5`, `Utiliser la fonction LIGNE()`], answer:0,
+    why:`Un clic droit sur le numéro de ligne (l'en-tête grisé à gauche) propose « Insérer » : une nouvelle ligne vide apparaît au-dessus, et tout ce qui était en dessous se décale.`,
+    tip:`Le même principe s'applique aux colonnes : clic droit sur la lettre d'en-tête.` },
+  { level:0, theme:`Fonctions MAX et MIN`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rInt(8,20)]); return { rows }; },
+    q:`Une colonne contient les notes d'une classe. Quelle fonction renvoie directement la meilleure note ?`,
+    options:[`MAX`, `GRANDE.VALEUR uniquement`, `SOMME`, `NB`], answer:0,
+    why:`MAX renvoie la plus grande valeur d'une plage, MIN la plus petite. GRANDE.VALEUR fait aussi le travail mais avec un argument de rang, ce qui est plus qu'il n'en faut pour trouver simplement le maximum.`,
+    tip:`Analogie : MAX et MIN, c'est le podium version simplifiée, juste la première ou la dernière marche.` },
+  { level:0, theme:`Format pourcentage`,
+    grid:{ rows:[['25 %']], highlight:['A1'] },
+    q:`Une cellule contient la valeur 0,25 et affiche « 25 % » grâce au format Pourcentage. Que se passe-t-il si tu retires ce format ?`,
+    options:[`La cellule affiche à nouveau 0,25 : seule l'apparence change, pas la valeur stockée`, `La valeur stockée devient 25`, `La cellule devient vide`, `Excel affiche une erreur`], answer:0,
+    why:`Un format d'affichage habille une valeur sans la modifier. 0,25 reste 0,25 en mémoire, que la cellule montre « 25 % » ou « 0,25 ».`,
+    tip:`C'est vrai aussi pour les dates : une date est un nombre en coulisses, seul le format change son apparence.` },
+  { level:0, theme:`Somme automatique`,
+    gridGen(){ return { rows:[[rInt(10,90)],[rInt(10,90)],[rInt(10,90)],['']], highlight:['A4'] }; },
+    q:`Tu sélectionnes une cellule vide juste en dessous d'une colonne de nombres, puis tu cliques sur le bouton Σ (Somme automatique) de l'onglet Accueil. Que se passe-t-il ?`,
+    options:[`Excel propose une formule SOMME sur les nombres juste au-dessus, à valider avec Entrée`, `La colonne est immédiatement triée`, `Toutes les cellules de la feuille sont additionnées`, `Un graphique est créé automatiquement`], answer:0,
+    why:`Le bouton Somme automatique détecte la plage de nombres adjacente et propose une formule SOMME toute prête. Il suffit de valider, ou d'ajuster la plage proposée avant de valider.`,
+    tip:`Raccourci clavier équivalent : Alt+= (ou Alt puis =).` },
+  { level:0, theme:`Sélection multiple`,
+    q:`Tu as déjà sélectionné A1:A5. Tu veux ajouter C1:C5 à la sélection, sans toucher à la première plage. Quelle touche maintiens-tu enfoncée en cliquant-glissant sur C1:C5 ?`,
+    options:[`Ctrl`, `Maj (Shift)`, `Alt`, `Tab`], answer:0,
+    why:`Ctrl ajoute une nouvelle plage à une sélection existante, sans effacer la précédente. Maj, elle, étend une sélection continue depuis le dernier point cliqué.`,
+    tip:`Combine les deux (Ctrl+Maj) pour étendre plusieurs blocs non contigus à la fois.` },
+  { level:0, theme:`Renommer une feuille`,
+    q:`Quelle manipulation renomme rapidement un onglet de feuille, en bas de la fenêtre Excel ?`,
+    options:[`Double-clic sur l'onglet, puis taper le nouveau nom`, `Un simple clic sur l'onglet`, `Glisser l'onglet vers la droite`, `Appuyer sur F2 dans une cellule`], answer:0,
+    why:`Le double-clic sur l'onglet le rend directement éditable. F2, lui, sert à modifier le contenu d'une cellule active, pas le nom d'un onglet.`,
+    tip:`Un clic droit sur l'onglet, puis « Renommer », fait aussi l'affaire, juste un peu plus long.` },
+  { level:0, theme:`Fonction NB`,
+    gridGen(){ return { rows:[[rInt(1,99)],[rPick(SAMPLE_NAMES)],[''],[rInt(1,99)]] }; },
+    q:`A1:A10 contient un mélange de nombres, de texte et de cellules vides. Que renvoie {{=NB(A1:A10)}} ?`,
+    options:[`Le nombre de cellules qui contiennent un nombre`, `Le nombre total de cellules non vides`, `Le nombre de cellules vides`, `La somme des nombres de la plage`], answer:0,
+    why:`NB ne compte que les cellules numériques. NBVAL compterait toutes les cellules non vides, texte compris, et NB.VIDE compterait les cellules vides.`,
+    tip:`Trio à retenir : NB (nombres), NBVAL (non vide), NB.VIDE (vide).` },
+  { level:0, theme:`Fusionner et centrer`,
+    q:`Tu veux qu'un titre s'étale visuellement sur plusieurs colonnes, centré au-dessus d'un tableau. Quel bouton utilises-tu ?`,
+    options:[`Fusionner et centrer`, `Renvoyer à la ligne automatiquement`, `Reproduire la mise en forme (pinceau)`, `Insérer un tableau`], answer:0,
+    why:`« Fusionner et centrer » combine plusieurs cellules en une seule et centre le contenu à l'intérieur. Pratique pour un titre, mais ça peut compliquer les tris et les formules par la suite.`,
+    tip:`Alternative plus sûre : centrer l'affichage sur plusieurs colonnes (Format de cellule > Alignement), sans fusionner réellement les cellules.` },
+
+  /* ----- Niveau 1 : Élémentaire ----- */
+  { level:1, theme:`Fonction SI`, dynamic:true,
+    build(){
+      const a1 = rInt(0,20);
+      const admis = a1 >= 10;
+      const correct = admis ? 'Admis' : 'Refusé';
+      const options = shuffle([correct, admis ? 'Refusé' : 'Admis', String(a1), '#VALEUR!']);
+      const grid = { rows:[[a1]], highlight:['A1'] };
+      return {
+        level:1, theme:`Fonction SI`,
+        q:`La cellule A1 contient ${a1}. Quel résultat donne {{=SI(A1>=10;"Admis";"Refusé")}} ?`,
+        grid, options, answer: options.indexOf(correct),
+        why:`Le test ${a1}>=10 est ${admis?'vrai':'faux'}, Excel renvoie donc le ${admis?'deuxième':'troisième'} argument. La structure est {{SI(test;si_vrai;si_faux)}}.`,
+        tip:`Analogie : le SI est un aiguillage de train. Une condition, deux voies possibles.`,
+      };
+    } },
+  { level:1, theme:`Références absolues`,
+    gridGen(){ const prix=rFloat(1,9,2); const rows=[[prix.toFixed(2).replace('.',','),''],[ '', rInt(1,10)],[ '', rInt(1,10)],[ '', rInt(1,10)]]; return { rows, highlight:['A1'] }; },
+    q:`Quelle différence y a-t-il entre {{=A1}} et {{=$A$1}} quand on recopie la formule vers le bas ?`,
+    options:[`{{$A$1}} reste figée sur A1, alors que {{A1}} devient A2, A3...`, `Aucune, les deux se comportent pareil`, `{{$A$1}} fait référence à une autre feuille`, `{{A1}} reste figée, {{$A$1}} se décale`], answer:0,
+    why:`Le symbole $ verrouille la colonne, la ligne, ou les deux. Sans lui, la référence est relative et suit le déplacement de la formule.`,
+    tip:`Raccourci : après avoir cliqué sur une référence dans la formule, la touche F4 bascule entre A1, $A$1, A$1 et $A1. Analogie : le $ est un cadenas.` },
+  { level:1, theme:`Fonction NB.SI`,
+    gridGen(){ const rows=Array.from({length:5},()=>[rPick(SAMPLE_CITIES)]); return { rows }; },
+    q:`Quelle formule compte le nombre de cellules de B2:B50 qui contiennent exactement « Paris » ?`,
+    options:[`{{=NB.SI(B2:B50;"Paris")}}`, `{{=NB(B2:B50;"Paris")}}`, `{{=SOMME.SI(B2:B50;"Paris")}}`, `{{=NBVAL(B2:B50;"Paris")}}`], answer:0,
+    why:`NB.SI compte les cellules qui respectent une condition. NB ne compte que les cellules contenant des nombres, et NBVAL les cellules non vides, sans condition.`,
+    tip:`Pour poser plusieurs conditions à la fois, passe à NB.SI.ENS.` },
+  { level:1, theme:`Mise en forme conditionnelle`,
+    gridGen(){ const rows=Array.from({length:4},()=> [rPick([-1,1])*rInt(5,90)]); return { rows }; },
+    q:`Tu veux colorer automatiquement en rouge toutes les valeurs négatives d'une colonne, y compris celles qui seront saisies plus tard. Quel outil utilises-tu ?`,
+    options:[`La mise en forme conditionnelle`, `Un coloriage manuel cellule par cellule`, `La validation des données`, `Le filtre automatique`], answer:0,
+    why:`La mise en forme conditionnelle applique un format selon une règle, et se met à jour toute seule quand les valeurs changent. Un coloriage manuel reste figé.`,
+    tip:`Chemin : onglet Accueil, Mise en forme conditionnelle, Règles de mise en surbrillance des cellules.` },
+  { level:1, theme:`Fonctions ET / OU`,
+    grid:{ rows:[[12,'Non']], highlight:['A1','B1'] },
+    q:`Que renvoie {{=SI(ET(A1>=10;B1="Oui");"OK";"KO")}} si A1 vaut 12 et B1 vaut « Non » ?`,
+    options:[`KO`, `OK`, `12`, `#NOM?`], answer:0,
+    why:`ET exige que toutes les conditions soient vraies. Ici A1>=10 est vrai, mais B1="Oui" est faux : ET renvoie donc FAUX, et le SI affiche « KO ».`,
+    tip:`OU fonctionne à l'inverse : une seule condition vraie suffit pour que le résultat soit VRAI.` },
+  { level:1, theme:`Filtre automatique`,
+    q:`Tu actives le filtre automatique sur ton tableau, puis tu ne coches que « Commercial » dans la colonne Service. Que se passe-t-il ?`,
+    options:[`Seules les lignes du service Commercial restent visibles, les autres sont masquées`, `Les lignes des autres services sont définitivement supprimées`, `Les données sont triées par ordre alphabétique`, `Une nouvelle feuille est créée avec les lignes filtrées`], answer:0,
+    why:`Un filtre masque les lignes qui ne correspondent pas au critère choisi, sans rien supprimer. Décoche le filtre et toutes les lignes réapparaissent.`,
+    tip:`Chemin : onglet Données, Filtrer (ou Ctrl+Maj+L).` },
+  { level:1, theme:`Trier sur plusieurs niveaux`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_SERVICES), rPick(SAMPLE_NAMES)]); return { rows, header:false }; },
+    q:`Tu veux trier un tableau d'abord par Service, puis, à l'intérieur de chaque service, par Nom. Quel outil permet ça en une seule opération ?`,
+    options:[`Le tri personnalisé, avec un premier niveau « Service » et un second niveau « Nom »`, `Deux tris successifs, le second effaçant le premier`, `Le filtre automatique`, `La mise en forme conditionnelle`], answer:0,
+    why:`Le tri personnalisé (onglet Données, Trier) permet d'ajouter plusieurs niveaux de tri, appliqués dans l'ordre où tu les définis.`,
+    tip:`Si tu tries deux fois séparément, le second tri écrase l'ordre du premier : les deux niveaux doivent être définis ensemble.` },
+  { level:1, theme:`Concaténer du texte`,
+    grid:{ rows:[['Marie','Dupont']], highlight:['A1','B1'] },
+    q:`A1 contient « Marie » et B1 contient « Dupont ». Que renvoie {{=A1&" "&B1}} ?`,
+    options:[`Marie Dupont`, `A1 B1`, `MarieDupont`, `#VALEUR!`], answer:0,
+    why:`L'esperluette & assemble des morceaux de texte. Ici on colle A1, un espace entre guillemets, puis B1 : le résultat est « Marie Dupont ».`,
+    tip:`La fonction CONCAT (ou CONCATENER) fait la même chose : {{=CONCAT(A1;" ";B1)}}.` },
+  { level:1, theme:`Figer les volets`,
+    q:`Ton tableau a 500 lignes. Tu veux garder la ligne d'en-têtes visible en permanence pendant que tu fais défiler les données. Quel outil utilises-tu ?`,
+    options:[`Figer les volets`, `Protéger la feuille`, `Grouper les lignes`, `Fractionner l'écran uniquement`], answer:0,
+    why:`Figer les volets (onglet Affichage) verrouille à l'écran une ou plusieurs lignes ou colonnes, qui restent visibles quel que soit le défilement.`,
+    tip:`« Figer la ligne supérieure » est l'option la plus utilisée pour garder des en-têtes toujours lisibles.` },
+  { level:1, theme:`Validation des données`,
+    q:`Tu veux qu'une cellule n'accepte que les valeurs « Oui » ou « Non », proposées dans une liste déroulante. Quel outil utilises-tu ?`,
+    options:[`Validation des données`, `Mise en forme conditionnelle`, `Filtre automatique`, `Protection de la feuille`], answer:0,
+    why:`La validation des données (onglet Données) restreint ce qu'on peut saisir dans une cellule, et peut afficher une liste déroulante pour guider la saisie.`,
+    tip:`Utile pour éviter les fautes de frappe dans une colonne à choix limité (statuts, régions, oui/non...).` },
+  { level:1, theme:`Fonction ARRONDI`, dynamic:true,
+    build(){
+      const intPart = rInt(1,99);
+      const dec = rInt(1000,9999);
+      const value = Number(intPart + '.' + dec);
+      const valueDisplay = (intPart + ',' + dec);
+      const correctDisplay = value.toFixed(2).replace('.', ',');
+      const truncDisplay = Math.floor(value*100)/100;
+      const wrongs = [truncDisplay.toFixed(2).replace('.', ','), String(intPart), valueDisplay];
+      let opts = [correctDisplay];
+      wrongs.forEach(w=>{ if(!opts.includes(w)) opts.push(w); });
+      let bump = 1;
+      while(opts.length < 4){ const c = (value + bump*0.01).toFixed(2).replace('.', ','); if(!opts.includes(c)) opts.push(c); bump++; }
+      const options = shuffle(opts.slice(0,4));
+      const grid = { rows:[[valueDisplay]], highlight:['A1'] };
+      return {
+        level:1, theme:`Fonction ARRONDI`,
+        q:`La cellule A1 contient ${valueDisplay}. Que renvoie {{=ARRONDI(A1;2)}} ?`,
+        grid, options, answer: options.indexOf(correctDisplay),
+        why:`Le second argument fixe le nombre de décimales conservées. Avec 2 décimales, ${valueDisplay} s'arrondit à ${correctDisplay}.`,
+        tip:`Avec un nombre négatif comme second argument, ARRONDI arrondit à la dizaine, à la centaine, etc.`,
+      };
+    } },
+  { level:1, theme:`Fonction SOMME.SI`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_SERVICES), rInt(20,90)]); return { rows }; },
+    q:`Colonne A : service, colonne B : montant (lignes 2 à 50). Quelle formule additionne uniquement les montants du service « IT » ?`,
+    options:[`{{=SOMME.SI(A2:A50;"IT";B2:B50)}}`, `{{=SOMME.SI(B2:B50;"IT";A2:A50)}}`, `{{=SOMME(A2:A50;"IT";B2:B50)}}`, `{{=NB.SI(A2:A50;"IT")}}`], answer:0,
+    why:`SOMME.SI prend d'abord la plage sur laquelle porte le critère, puis le critère, puis (en option) la plage à additionner si elle diffère de la première.`,
+    tip:`Si la plage de critère et la plage à additionner sont la même, tu peux omettre le troisième argument.` },
+  { level:1, theme:`Formats de nombre`,
+    grid:{ rows:[[1500]], highlight:['A1'] },
+    q:`Une cellule contient 1500. Tu veux qu'elle affiche « 1 500,00 € » sans changer la valeur réellement stockée. Quel outil utilises-tu ?`,
+    options:[`Le format de cellule (catégorie Monétaire ou Comptabilité)`, `La fonction TEXTE, seule solution possible`, `Un nouveau calcul du type {{=A1*1}}`, `Le collage spécial uniquement`], answer:0,
+    why:`Le format de cellule habille l'affichage (séparateur de milliers, décimales, symbole monétaire) sans toucher à la valeur réelle stockée, qui reste 1500 en coulisses.`,
+    tip:`Raccourci utile : Ctrl+1 ouvre directement la boîte de dialogue Format de cellule.` },
+  { level:1, theme:`Fonction AUJOURDHUI`,
+    q:`Que renvoie la formule {{=AUJOURDHUI()}} ?`,
+    options:[`La date du jour, recalculée à chaque ouverture ou recalcul du classeur`, `La date de création du fichier, figée une fois pour toutes`, `L'heure actuelle`, `Un nombre aléatoire`], answer:0,
+    why:`AUJOURDHUI() ne prend aucun argument et renvoie toujours la date du jour, mise à jour automatiquement à chaque fois que le classeur se recalcule.`,
+    tip:`Pour figer une date sans formule (par exemple une date de commande), utilise plutôt le raccourci Ctrl+; qui insère la date du jour en dur.` },
+  { level:1, theme:`Convertir du texte en nombre`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rInt(100,9999)]); return { rows, forceAlign:'left' }; },
+    q:`Une colonne de nombres importés d'un autre logiciel est en réalité stockée en texte : elle s'aligne à gauche, et SOMME renvoie 0. Quelle méthode simple les convertit en vrais nombres ?`,
+    options:[`Sélectionner la colonne et utiliser Convertir (l'icône d'avertissement jaune), ou un collage spécial en multipliant par 1`, `Supprimer les valeurs et les retaper une par une`, `Changer la police de caractères`, `Trier la colonne par ordre croissant`], answer:0,
+    why:`Excel affiche souvent une icône d'alerte proposant « Convertir en nombre ». À défaut, un collage spécial avec l'opération Multiplier (en collant un simple 1) force la conversion de tout le bloc d'un coup.`,
+    tip:`Le signe avant-coureur classique de ce problème : un nombre aligné à gauche au lieu d'à droite.` },
+  { level:1, theme:`Zone d'impression`,
+    q:`Tu ne veux imprimer qu'une partie précise de ta feuille, pas tout son contenu. Quel outil utilises-tu ?`,
+    options:[`Définir une zone d'impression (onglet Mise en page)`, `Réduire le zoom d'affichage avant d'imprimer`, `Masquer les colonnes inutiles`, `Changer le format de papier`], answer:0,
+    why:`« Zone d'impression » (Mise en page > Zone d'impression > Définir) indique précisément à Excel quelle plage imprimer, sans modifier l'affichage à l'écran pour autant.`,
+    tip:`Masquer des colonnes fonctionne aussi, mais ça change l'affichage pour tout le monde, alors que la zone d'impression n'affecte que l'impression.` },
+
+  /* ----- Niveau 2 : Intermédiaire ----- */
+  { level:2, theme:`RECHERCHEV`, dynamic:true,
+    build(){
+      const idx = rInt(0,2);
+      const products = rPickN(SAMPLE_PRODUCTS, 3);
+      const prices = [rFloat(1,9,2), rFloat(1,9,2), rFloat(1,9,2)];
+      const codes = ['P01','P02','P03'];
+      const searchCode = codes[idx];
+      const fmtPrice = n => n.toFixed(2).replace('.', ',');
+      const correctDisplay = fmtPrice(prices[idx]);
+      const grid = {
+        header:true,
+        rows:[
+          ['Code','Produit','Prix'],
+          [codes[0], products[0], fmtPrice(prices[0])],
+          [codes[1], products[1], fmtPrice(prices[1])],
+          [codes[2], products[2], fmtPrice(prices[2])],
+        ],
+        highlight:['C' + (idx+2)],
+      };
+      const options = shuffle([correctDisplay, products[idx], searchCode, '#N/A']);
+      return {
+        level:2, theme:`RECHERCHEV`,
+        q:`Le tableau ci-dessous se trouve en A1:C4 (en-têtes en ligne 1). Que renvoie {{=RECHERCHEV("${searchCode}";A2:C4;3;FAUX)}} ?`,
+        grid, options, answer: options.indexOf(correctDisplay),
+        why:`RECHERCHEV cherche ${searchCode} dans la première colonne de A2:C4, puis renvoie la valeur de la 3e colonne de la même ligne : ${correctDisplay}. L'argument FAUX impose une correspondance exacte.`,
+        tip:`Le numéro de colonne se compte depuis la première colonne de la plage choisie, pas depuis la colonne A de la feuille.`,
+      };
+    } },
+  { level:2, theme:`SOMME.SI.ENS`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rPick([2024,2025]), rInt(200,900)]); return { rows }; },
+    q:`Colonne A : région, colonne B : année, colonne C : montant des ventes (lignes 2 à 100). Quelle formule additionne les ventes de la région Sud en 2025 ?`,
+    options:[`{{=SOMME.SI.ENS(C2:C100;A2:A100;"Sud";B2:B100;2025)}}`, `{{=SOMME.SI.ENS(A2:A100;"Sud";B2:B100;2025;C2:C100)}}`, `{{=SOMME.SI(C2:C100;A2:A100;"Sud";B2:B100;2025)}}`, `{{=NB.SI.ENS(A2:A100;"Sud";B2:B100;2025)}}`], answer:0,
+    why:`Avec SOMME.SI.ENS, on indique d'abord la plage à additionner, puis des paires « plage de critère ; critère ». SOMME.SI n'accepte qu'un seul critère, et NB.SI.ENS compte au lieu d'additionner.`,
+    tip:`Retiens l'ordre : d'abord ce qu'on additionne, ensuite les conditions.`,
+    link:{ label:`Additionner selon plusieurs conditions (Microsoft Support)`, url:`https://support.microsoft.com/fr-fr/Excel/sum-values-based-on-multiple-conditions` } },
+  { level:2, theme:`Tableaux croisés dynamiques`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rInt(1000,9000)]); return { rows, highlight:['B1','B2','B3','B4'] }; },
+    q:`Dans un tableau croisé dynamique, tu veux afficher le total des ventes par région. Dans quelle zone places-tu le champ « Ventes » ?`,
+    options:[`Valeurs`, `Filtres`, `Lignes`, `Colonnes`], answer:0,
+    why:`Lignes et Colonnes servent à découper, Filtres à restreindre, Valeurs à calculer. Le champ à additionner va donc en Valeurs, avec la fonction Somme.`,
+    tip:`Analogie : Lignes et Colonnes sont les tiroirs, Valeurs est le calcul que tu fais sur les fiches rangées dedans.`,
+    link:{ label:`Créer un tableau croisé dynamique (Microsoft Support)`, url:`https://support.microsoft.com/fr-fr/office/cr%C3%A9er-un-tableau-crois%C3%A9-dynamique-pour-analyser-des-donn%C3%A9es-de-feuille-de-calcul-a9a84538-bfe9-40a9-a8e9-f99134456576` } },
+  { level:2, theme:`Gestion des erreurs`,
+    gridGen(){ const rows=[['E1','Inconnu'],['P01', rInt(10,90)],['P02', rInt(10,90)]]; return { rows, highlight:['A1'] }; },
+    q:`Que fait {{=SIERREUR(RECHERCHEV(E2;A2:C100;3;FAUX);"Introuvable")}} quand la valeur de E2 n'existe pas dans le tableau ?`,
+    options:[`Elle affiche « Introuvable » à la place de l'erreur`, `Elle affiche #N/A`, `Elle affiche 0`, `Elle supprime la ligne concernée`], answer:0,
+    why:`SIERREUR surveille la formule : si celle-ci renvoie une erreur, elle affiche la valeur de remplacement à la place.`,
+    tip:`SI.NON.DISP est plus précise : elle ne masque que #N/A. SIERREUR masque toutes les erreurs, y compris celles qui révèlent un vrai problème.`,
+    link:{ label:`Fonction SI.NON.DISP (Microsoft Support)`, url:`https://support.microsoft.com/fr-FR/Excel/functions/ifna-function` } },
+  { level:2, theme:`NB.SI.ENS`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rPick(['Actif','Inactif'])]); return { rows }; },
+    q:`Colonne A : région, colonne B : statut (lignes 2 à 80). Quelle formule compte les lignes où la région est « Sud » ET le statut « Actif » ?`,
+    options:[`{{=NB.SI.ENS(A2:A80;"Sud";B2:B80;"Actif")}}`, `{{=NB.SI(A2:A80;"Sud";B2:B80;"Actif")}}`, `{{=SOMME.SI.ENS(A2:A80;"Sud";B2:B80;"Actif")}}`, `{{=NB.SI.ENS(A2:A80;"Sud")+NB.SI.ENS(B2:B80;"Actif")}}`], answer:0,
+    why:`NB.SI.ENS accepte plusieurs paires « plage ; critère » et ne compte que les lignes qui remplissent toutes les conditions à la fois. NB.SI, lui, n'accepte qu'un seul critère.`,
+    tip:`SOMME.SI.ENS additionne, NB.SI.ENS compte : le nom de la fonction indique l'opération finale.` },
+  { level:2, theme:`SI imbriqués`,
+    gridGen(){ return { rows:[[rInt(4,18)]], highlight:['A1'] }; },
+    q:`Tu veux attribuer une mention selon la note en A1 : « Insuffisant » si <10, « Passable » si <12, sinon « Bien ». Quelle formule est correcte ?`,
+    options:[`{{=SI(A1<10;"Insuffisant";SI(A1<12;"Passable";"Bien"))}}`, `{{=SI(A1<10;"Insuffisant";A1<12;"Passable";"Bien")}}`, `{{=SI(A1<10;"Insuffisant")+SI(A1<12;"Passable";"Bien")}}`, `{{=SI(A1<10;A1<12;"Insuffisant";"Passable";"Bien")}}`], answer:0,
+    why:`Un second SI vient prendre la place du « si_faux » du premier, formant des paliers. Excel évalue les conditions dans l'ordre et s'arrête dès qu'une est vraie.`,
+    tip:`Pense à ordonner tes seuils du plus bas au plus haut (ou l'inverse), jamais dans le désordre, sinon la logique se dérègle.` },
+  { level:2, theme:`RECHERCHEV approximative`,
+    q:`Une table de tranches tarifaires (triée par ordre croissant) est en A2:B5. Que fait {{=RECHERCHEV(38;A2:A5;2;VRAI)}} par rapport à {{...;FAUX)}} ?`,
+    options:[`Avec VRAI, elle trouve la plus grande valeur inférieure ou égale à 38 ; avec FAUX, elle exigerait 38 exactement et renverrait #N/A si absent`, `VRAI et FAUX donnent toujours le même résultat`, `VRAI cherche du texte, FAUX cherche des nombres`, `VRAI ignore la casse, FAUX en tient compte`], answer:0,
+    why:`Le dernier argument de RECHERCHEV règle le type de correspondance : VRAI (ou omis) autorise une correspondance approximative sur un tableau trié, FAUX exige une correspondance exacte.`,
+    tip:`Piège classique : avec VRAI, si le tableau n'est pas trié en ordre croissant, le résultat peut être faux sans qu'Excel signale d'erreur.` },
+  { level:2, theme:`TCD et dates`,
+    gridGen(){ const rows=Array.from({length:4},()=>['0'+rInt(1,9)+'/'+rPick(['01','02','03'])+'/2026', rInt(50,400)]); return { rows }; },
+    q:`Un tableau croisé dynamique a un champ Date en Lignes, avec une ligne par jour. Comment regrouper l'affichage par mois plutôt que par jour ?`,
+    options:[`Clic droit sur une date du TCD, puis « Grouper »`, `Trier la colonne Date par ordre croissant`, `Ajouter un filtre sur le champ Date`, `Changer l'agrégation en Moyenne`], answer:0,
+    why:`L'option « Grouper » d'un TCD permet de regrouper des dates par mois, trimestre ou année, sans toucher aux données sources.`,
+    tip:`Le même clic droit propose aussi de grouper des nombres par tranches (0-10, 10-20...).` },
+  { level:2, theme:`Mise en forme conditionnelle avancée`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_NAMES), rInt(600,1400)]); return { rows, highlight:['B1','B2','B3','B4'] }; },
+    q:`Tu veux colorer toute une ligne en jaune si la valeur de la colonne C de cette ligne dépasse 1000, en te basant sur une formule personnalisée. Quelle option choisis-tu ?`,
+    options:[`« Utiliser une formule pour déterminer pour quelles cellules le format sera appliqué »`, `« Nuances de couleurs »`, `« Barres de données »`, `« Jeux d'icônes »`], answer:0,
+    why:`Les règles toutes prêtes (nuances de couleurs, barres de données, icônes) s'appliquent cellule par cellule selon sa propre valeur. Pour colorer une ligne entière selon une autre cellule, il faut une formule personnalisée, avec une référence relative bien construite (ex. {{=$C1>1000}}).`,
+    tip:`N'oublie pas de verrouiller la colonne avec $ (comme {{$C1}}) pour que la règle compare toujours la bonne colonne sur chaque ligne.` },
+  { level:2, theme:`Calculer une durée`,
+    gridGen(){ const y=rInt(2015,2023); return { rows:[[rPick(['12','05','09'])+'/'+rPick(['01','06','11'])+'/'+y]], highlight:['A1'] }; },
+    q:`A1 contient une date d'embauche. Quelle formule calcule l'ancienneté en années complètes à ce jour ?`,
+    options:[`{{=DATEDIF(A1;AUJOURDHUI();"y")}}`, `{{=AUJOURDHUI()-A1}}`, `{{=ANNEE(A1)}}`, `{{=A1-AUJOURDHUI()}}`], answer:0,
+    why:`DATEDIF calcule un écart entre deux dates dans l'unité demandée : "y" pour des années complètes, "m" pour des mois, "d" pour des jours. {{AUJOURDHUI()-A1}} donne un nombre de jours brut, pas des années.`,
+    tip:`DATEDIF n'apparaît pas dans la liste des fonctions suggérées par Excel, mais elle fonctionne bien si tu la tapes directement.` },
+  { level:2, theme:`Protection de feuille`,
+    q:`Tu actives « Protéger la feuille » sans rien changer d'autre. Que se passe-t-il par défaut ?`,
+    options:[`Toutes les cellules deviennent verrouillées : plus aucune modification n'est possible`, `Seules les cellules contenant des formules sont verrouillées`, `Rien ne change tant qu'un mot de passe n'est pas défini`, `Seule la mise en forme est bloquée, la saisie reste libre`], answer:0,
+    why:`Par défaut, toutes les cellules d'une feuille Excel ont l'attribut « verrouillée ». Ce verrouillage ne prend effet qu'une fois la protection de la feuille activée, et bloque alors toute modification.`,
+    tip:`Pour laisser certaines cellules modifiables, déverrouille-les (Format de cellule > Protection) avant d'activer la protection de la feuille.` },
+  { level:2, theme:`Références mixtes`,
+    gridGen(){ const rows=[[rInt(5,50), rInt(5,50)],[rInt(5,50), rInt(5,50)]]; return { rows, highlight:['A1'] }; },
+    q:`Dans une formule que tu recopies vers le bas et vers la droite, tu veux que la colonne reste fixée sur A mais que la ligne s'adapte. Quelle écriture utilises-tu ?`,
+    options:[`{{$A1}}`, `{{A$1}}`, `{{$A$1}}`, `{{A1}}`], answer:0,
+    why:`Le $ placé juste avant la lettre verrouille la colonne ; celui placé juste avant le chiffre verrouille la ligne. {{$A1}} fige la colonne A et laisse la ligne s'adapter à la recopie.`,
+    tip:`Retiens l'astuce : le $ « bloque » ce qui le suit immédiatement, lettre ou chiffre.` },
+  { level:2, theme:`MOYENNE.SI.ENS`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_SERVICES), rPick([2024,2025]), rInt(8,20)]); return { rows }; },
+    q:`Colonne A : service, colonne B : année, colonne C : note (lignes 2 à 60). Quelle formule calcule la note moyenne du service « IT » en 2025 ?`,
+    options:[`{{=MOYENNE.SI.ENS(C2:C60;A2:A60;"IT";B2:B60;2025)}}`, `{{=MOYENNE.SI(C2:C60;A2:A60;"IT")}}`, `{{=NB.SI.ENS(C2:C60;A2:A60;"IT";B2:B60;2025)}}`, `{{=MOYENNE(C2:C60)}}`], answer:0,
+    why:`MOYENNE.SI.ENS suit la même logique que SOMME.SI.ENS et NB.SI.ENS : la plage à calculer en premier, puis des paires plage/critère. MOYENNE.SI, elle, n'accepte qu'un seul critère, alors qu'il en faut deux ici.`,
+    tip:`Les trois fonctions « .ENS » (SOMME, NB, MOYENNE) partagent exactement la même syntaxe : un bon réflexe à généraliser.` },
+  { level:2, theme:`TCD : pourcentage du total`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rInt(1000,9000)]); return { rows, highlight:['B1','B2','B3','B4'] }; },
+    q:`Dans un tableau croisé dynamique, tu veux que chaque case affiche un pourcentage du total général plutôt que la valeur brute. Où actives-tu cette option ?`,
+    options:[`Clic droit sur une valeur du TCD, puis « Afficher les valeurs sous » > % du total général`, `En modifiant directement la fonction SOMME par une formule personnalisée`, `En ajoutant le champ une seconde fois en Filtres`, `En changeant le format de nombre en Pourcentage via Format de cellule`], answer:0,
+    why:`L'onglet « Afficher les valeurs sous » du menu Paramètres des champs de valeurs propose plusieurs recalculs automatiques, dont le pourcentage du total général, de la ligne ou de la colonne.`,
+    tip:`Combine-le avec le même champ posé une seconde fois en Valeurs pour voir le montant brut ET le pourcentage côte à côte.` },
+  { level:2, theme:`Convertir : texte en colonnes`,
+    grid:{ rows:[['Dupont;Marie;Commercial']], forceAlign:'left', highlight:['A1'] },
+    q:`Une colonne contient des valeurs du type « Dupont;Marie;Commercial » (séparées par des points-virgules), à éclater en trois colonnes distinctes. Quel outil utilises-tu ?`,
+    options:[`Convertir (onglet Données > Convertir, avec un séparateur)`, `Trier et filtrer`, `Validation des données`, `Format de cellule > Nombre`], answer:0,
+    why:`« Convertir » (Données > Convertir) ouvre un assistant qui découpe le contenu d'une colonne en plusieurs colonnes, selon un séparateur choisi (point-virgule, virgule, espace...) ou une largeur fixe.`,
+    tip:`Puissant mais pas toujours facile à annuler : fais une copie de la colonne source avant de convertir, par précaution.` },
+  { level:2, theme:`Somme cumulée`,
+    gridGen(){ const rows=Array.from({length:5},()=>[rInt(50,400)]); return { rows, highlight:['B1'] }; },
+    q:`En B2, tu écris {{=SOMME($B$2:B2)}}, puis tu recopies la formule vers le bas jusqu'à B10. Que calcule chaque cellule ?`,
+    options:[`Un cumul progressif : le total depuis le début jusqu'à la ligne courante`, `La somme totale de B2:B10, répétée à l'identique sur chaque ligne`, `Une moyenne glissante des trois dernières lignes`, `Rien : la formule renvoie une erreur de référence circulaire`], answer:0,
+    why:`La borne de départ $B$2 est verrouillée par les $, alors que la borne de fin B2 reste relative et s'étend à chaque ligne recopiée : B2, puis B2:B3, puis B2:B4... C'est le principe classique du cumul progressif.`,
+    tip:`Utile pour un solde de trésorerie ou un compteur de ventes qui s'accumule au fil du temps.` },
+
+  /* ----- Niveau 3 : Avancé ----- */
+  { level:3, theme:`INDEX et EQUIV`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_NAMES), rInt(20,90)]); return { rows }; },
+    q:`Dans quel cas la combinaison INDEX + EQUIV est-elle plus souple que RECHERCHEV ?`,
+    options:[`Quand la valeur à renvoyer se trouve à gauche de la colonne de recherche`, `Quand les données sont uniquement du texte`, `Quand le tableau est trié automatiquement`, `Quand la fonction RECHERCHEV n'existe plus`], answer:0,
+    why:`RECHERCHEV ne regarde que vers la droite de la colonne clé. INDEX renvoie la cellule d'une colonne au choix, et EQUIV trouve la position de la ligne à lire.`,
+    tip:`Analogie : EQUIV donne le numéro du tiroir, INDEX ouvre ce tiroir dans la colonne de ton choix.` },
+  { level:3, theme:`Fonctions de texte`,
+    grid:{ rows:[['DUPONT Marie']], forceAlign:'left', highlight:['A1'] },
+    q:`La cellule A1 contient « DUPONT Marie ». Que renvoie {{=GAUCHE(A1;TROUVE(" ";A1)-1)}} ?`,
+    options:[`DUPONT`, `DUPONT suivi d'un espace`, `Marie`, `#VALEUR!`], answer:0,
+    why:`{{TROUVE(" ";A1)}} renvoie 7, la position de l'espace. On enlève 1 pour ne pas garder l'espace, et GAUCHE extrait donc les 6 premiers caractères : DUPONT.`,
+    tip:`Ce duo GAUCHE + TROUVE sert à couper un texte au premier séparateur (espace, tiret, arobase...).` },
+  { level:3, theme:`Tableaux Excel`,
+    q:`Quel est l'avantage principal de convertir une plage de données en Tableau (Ctrl+T) ?`,
+    options:[`Il s'étend automatiquement aux nouvelles lignes, et les formules, graphiques et TCD qui s'y réfèrent en tiennent compte`, `Les données sont triées automatiquement`, `Les formules deviennent inutiles`, `Le fichier devient deux fois plus léger`], answer:0,
+    why:`Un Tableau Excel est un objet « vivant » : il grandit quand tu ajoutes des lignes, recopie les formules de colonne tout seul et permet d'écrire des références lisibles comme {{Ventes[Montant]}}.`,
+    tip:`Sers-toi d'un Tableau comme source de tes TCD : plus besoin de rrééditer la plage quand les données grossissent.` },
+  { level:3, theme:`Power Query`,
+    q:`À quoi sert principalement Power Query ?`,
+    options:[`À importer et nettoyer des données par étapes mémorisées, rejouables en un clic d'actualisation`, `À dessiner des graphiques en 3D`, `À protéger un classeur par mot de passe`, `À vérifier l'orthographe d'une feuille`], answer:0,
+    why:`Power Query enregistre chaque transformation (supprimer une colonne, fractionner, filtrer...) comme une étape. À la prochaine actualisation, toutes les étapes sont rejouées sur les nouvelles données.`,
+    tip:`Analogie : c'est une recette de cuisine enregistrée. Tu changes les ingrédients, la recette s'applique seule.` },
+  { level:3, theme:`Fonction SOMMEPROD`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rInt(1,20), rFloat(1,9,2).toFixed(2).replace('.',',')]); return { rows }; },
+    q:`Colonne A : quantité, colonne B : prix unitaire (lignes 2 à 20, aucune ligne de sous-total). Quelle formule calcule le chiffre d'affaires total en une seule fois ?`,
+    options:[`{{=SOMMEPROD(A2:A20;B2:B20)}}`, `{{=SOMME(A2:A20;B2:B20)}}`, `{{=A2:A20*B2:B20}}`, `{{=PRODUIT(A2:A20;B2:B20)}}`], answer:0,
+    why:`SOMMEPROD multiplie les plages terme à terme (quantité × prix pour chaque ligne), puis additionne tous les résultats, sans colonne intermédiaire.`,
+    tip:`SOMMEPROD sert aussi à compter ou sommer selon plusieurs conditions, en multipliant des tests logiques entre eux.` },
+  { level:3, theme:`Fonction TEXTE`,
+    grid:{ rows:[['05/03/2026']], highlight:['A1'] },
+    q:`A1 contient la date du 5 mars 2026 (une vraie date Excel). Que renvoie {{=TEXTE(A1;"jj/mm/aaaa")}} ?`,
+    options:[`05/03/2026, sous forme de texte`, `45721 (le numéro de série de la date)`, `Mars 2026`, `#VALEUR!`], answer:0,
+    why:`TEXTE convertit une valeur en chaîne de caractères selon le modèle de format donné. Le résultat n'est plus une date manipulable, mais du texte prêt à afficher ou à concaténer.`,
+    tip:`Pratique pour construire une phrase du type {{="Rapport du "&TEXTE(A1;"jj/mm/aaaa")}}.` },
+  { level:3, theme:`SUBSTITUE et REMPLACER`,
+    q:`Quelle est la différence principale entre SUBSTITUE et REMPLACER ?`,
+    options:[`SUBSTITUE remplace un texte précis (ex. tous les "-"), REMPLACER remplace des caractères à une position donnée`, `Les deux fonctions font exactement la même chose`, `REMPLACER ne fonctionne que sur des nombres`, `SUBSTITUE ne peut remplacer qu'un seul caractère à la fois`], answer:0,
+    why:`SUBSTITUE cherche un texte donné et le remplace partout (ou à la occurrence choisie). REMPLACER, elle, agit par position : elle remplace un nombre de caractères à partir d'un rang précis, sans se soucier de leur contenu.`,
+    tip:`Pour nettoyer des séparateurs (remplacer tous les "/" par des "-"), SUBSTITUE est le bon choix.` },
+  { level:3, theme:`Références 3D`,
+    q:`Un classeur a trois feuilles consécutives Janvier, Février, Mars, chacune avec un total en B10. Quelle formule additionne ce total sur les trois feuilles d'un coup ?`,
+    options:[`{{=SOMME(Janvier:Mars!B10)}}`, `{{=SOMME(Janvier!B10;Février!B10;Mars!B10;B10)}}`, `{{=SOMME(Janvier+Mars!B10)}}`, `{{=SOMME(TOUTES!B10)}}`], answer:0,
+    why:`Une référence 3D avec deux-points entre deux noms de feuilles (Janvier:Mars) inclut toutes les feuilles consécutives entre les deux, et {{!B10}} pointe la même cellule sur chacune.`,
+    tip:`Si tu insères une nouvelle feuille entre Janvier et Mars, elle est automatiquement incluse dans la référence 3D.` },
+  { level:3, theme:`Valeur cible`,
+    q:`Tu as une formule de mensualité de prêt, et tu veux savoir quel taux d'intérêt donnerait une mensualité de 350 €, en laissant Excel chercher la valeur. Quel outil utilises-tu ?`,
+    options:[`Valeur cible`, `Filtre avancé`, `Consolider`, `Vérification des erreurs`], answer:0,
+    why:`Valeur cible (onglet Données, Analyse de scénarios) fait varier une cellule d'entrée jusqu'à ce qu'une cellule de résultat atteigne l'objectif fixé, par approches successives.`,
+    tip:`Pour des problèmes plus complexes avec plusieurs cellules d'entrée et des contraintes, c'est le Solveur (complément) qu'il faut activer.` },
+  { level:3, theme:`Supprimer les doublons`,
+    gridGen(){ const n=rPick(SAMPLE_NAMES); const rows=[[n],[rPick(SAMPLE_NAMES)],[n],[rPick(SAMPLE_NAMES)]]; return { rows }; },
+    q:`Tu as une liste de 300 clients avec des lignes répétées à l'identique. Quel outil supprime ces doublons en un clic ?`,
+    options:[`Données > Supprimer les doublons`, `La mise en forme conditionnelle`, `La fonction NB.SI`, `Le tri personnalisé`], answer:0,
+    why:`« Supprimer les doublons » (onglet Données) compare les colonnes choisies et ne garde qu'une occurrence de chaque combinaison identique.`,
+    tip:`Fais toujours une copie de sauvegarde avant : la suppression est immédiate et irréversible par un simple Ctrl+Z une fois le classeur refermé.` },
+  { level:3, theme:`Caractères génériques`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_NAMES).toLowerCase()+'.'+rPick(SAMPLE_NAMES).toLowerCase()+'@data-unchained.fr']); return { rows, forceAlign:'left' }; },
+    q:`Colonne A contient des adresses e-mail. Quelle formule compte celles qui se terminent par « @data-unchained.fr » ?`,
+    options:[`{{=NB.SI(A2:A100;"*@data-unchained.fr")}}`, `{{=NB.SI(A2:A100;"@data-unchained.fr")}}`, `{{=NB.SI(A2:A100;"?@data-unchained.fr")}}`, `{{=TROUVE(A2:A100;"@data-unchained.fr")}}`], answer:0,
+    why:`L'astérisque * remplace n'importe quelle suite de caractères. "*@data-unchained.fr" trouve donc toute chaîne qui se termine par ce domaine, quel que soit ce qui précède.`,
+    tip:`Le point d'interrogation ? remplace un seul caractère, utile pour des formats à longueur fixe.` },
+  { level:3, theme:`Fonction INDIRECT`,
+    gridGen(){ const rows=[['B5',''],['',''],['',''],['',''],['', rInt(10,90)]]; return { rows, highlight:['A1','B5'] }; },
+    q:`A1 contient le texte « B5 » (pas une formule, juste ce texte). Que fait {{=INDIRECT(A1)}} ?`,
+    options:[`Elle renvoie le contenu de la cellule B5, en interprétant le texte de A1 comme une adresse`, `Elle renvoie le texte « B5 »`, `Elle renvoie une erreur, INDIRECT n'accepte pas le texte`, `Elle renvoie l'adresse de la cellule A1 elle-même`], answer:0,
+    why:`INDIRECT transforme une chaîne de texte en véritable référence de cellule, et va chercher son contenu. Ça permet de construire des adresses dynamiquement, par exemple à partir d'un nom de feuille saisi ailleurs.`,
+    tip:`Pratique, mais à utiliser avec parcimonie : INDIRECT ralentit les gros classeurs, car elle se recalcule à chaque changement.` },
+  { level:3, theme:`Fonction STXT`,
+    grid:{ rows:[['marie.dupont@data-unchained.fr']], forceAlign:'left', highlight:['A1'] },
+    q:`A1 contient « marie.dupont@data-unchained.fr ». Que renvoie {{=STXT(A1;TROUVE("@";A1)+1;50)}} ?`,
+    options:[`data-unchained.fr`, `marie.dupont`, `Le caractère @ seul`, `#VALEUR!`], answer:0,
+    why:`TROUVE("@";A1) localise la position de l'arobase. STXT extrait ensuite jusqu'à 50 caractères à partir de la position juste après (+1), ce qui capture tout le domaine, quelle que soit sa longueur réelle.`,
+    tip:`STXT(texte;position_départ;nb_caractères) est l'équivalent généraliste de GAUCHE et DROITE, utile quand l'extraction ne commence ni au début ni à la fin du texte.` },
+  { level:3, theme:`Graphique croisé dynamique`,
+    q:`Tu crées un graphique croisé dynamique relié à un TCD. Que se passe-t-il si tu modifies les zones (Lignes, Colonnes, Valeurs) du TCD ?`,
+    options:[`Le graphique se met à jour automatiquement pour refléter la nouvelle structure`, `Le graphique reste figé sur son affichage d'origine`, `Le graphique disparaît et doit être recréé`, `Seules les couleurs du graphique changent`], answer:0,
+    why:`Un graphique croisé dynamique reste lié en direct à son TCD source : toute modification des zones, filtres ou agrégations se répercute immédiatement sur le graphique.`,
+    tip:`Pratique pour construire un tableau de bord interactif : change les zones du TCD, le graphique suit tout seul.` },
+  { level:3, theme:`Consolider`,
+    q:`Tu as trois feuilles (une par région), chacune avec un tableau de ventes par produit, mais pas forcément dans le même ordre de lignes. Quel outil additionne ces tableaux en faisant correspondre les lignes par leur étiquette (nom de produit), plutôt que par leur position ?`,
+    options:[`Consolider (onglet Données)`, `Les références 3D classiques`, `RECHERCHEV répété manuellement feuille par feuille`, `Collage spécial > Addition`], answer:0,
+    why:`L'outil Consolider (Données > Consolider) additionne des plages venues de plusieurs feuilles en faisant correspondre les étiquettes de ligne et de colonne, même si l'ordre diffère d'une feuille à l'autre. Les références 3D, elles, exigent une mise en page rigoureusement identique sur toutes les feuilles.`,
+    tip:`Coche « Ligne du haut » et « Colonne de gauche » dans la boîte de dialogue pour que la correspondance se fasse sur les étiquettes plutôt que sur la position.` },
+  { level:3, theme:`Grouper et plan`,
+    q:`Tu veux pouvoir replier ou déplier d'un clic un ensemble de lignes de détail sous chaque sous-total, comme un plan hiérarchique. Quel outil utilises-tu ?`,
+    options:[`Grouper (onglet Données > Plan > Grouper)`, `Figer les volets`, `Filtrer`, `Fractionner la fenêtre`], answer:0,
+    why:`« Grouper » crée un plan avec des boutons +/- qui replient ou déplient des lignes ou des colonnes. Combiné à l'outil Sous-total, Excel peut même grouper automatiquement selon les ruptures de chaque catégorie.`,
+    tip:`Raccourci : Maj+Alt+Flèche droite groupe la sélection, Maj+Alt+Flèche gauche la dégroupe.` },
+
+  /* ----- Niveau 4 : Expert ----- */
+  { level:4, theme:`RECHERCHEX`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_PRODUCTS), rFloat(1,9,2).toFixed(2).replace('.',',')]); return { rows }; },
+    q:`Parmi ces affirmations sur RECHERCHEX, laquelle est vraie ?`,
+    options:[`Elle peut renvoyer une valeur située à gauche de la colonne de recherche et prévoit un argument « si non trouvé »`, `Elle est disponible dans toutes les versions d'Excel depuis 2007`, `Elle exige que la première colonne soit triée`, `Elle ne fonctionne qu'avec des nombres`], answer:0,
+    why:`RECHERCHEX sépare la colonne de recherche et la colonne de résultat, fait une correspondance exacte par défaut et gère le cas « non trouvé ». Elle est absente d'Excel 2016 et 2019.`,
+    tip:`Elle peut aussi renvoyer plusieurs colonnes d'un coup, ce que RECHERCHEV ne sait pas faire.`,
+    link:{ label:`Fonction RECHERCHEX (Microsoft Support)`, url:`https://support.microsoft.com/fr-fr/Excel/functions/xlookup-function` } },
+  { level:4, theme:`Fonctions matricielles dynamiques`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rInt(100,900)]); return { rows }; },
+    q:`Que produit {{=FILTRE(A2:C100;B2:B100="Sud")}} dans Microsoft 365 ?`,
+    options:[`Toutes les lignes dont la colonne B vaut « Sud », qui se déversent automatiquement dans les cellules voisines`, `Uniquement la première ligne trouvée`, `Le nombre de lignes dont la colonne B vaut « Sud »`, `Une erreur, il faut valider avec Ctrl+Maj+Entrée`], answer:0,
+    why:`Les fonctions matricielles dynamiques (FILTRE, TRIER, UNIQUE...) renvoient plusieurs valeurs qui « débordent » dans les cellules libres en dessous et à droite.`,
+    tip:`Si une cellule voisine est déjà occupée, Excel affiche l'erreur #DÉVERSEMENT!. Libère la zone et le résultat apparaît.` },
+  { level:4, theme:`Fonction LET`,
+    q:`À quoi sert la fonction LET ?`,
+    options:[`À donner un nom à un calcul intermédiaire dans une formule pour ne pas le répéter`, `À verrouiller des cellules`, `À créer une liste déroulante`, `À relier deux classeurs`], answer:0,
+    why:`LET déclare des noms (comme des variables) à l'intérieur d'une formule. Le calcul est fait une fois, la formule est plus rapide et bien plus lisible.`,
+    tip:`Pense LET dès que tu répètes la même sous-formule deux fois dans une formule.`,
+    link:{ label:`Fonction LET (Microsoft Support)`, url:`https://support.microsoft.com/fr-fr/excel/functions/let-function` } },
+  { level:4, theme:`Modèle de données`,
+    q:`Tu dois analyser dans un même TCD des ventes et des clients qui se trouvent dans deux tables distinctes, sans passer par des RECHERCHEV. Quel outil est fait pour ça ?`,
+    options:[`Le Modèle de données (Power Pivot) avec des relations entre les tables`, `La fonction CONCAT`, `Le correcteur d'orthographe`, `La validation des données`], answer:0,
+    why:`Le Modèle de données relie plusieurs tables par des relations (comme dans une base de données) et alimente un TCD qui croise leurs champs, sans dupliquer les données.`,
+    tip:`Analogie : au lieu de recopier l'adresse du client sur chaque facture, tu relies la facture à la fiche client.` },
+  { level:4, theme:`Fonction LAMBDA`,
+    q:`À quoi sert la fonction LAMBDA ?`,
+    options:[`À créer une fonction personnalisée réutilisable, écrite en formule Excel, sans passer par VBA`, `À accélérer le recalcul d'un très gros classeur`, `À fusionner deux classeurs en un seul fichier`, `À chiffrer un classeur avec un mot de passe`], answer:0,
+    why:`LAMBDA permet de définir ses propres fonctions, avec des paramètres, directement en formule. Une fois nommée dans le Gestionnaire de noms, elle se réutilise partout comme une fonction native.`,
+    tip:`Combine-la avec LET pour construire des fonctions maison lisibles et sans répétition.` },
+  { level:4, theme:`Fonction UNIQUE`,
+    gridGen(){ const c1=rPick(SAMPLE_CITIES); const rows=[[c1],[rPick(SAMPLE_CITIES)],[c1],[rPick(SAMPLE_CITIES)]]; return { rows }; },
+    q:`Que produit {{=UNIQUE(A2:A100)}} dans Microsoft 365, si A2:A100 contient des noms de villes avec des répétitions ?`,
+    options:[`La liste des villes, chacune apparaissant une seule fois, qui se déverse dans les cellules voisines`, `Le nombre de villes différentes`, `Uniquement la première ville de la liste`, `La liste triée par ordre alphabétique, doublons compris`], answer:0,
+    why:`UNIQUE extrait les valeurs distinctes d'une plage et les renvoie sous forme de tableau matriciel dynamique, qui se déverse automatiquement en dessous.`,
+    tip:`Combine-la avec TRIER pour obtenir une liste de valeurs uniques déjà triée : {{=TRIER(UNIQUE(A2:A100))}}.` },
+  { level:4, theme:`Fonction TRIERPAR`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_PRODUCTS), rInt(50,500)]); return { rows }; },
+    q:`Tu as une liste de produits en A2:A50 et leurs ventes en B2:B50. Quelle formule affiche les produits triés du plus vendu au moins vendu, sans toucher au tableau source ?`,
+    options:[`{{=TRIERPAR(A2:A50;B2:B50;-1)}}`, `{{=TRIER(A2:A50)}}`, `{{=INDEX(A2:A50;EQUIV(MAX(B2:B50);B2:B50;0))}}`, `{{=FILTRE(A2:A50;B2:B50>0)}}`], answer:0,
+    why:`TRIERPAR trie une plage selon les valeurs d'une autre, sans les mélanger. Le dernier argument -1 demande un ordre décroissant (1 pour croissant).`,
+    tip:`Contrairement à un tri classique (onglet Données), TRIERPAR ne modifie jamais les données d'origine : c'est une formule qui se recalcule toute seule.` },
+  { level:4, theme:`Fonction SEQUENCE`,
+    grid:{ rows:[[1],[2],[3],[4],[5]], highlight:['A1','A2','A3','A4','A5'] },
+    q:`Que produit {{=SEQUENCE(5)}} dans une cellule ?`,
+    options:[`Les nombres 1, 2, 3, 4, 5, déversés verticalement dans les cellules du dessous`, `Le nombre 5 uniquement`, `Une erreur, il manque des arguments obligatoires`, `La date du jour, répétée 5 fois`], answer:0,
+    why:`SEQUENCE génère un tableau de nombres consécutifs. Avec un seul argument, elle produit une colonne de 1 à ce nombre, qui se déverse comme les autres fonctions matricielles dynamiques.`,
+    tip:`Des arguments supplémentaires permettent de choisir le nombre de colonnes, la valeur de départ et le pas : {{=SEQUENCE(5;1;10;5)}} donne 10, 15, 20, 25, 30.` },
+  { level:4, theme:`DAX et CALCULATE`,
+    q:`Dans une mesure DAX du Modèle de données (Power Pivot), à quoi sert principalement la fonction CALCULATE ?`,
+    options:[`À recalculer un total en modifiant le contexte de filtre (ex. ne garder que l'année en cours)`, `À additionner deux colonnes d'une même table`, `À importer une nouvelle table dans le modèle`, `À renommer une mesure existante`], answer:0,
+    why:`CALCULATE est la fonction centrale du DAX : elle évalue une expression en changeant les filtres appliqués, ce qui permet des calculs comme « ventes de l'année en cours » ou « part du total ».`,
+    tip:`Analogie : CALCULATE, c'est demander « et si on ne regardait que ce sous-ensemble de lignes ? » avant de refaire le calcul.` },
+  { level:4, theme:`Power Query : fusionner des requêtes`,
+    q:`Dans Power Query, tu as deux tables (Commandes et Clients) reliées par un identifiant client. Quel outil les combine, façon jointure de base de données ?`,
+    options:[`Fusionner les requêtes`, `Ajouter des requêtes`, `Regrouper par`, `Transposer`], answer:0,
+    why:`« Fusionner les requêtes » associe deux tables sur une colonne commune, à la façon d'une jointure SQL, et ramène les colonnes de l'une dans l'autre. « Ajouter des requêtes » empile des tables les unes sous les autres, ce qui est différent.`,
+    tip:`Choisis bien le type de jointure (gauche, interne, externe...) selon que tu veux garder ou non les lignes sans correspondance.` },
+  { level:4, theme:`Champ calculé dans un TCD`,
+    q:`Dans un tableau croisé dynamique classique (sans Modèle de données), tu veux ajouter une colonne « Marge » calculée à partir de deux champs existants du TCD. Quel outil utilises-tu ?`,
+    options:[`Un champ calculé (Outils de TCD > Analyse > Champs, éléments et jeux)`, `Une mesure DAX`, `Une colonne ajoutée directement dans le tableau croisé`, `Le Solveur`], answer:0,
+    why:`Un champ calculé combine des champs déjà présents dans le TCD avec une formule, sans passer par le Modèle de données. Les mesures DAX, elles, n'existent que si les données sont chargées dans le Modèle de données (Power Pivot).`,
+    tip:`Un champ calculé travaille sur les totaux déjà agrégés, ce qui peut fausser un résultat comme une marge en pourcentage : les mesures DAX évitent ce piège en recalculant ligne par ligne.` },
+  { level:4, theme:`RECHERCHEX multi-critères`,
+    gridGen(){ const rows=Array.from({length:3},()=>[rPick(SAMPLE_NAMES), rPick(['Dupont','Martin','Bernard']), rInt(28,60)*1000]); return { rows }; },
+    q:`Tu dois retrouver un salarié à partir de son Nom ET de son Prénom (deux colonnes distinctes), pour renvoyer son salaire. Comment adapter RECHERCHEX à ce cas ?`,
+    options:[`Construire une clé de recherche en concaténant Nom et Prénom, des deux côtés de la formule`, `RECHERCHEX ne gère jamais plus d'un critère, il faut utiliser RECHERCHEV`, `Utiliser deux RECHERCHEX imbriqués`, `Ajouter un troisième argument « critère2 » à RECHERCHEX`], answer:0,
+    why:`RECHERCHEX ne prévoit pas nativement plusieurs critères, mais on peut concaténer les colonnes clés en une seule valeur de recherche des deux côtés : {{=RECHERCHEX(F2&F3;A2:A100&B2:B100;C2:C100)}}.`,
+    tip:`Cette technique de concaténation fonctionne aussi avec RECHERCHEV en formule matricielle, mais RECHERCHEX la gère plus simplement.` },
+  { level:4, theme:`Fonction EQUIVX`,
+    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_NAMES)]); return { rows }; },
+    q:`Quelle est la principale amélioration d'EQUIVX (XMATCH) par rapport à EQUIV classique ?`,
+    options:[`Elle propose un mode de recherche (du début, de la fin) et des correspondances approximatives plus flexibles`, `Elle ne fonctionne qu'avec du texte`, `Elle remplace complètement la fonction INDEX`, `Elle est disponible dans toutes les versions d'Excel depuis 2007`], answer:0,
+    why:`EQUIVX ajoute un mode de recherche (du début, de la fin, ou binaire) et des options de correspondance plus fines (exacte, approximative supérieure ou inférieure) qu'EQUIV ne proposait pas.`,
+    tip:`EQUIVX se combine très bien avec INDEX, exactement comme EQUIV, mais avec davantage de contrôle sur la recherche.` },
+  { level:4, theme:`Power Query : colonne personnalisée`,
+    q:`Dans Power Query, tu veux créer une nouvelle colonne calculée à partir de deux colonnes existantes (par exemple Prix × Quantité), avec une formule que tu écris toi-même. Quel outil utilises-tu ?`,
+    options:[`Ajouter une colonne personnalisée`, `Fusionner les requêtes`, `Regrouper par`, `Changer le type de colonne`], answer:0,
+    why:`« Colonne personnalisée » (onglet Ajouter une colonne) ouvre un éditeur où l'on écrit une formule en langage M, en référençant les autres colonnes de la table, pour créer une nouvelle colonne calculée.`,
+    tip:`Le langage M utilisé ici diffère des formules Excel classiques : les noms de colonnes s'écrivent entre crochets, par exemple {{[Prix] * [Quantité]}}.` },
+  { level:4, theme:`DAX : mesure ou colonne calculée`,
+    q:`Dans le Modèle de données, quelle est la différence entre une colonne calculée et une mesure DAX ?`,
+    options:[`La colonne calculée stocke une valeur par ligne dans la table ; la mesure se calcule à la volée selon le contexte du rapport (filtres, TCD...)`, `Les deux sont rigoureusement identiques, seul le nom change`, `Une mesure ne peut porter que sur des dates`, `Une colonne calculée ne fonctionne que sur des tables liées entre elles`], answer:0,
+    why:`Une colonne calculée occupe de la mémoire, ligne par ligne, comme une colonne normale. Une mesure, elle, n'existe pas physiquement : elle se recalcule chaque fois qu'elle est utilisée, selon le contexte de filtre du moment (une région choisie, une année sélectionnée...).`,
+    tip:`Réflexe utile : si le résultat doit changer selon les filtres d'un TCD (comme une marge en %), pense mesure plutôt que colonne calculée.` },
+  { level:4, theme:`Office Scripts`,
+    q:`Tu veux automatiser une tâche répétitive dans Excel sur le web (Microsoft 365), en enregistrant tes actions puis en les rejouant en un clic. Quel outil est prévu pour ça ?`,
+    options:[`Office Scripts (enregistreur d'actions, en TypeScript)`, `Power Pivot`, `Le Solveur`, `Les Tableaux Excel`], answer:0,
+    why:`Office Scripts enregistre une série d'actions effectuées dans Excel sur le web, générées automatiquement en code TypeScript, puis permet de les rejouer ou de les modifier. C'est l'équivalent moderne des macros VBA, pensé pour le cloud.`,
+    tip:`Contrairement à VBA, Office Scripts fonctionne aussi dans Excel sur le web et peut être déclenché automatiquement via Power Automate.` },
+];
+
+const MAX_SCORE = POINTS.reduce((s,p)=> s + p*QUESTIONS_PER_LEVEL, 0);
+
+/* =========================================================
+   2. ÉTAT
+   ========================================================= */
+// QUESTIONS = la session en cours (20 questions), reconstituée à chaque test à partir de POOL.
+let QUESTIONS = [];
+let state = { started:false, finished:false, idx:0, score:0, perm:[], picks:[], results:[], tabSwitches:0 };
+
+// Pioche QUESTIONS_PER_LEVEL questions au hasard dans chaque niveau de POOL, puis les met
+// bout à bout dans l'ordre des niveaux (0 à 4), pour garder la difficulté croissante.
+function buildSession(){
+  let session = [];
+  for(let lvl=0; lvl<LEVELS.length; lvl++){
+    const pool = POOL.filter(q=> q.level===lvl);
+    session = session.concat(shuffle(pool).slice(0, QUESTIONS_PER_LEVEL).map(materializeQuestion));
+  }
+  return session;
+}
+// Une question « dynamique » (dynamic:true) fournit sa propre méthode build() qui régénère
+// tout (texte, grille, options, bonne réponse) à chaque appel. Une question qui porte
+// seulement un gridGen() garde son texte et ses réponses fixes, mais reçoit une mini-vue
+// Excel fraîche à chaque tirage (valeurs différentes, sans incidence sur la correction).
+function materializeQuestion(q){
+  if(q.dynamic) return q.build();
+  if(q.gridGen){ return Object.assign({}, q, { grid: q.gridGen() }); }
+  return q;
+}
+
+/* =========================================================
+   3. UTILITAIRES
+   ========================================================= */
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Échappe le texte puis transforme {{extrait}} en <code>extrait</code>
+function fmt(s){ return esc(s).replace(/\{\{([\s\S]+?)\}\}/g, '<code>$1</code>'); }
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; }
+  return a;
+}
+function levelOf(score){ return Math.min(LEVELS.length-1, Math.floor(score / MAX_SCORE * LEVELS.length)); }
+function levelMin(i){ return Math.round(i * MAX_SCORE / LEVELS.length); }
+function levelMax(i){ return i === LEVELS.length-1 ? MAX_SCORE : levelMin(i+1) - 1; }
+function chip(i, extraStyle){ const L = LEVELS[i]; return `<span class="lvl-chip" style="background:${L.color};color:${L.text};${extraStyle||''}">${L.name}</span>`; }
+
+/* =========================================================
+   4. JAUGE (SVG maison, aucune dépendance)
+   ========================================================= */
+function polar(cx,cy,r,deg){ const a = deg*Math.PI/180; return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; }
+function arcPath(cx,cy,r,d0,d1){
+  const [x0,y0] = polar(cx,cy,r,d0), [x1,y1] = polar(cx,cy,r,d1);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+function gaugeSvg(prefix){
+  const n = LEVELS.length, span = 180 / n;
+  const segs = LEVELS.map((L,i)=>
+    `<path class="g-seg" id="${prefix}Seg${i}" d="${arcPath(150,150,110,180+i*span+1.5,180+(i+1)*span-1.5)}" stroke="${L.color}" stroke-width="26" fill="none" opacity=".3"/>`
+  ).join('');
+  return `<svg viewBox="0 0 300 200" role="img" aria-label="Jauge de niveau Excel, de Débutant à Expert">
+    ${segs}
+    <text x="40" y="172" font-size="11" text-anchor="middle" fill="#6B6B6B">Débutant</text>
+    <text x="260" y="172" font-size="11" text-anchor="middle" fill="#6B6B6B">Expert</text>
+    <g class="needle" id="${prefix}Needle" style="transform-origin:150px 150px;transform:rotate(-90deg)">
+      <polygon points="145.5,150 154.5,150 150,50" fill="#333333"/>
+    </g>
+    <circle cx="150" cy="150" r="10" fill="#333333"/>
+    <circle cx="150" cy="150" r="4" fill="#FFFFFF"/>
+    <text x="150" y="192" font-size="22" font-weight="700" text-anchor="middle" fill="#333333"><tspan id="${prefix}Score">0</tspan><tspan font-size="12" font-weight="600" fill="#6B6B6B"> / ${MAX_SCORE}</tspan></text>
+  </svg>`;
+}
+function setGauge(prefix, score){
+  const pct = Math.max(0, Math.min(1, score / MAX_SCORE));
+  const needle = $(prefix+'Needle');
+  if(needle) needle.style.transform = `rotate(${(-90 + pct*180).toFixed(1)}deg)`;
+  const sc = $(prefix+'Score'); if(sc) sc.textContent = score;
+  const lvl = levelOf(score);
+  LEVELS.forEach((L,i)=>{ const seg = $(prefix+'Seg'+i); if(seg) seg.setAttribute('opacity', i <= lvl ? '1' : '.3'); });
+}
+function updateGauge(){
+  setGauge('t', state.score);
+  const lvl = levelOf(state.score);
+  const answered = state.results.filter(r=>r!==null && r!==undefined).length;
+  $('gaugeLevel').innerHTML = `${chip(lvl)}<span class="hint">${answered === 0 ? 'Niveau de départ, avant ta première réponse' : 'Niveau estimé après ' + answered + ' question' + (answered>1?'s':'')}</span>`;
+  $('gaugeLegend').innerHTML = LEVELS.map((L,i)=>
+    `<div class="legend-row${i===lvl?' current':''}"><span class="sw" style="background:${L.color}"></span>${L.name}<span class="rg">${levelMin(i)} à ${levelMax(i)}</span></div>`
+  ).join('');
+}
+
+/* =========================================================
+   5. TEST
+   ========================================================= */
+function startTest(){
+  QUESTIONS = buildSession();
+  state = {
+    started:true, finished:false, idx:0, score:0,
+    perm: QUESTIONS.map(q=> shuffle(q.options.map((_,i)=>i))),
+    picks: QUESTIONS.map(()=>null),
+    results: QUESTIONS.map(()=>null),
+    fiftyHidden: QUESTIONS.map(()=>null),
+    tabSwitches: 0,
+  };
+  updateGauge(); renderTest(); renderRevisions(); updateTabBadge(); updateHomeCta();
+}
+function restartTest(){
+  const inProgress = state.started && !state.finished && state.results.some(r=>r!==null);
+  if(inProgress && !window.confirm('Recommencer le test ? Ta progression actuelle sera perdue.')) return;
+  startTest();
+}
+function renderDots(){
+  return `<div class="dots" aria-hidden="true">` + QUESTIONS.map((_,i)=>{
+    let c = 'dot';
+    if(state.results[i] === true) c += ' ok';
+    else if(state.results[i] === false) c += ' ko';
+    else if(i === state.idx && !state.finished) c += ' cur';
+    return `<span class="${c}"></span>`;
+  }).join('') + `</div>`;
+}
+function renderTest(){
+  const host = $('testHost');
+  if(!state.started){ host.innerHTML = ''; return; }
+  if(state.finished){ renderResults(host); return; }
+  const i = state.idx, q = QUESTIONS[i], perm = state.perm[i];
+  const picked = state.picks[i];
+  const answered = picked !== null;
+  const isLast = i === QUESTIONS.length - 1;
+  const hidden = state.fiftyHidden[i];
+  const fullPts = POINTS[q.level];
+  const halfPts = Math.round(fullPts / 2);
+  const pts = hidden ? halfPts : fullPts;
+
+  const tableHtml = renderGrid(q.grid);
+
+  const optsHtml = perm.map((orig, d)=>{
+    if(hidden && hidden.has(orig)) return '';
+    let cls = 'opt';
+    if(answered && orig === picked) cls += (orig === q.answer) ? ' picked-ok' : ' picked-ko';
+    return `<button type="button" class="${cls}" data-d="${d}" ${answered?'disabled':''}><span class="letter">${'ABCD'[d]}</span><span>${fmt(q.options[orig])}</span></button>`;
+  }).join('');
+
+  let fbHtml = '';
+  if(answered){
+    if(state.results[i]) fbHtml = `<div class="fb ok" role="status">✓ <b>Bonne réponse !</b> +${pts} points sur la jauge${hidden ? ' (question à moitié de points, 50/50 utilisé)' : ''}.</div>`;
+    else fbHtml = `<div class="fb ko" role="status">✗ <b>Pas cette fois.</b> Pas de panique : la bonne réponse et l'explication t'attendent dans l'onglet Révisions.</div>`;
+  }
+
+  const fiftyHtml = !answered
+    ? (hidden
+        ? `<p class="q-note" style="margin:0 0 8px">🎯 50/50 utilisé : cette question ne rapporte plus que ${halfPts} point${halfPts>1?'s':''} (au lieu de ${fullPts}).</p>`
+        : `<div style="text-align:right;margin-bottom:8px"><button type="button" class="ghost" id="btnFifty">🎯 50/50 : éliminer 2 réponses (question à moitié de points)</button></div>`)
+    : '';
+
+  host.innerHTML = `<div class="panel q-card">
+    <div class="q-head">
+      <span class="q-count">Question ${i+1} sur ${QUESTIONS.length}</span>
+      <button type="button" class="ghost" id="btnRestart">↺ Recommencer</button>
+    </div>
+    ${renderDots()}
+    <p class="q-text">${fmt(q.q)}</p>
+    ${tableHtml}
+    ${fiftyHtml}
+    <div class="opts">${optsHtml}</div>
+    ${fbHtml}
+    <div class="q-actions">
+      <span class="q-note">${answered ? '' : 'Choisis une réponse pour la valider.'}</span>
+      ${answered ? `<button type="button" class="primary big" id="btnNext">${isLast ? 'Voir mon résultat' : 'Question suivante ▸'}</button>` : ''}
+    </div>
+  </div>`;
+
+  host.querySelectorAll('.opt').forEach(b=> b.addEventListener('click', ()=> answerQuestion(parseInt(b.dataset.d,10))));
+  $('btnRestart').addEventListener('click', restartTest);
+  const fiftyBtn = $('btnFifty'); if(fiftyBtn) fiftyBtn.addEventListener('click', useFifty);
+  const next = $('btnNext'); if(next){ next.addEventListener('click', nextQuestion); next.focus({preventScroll:true}); }
+}
+// Élimine 2 des 3 mauvaises réponses de la question en cours (esprit « 50/50 »). Ne peut
+// être utilisé qu'une fois par question, avant de répondre ; la question ne rapporte
+// ensuite que la moitié de ses points habituels, même en cas de bonne réponse.
+function useFifty(){
+  const i = state.idx;
+  if(state.picks[i] !== null || state.fiftyHidden[i]) return;
+  const q = QUESTIONS[i];
+  const wrongIdx = q.options.map((_,idx)=> idx).filter(idx=> idx !== q.answer);
+  state.fiftyHidden[i] = new Set(shuffle(wrongIdx).slice(0,2));
+  renderTest();
+}
+function answerQuestion(d){
+  const i = state.idx;
+  if(state.picks[i] !== null) return;
+  const orig = state.perm[i][d];
+  const ok = orig === QUESTIONS[i].answer;
+  state.picks[i] = orig;
+  state.results[i] = ok;
+  if(ok){
+    const fullPts = POINTS[QUESTIONS[i].level];
+    state.score += state.fiftyHidden[i] ? Math.round(fullPts / 2) : fullPts;
+  }
+  updateGauge(); renderTest(); renderRevisions(); updateTabBadge();
+}
+function scrollToTestTop(){
+  const host = $('testHost'); const hdr = $('appHeader').offsetHeight;
+  if(host.getBoundingClientRect().top < hdr) host.scrollIntoView({block:'start', behavior:'smooth'});
+}
+// Message d'encouragement adapté au score, du sans-faute au tout premier essai.
+const ENCOURAGEMENT_TIERS = [
+  { min:1,    icon:'🎉', text:"Sans-faute total : 20 questions sur 20, une performance parfaite !", border:'var(--success)' },
+  { min:0.85, icon:'🌟', text:"Excellent travail, tu maîtrises clairement Excel.", border:'var(--success)' },
+  { min:0.6,  icon:'👏', text:"Bon score : tes bases sont solides, encore quelques points à consolider.", border:'var(--accent)' },
+  { min:0.35, icon:'💪', text:"Pas mal du tout. Direction l'onglet Révisions pour passer un cap.", border:'var(--accent)' },
+  { min:0,    icon:'🌱', text:"Un point de départ clair. L'onglet Révisions va t'aider à progresser vite.", border:'var(--brand-orange)' },
+];
+function encouragementFor(){
+  const pct = state.score / MAX_SCORE;
+  return ENCOURAGEMENT_TIERS.find(t=> pct >= t.min) || ENCOURAGEMENT_TIERS[ENCOURAGEMENT_TIERS.length-1];
+}
+function nextQuestion(){
+  if(state.idx < QUESTIONS.length - 1) state.idx++;
+  else {
+    state.finished = true; updateHomeCta();
+    if(state.score === MAX_SCORE) launchConfetti();
+  }
+  renderTest(); scrollToTestTop();
+}
+function renderResults(host){
+  const lvl = levelOf(state.score);
+  const good = state.results.filter(r=>r===true).length;
+  const nbErr = QUESTIONS.length - good;
+  const rows = LEVELS.map((L,li)=>{
+    const idxs = QUESTIONS.map((q,qi)=> q.level===li ? qi : -1).filter(x=>x>=0);
+    const ok = idxs.filter(qi=> state.results[qi] === true).length;
+    const cells = idxs.map(qi=> `<span class="bd-cell" style="background:${state.results[qi]===true ? L.color : '#E8E6E4'}"></span>`).join('');
+    return `<div class="bd-row"><span>${L.name}</span><span class="bd-bar">${cells}</span><span>${ok} / ${idxs.length}</span></div>`;
+  }).join('');
+  const missing = lvl < LEVELS.length - 1 ? levelMin(lvl+1) - state.score : 0;
+  const msg = lvl === LEVELS.length - 1
+    ? `Belle performance : tu maîtrises l'essentiel d'Excel, y compris ses fonctions récentes.${nbErr ? ' Jette un œil aux quelques erreurs dans l\'onglet Révisions pour boucler la boucle.' : ' Sans-faute, bravo !'}`
+    : `Il te manque <b>${missing} point${missing>1?'s':''}</b> pour atteindre le niveau <b>${LEVELS[lvl+1].name}</b>. ${nbErr ? 'L\'onglet Révisions regroupe tes ' + nbErr + ' erreur' + (nbErr>1?'s':'') + ' avec les explications, en commençant par les bases.' : ''}`;
+  const switchLine = state.tabSwitches > 0
+    ? `<p class="result-msg" style="color:var(--error);font-weight:600">⚠️ ${state.tabSwitches} changement${state.tabSwitches>1?'s':''} de fenêtre ou d'onglet détecté${state.tabSwitches>1?'s':''} pendant le test.</p>`
+    : `<p class="result-msg" style="color:var(--success)">✓ Aucun changement de fenêtre détecté : tu es resté concentré sur le test du début à la fin.</p>`;
+  const enc = encouragementFor();
+  const encHtml = `<div class="encourage" style="border-left-color:${enc.border}"><span class="enc-icon">${enc.icon}</span><span>${enc.text}</span></div>`;
+  host.innerHTML = `<div class="panel result-card">
+    <div class="result-top">
+      <div class="result-top-text">
+        <h2>Test terminé</h2>
+        <div class="result-big">${chip(lvl, 'font-size:16px;padding:5px 18px;')}
+          <div class="score">${state.score}<small> / ${MAX_SCORE} points</small></div>
+          <div><b>${good}</b> bonne${good>1?'s':''} réponse${good>1?'s':''} sur ${QUESTIONS.length}</div>
+        </div>
+        ${encHtml}
+        <p class="result-msg">${msg}</p>
+        ${switchLine}
+      </div>
+      <div class="result-gauge" id="resultGauge"></div>
+    </div>
+    <div class="breakdown" aria-label="Résultats par niveau de difficulté">${rows}</div>
+    <div class="q-actions" style="justify-content:flex-start;gap:10px">
+      <button type="button" class="primary big" data-goto="revisions">📚 Voir mes pistes de révision</button>
+      <button type="button" class="big" id="btnRetry">↺ Refaire le test</button>
+    </div>
+  </div>
+  ${renderExportBlock()}`;
+  $('resultGauge').innerHTML = gaugeSvg('r');
+  setGauge('r', state.score);
+  $('btnRetry').addEventListener('click', startTest);
+}
+
+/* =========================================================
+   5bis. EXPORT DU RÉSULTAT (e-mail ou presse-papiers)
+   Rien n'est envoyé depuis l'outil : on ouvre la messagerie du poste via un lien
+   mailto (aucun serveur, aucune donnée transmise par nos soins), ou on copie un
+   texte simple dans le presse-papiers pour un collage manuel.
+   ========================================================= */
+function buildSummaryText(){
+  const lvl = levelOf(state.score);
+  const wrong = QUESTIONS.map((q,i)=>({q,i})).filter(o=> state.results[o.i] === false);
+  const good = QUESTIONS.length - wrong.length;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const lines = [];
+  lines.push('Test de positionnement Excel : Data Unchained');
+  lines.push('Date : ' + dateStr);
+  lines.push('Niveau atteint : ' + LEVELS[lvl].name + ' (' + state.score + ' / ' + MAX_SCORE + ' points)');
+  lines.push('Bonnes réponses : ' + good + ' / ' + QUESTIONS.length);
+  lines.push(encouragementFor().text);
+  lines.push('');
+  lines.push("Changements de fenêtre ou d'onglet détectés pendant le test : " + state.tabSwitches);
+  lines.push('');
+  if(wrong.length){
+    lines.push('Questions à revoir :');
+    wrong.forEach(o=> lines.push('- ' + o.q.theme + ' (niveau ' + LEVELS[o.q.level].name + ')'));
+  } else {
+    lines.push('Aucune erreur : sans-faute sur les ' + QUESTIONS.length + ' questions.');
+  }
+  lines.push('');
+  lines.push(NEXT_STEP[lvl]);
+  return lines.join('\n');
+}
+function renderExportBlock(){
+  return `<div class="panel export-block">
+    <div class="panel-title" style="padding:0 0 10px;border:none">✉️ Envoyer ce résultat</div>
+    <div class="export-row">
+      <div class="export-field">
+        <label for="exportTo">Adresse du destinataire (optionnel)</label>
+        <input type="email" id="exportTo" placeholder="formateur@entreprise.fr">
+      </div>
+      <div class="export-actions">
+        <button type="button" class="primary export-mail-btn">✉️ Envoyer par e-mail</button>
+        <button type="button" class="export-copy-btn">📋 Copier le résumé</button>
+      </div>
+    </div>
+    <p class="export-note" id="exportNote">Ouvre ta messagerie habituelle avec le score, le niveau et les points à revoir déjà rédigés. Rien n'est envoyé depuis cet outil : c'est ta messagerie qui prend le relais.</p>
+  </div>`;
+}
+function copyText(text){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly',''); ta.style.position = 'fixed'; ta.style.left = '-9999px';
+  document.body.appendChild(ta); ta.select();
+  let ok = false;
+  try{ ok = document.execCommand('copy'); } catch(e){ ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+function sendByMail(){
+  const lvl = levelOf(state.score);
+  const to = ($('exportTo') ? $('exportTo').value.trim() : '');
+  const subject = 'Test de positionnement Excel : ' + LEVELS[lvl].name + ' (' + new Date().toLocaleDateString('fr-FR') + ')';
+  const body = buildSummaryText();
+  window.location.href = 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+}
+function copySummary(){
+  const ok = copyText(buildSummaryText());
+  const note = $('exportNote');
+  if(!note) return;
+  note.textContent = ok ? '✓ Résumé copié dans le presse-papiers.' : "La copie automatique n'a pas fonctionné : sélectionne et copie le texte toi-même depuis un e-mail vide.";
+}
+
+
+
+/* =========================================================
+   6. RÉVISIONS : uniquement les questions en erreur
+   ========================================================= */
+function updateTabBadge(){
+  const n = state.results.filter(r=>r===false).length;
+  const b = $('revBadge');
+  b.hidden = n === 0; b.textContent = n;
+}
+function renderRevisions(){
+  const host = $('revHost');
+  if(!state.started){
+    host.innerHTML = `<div class="panel empty"><div class="big">📚</div><p>Cet onglet se remplit avec les questions où tu te trompes pendant le test : la bonne réponse, l'explication, et des pistes pour passer au niveau suivant.</p><button class="primary big" data-goto="test">Passer le test</button></div>`;
+    return;
+  }
+  const lvl = levelOf(state.score);
+  const wrong = QUESTIONS.map((q,i)=>({q,i})).filter(o=> state.results[o.i] === false).sort((a,b)=> a.q.level - b.q.level || a.i - b.i);
+
+  const goal = `<section class="panel goal">
+    <h2>${state.finished ? 'Ton niveau' : 'Ton niveau estimé pour l\'instant'} : ${chip(lvl)}</h2>
+    <p>${esc(NEXT_STEP[lvl])}</p>
+    ${lvl < LEVELS.length-1 ? `<p><b>${levelMin(lvl+1) - state.score} point${(levelMin(lvl+1)-state.score)>1?'s':''}</b> à gagner pour atteindre le niveau ${LEVELS[lvl+1].name}.</p>` : ''}
+    ${state.finished ? '' : `<p style="color:var(--text-secondary);font-size:12.5px">Le test est en cours : cette liste se complète au fil de tes réponses.</p>`}
+  </section>`;
+
+  let list;
+  if(wrong.length === 0){
+    list = state.finished
+      ? `<div class="panel empty"><div class="big">🏆</div><p>Aucune erreur : rien à réviser sur ces 20 questions. Pour continuer à progresser, explore les pistes du bandeau ci-dessus.</p><button class="big" data-goto="test">Refaire le test</button></div>`
+      : `<div class="panel empty"><div class="big">✅</div><p>Aucune erreur pour l'instant. Continue le test, les questions à revoir apparaîtront ici.</p><button class="primary big" data-goto="test">Retour au test</button></div>`;
+  } else {
+    list = `<div class="rev-list">` + wrong.map(({q,i})=>{
+      const tableHtml = renderGrid(q.grid);
+      return `<article class="panel rev-card">
+        <div class="rev-top">${chip(q.level)}<span class="rev-theme">${esc(q.theme)}</span><span class="rev-theme">· question ${i+1}</span></div>
+        <p class="rev-q">${fmt(q.q)}</p>
+        ${tableHtml}
+        <div class="ans ko">✗ <b>Ta réponse :</b> ${fmt(q.options[state.picks[i]])}</div>
+        <div class="ans ok">✓ <b>Bonne réponse :</b> ${fmt(q.options[q.answer])}</div>
+        <p class="why"><b>Pourquoi :</b> ${fmt(q.why)}</p>
+        <div class="tip">💡 ${fmt(q.tip)}</div>
+        ${q.link ? `<a class="rev-link" href="${esc(q.link.url)}" target="_blank" rel="noopener noreferrer">📘 Pour aller plus loin : ${esc(q.link.label)}</a>` : ''}
+      </article>`;
+    }).join('') + `</div>`;
+  }
+  const intro = wrong.length ? `<p style="margin:0;font-size:13px;color:var(--text-secondary)">${wrong.length} question${wrong.length>1?'s':''} à revoir, classée${wrong.length>1?'s':''} des bases vers le plus avancé.</p>` : '';
+  host.innerHTML = goal + intro + list;
+}
+
+/* =========================================================
+   7. ACCUEIL
+   ========================================================= */
+function renderHome(){
+  $('heroGauge').innerHTML = gaugeSvg('h');
+  $('homeLevels').innerHTML = LEVELS.map((L,i)=>
+    `<div class="lvl-row"><span class="lvl-swatch" style="background:${L.color}"></span><div><b>${L.name}</b><span class="range">de ${levelMin(i)} à ${levelMax(i)} points</span><p>${esc(L.desc)} <i>Question de ce niveau : ${POINTS[i]} point${POINTS[i]>1?'s':''}.</i></p></div></div>`
+  ).join('');
+  $('homeBareme').textContent = `Barème : 4 questions par niveau, de ${POINTS[0]} points (Débutant) à ${POINTS[POINTS.length-1]} points (Expert) la question. Total possible : ${MAX_SCORE} points.`;
+  // Un seul mouvement d'aiguille à l'ouverture pour illustrer le principe
+  setGauge('h', 0);
+  setTimeout(()=> setGauge('h', Math.round(MAX_SCORE * 0.7)), 350);
+}
+function updateHomeCta(){
+  const b = $('homeCta');
+  if(state.started && state.finished) b.textContent = 'Voir mon résultat';
+  else if(state.started && state.results.some(r=>r!==null)) b.textContent = 'Reprendre le test';
+  else b.textContent = 'Commencer le test';
+}
+
+/* =========================================================
+   8. ONGLETS ET NAVIGATION (écouteurs attachés une seule fois)
+   ========================================================= */
+function goTo(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>{ const on = b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+  document.querySelectorAll('.tab-panel').forEach(p=> p.classList.toggle('active', p.id === 'tab-'+tab));
+  if(tab === 'test' && !state.started) startTest();
+  if(tab === 'revisions') renderRevisions();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=> goTo(b.dataset.tab)));
+// Les boutons créés dynamiquement portent data-goto, ou une classe export-* : deux écouteurs
+// délégués suffisent, plutôt que de rattacher un listener à chaque rendu.
+document.addEventListener('click', e=>{
+  const t = e.target.closest('[data-goto]');
+  if(t) goTo(t.dataset.goto);
+  if(e.target.closest('.export-mail-btn')) sendByMail();
+  if(e.target.closest('.export-copy-btn')) copySummary();
+});
+
+/* =========================================================
+   7bis. CONFETTIS (score parfait)
+   Petite pluie de confettis en canvas, sans dépendance externe, déclenchée une seule
+   fois quand le test se termine avec le score maximal. Respecte prefers-reduced-motion.
+   ========================================================= */
+function launchConfetti(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const old = $('confettiCanvas'); if(old) old.remove();
+  const canvas = document.createElement('canvas');
+  canvas.id = 'confettiCanvas';
+  canvas.setAttribute('aria-hidden', 'true');
+  canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:400;';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  function resize(){
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const colors = ['#DDA40D','#1D8A57','#B95E01','#175B36','#F3D163'];
+  const N = 140;
+  const particles = Array.from({length:N}, ()=> ({
+    x: Math.random() * window.innerWidth,
+    y: -20 - Math.random() * window.innerHeight * 0.6,
+    w: 6 + Math.random() * 6,
+    h: 9 + Math.random() * 9,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    speedY: 2.2 + Math.random() * 2.6,
+    speedX: (Math.random() - 0.5) * 2.2,
+    rot: Math.random() * 360,
+    rotSpeed: (Math.random() - 0.5) * 12,
+  }));
+  const duration = 4200;
+  const start = performance.now();
+  function frame(now){
+    const elapsed = now - start;
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    let stillFalling = false;
+    particles.forEach(p=>{
+      p.y += p.speedY; p.x += p.speedX; p.rot += p.rotSpeed;
+      if(p.y < window.innerHeight + 20) stillFalling = true;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    if(elapsed < duration && stillFalling){
+      requestAnimationFrame(frame);
+    } else {
+      window.removeEventListener('resize', resize);
+      canvas.remove();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* =========================================================
+   8bis. DÉTECTION DE CHANGEMENT DE FENÊTRE / ONGLET
+   Signal pédagogique, pas une surveillance en direct. Deux API se complètent :
+   - visibilitychange (document.hidden) : capte le changement d'onglet, la minimisation,
+     le passage à une autre appli qui recouvre entièrement la fenêtre.
+   - blur/focus sur window (document.hasFocus()) : capte en plus la perte de focus alors
+     que la fenêtre reste VISIBLE à l'écran (écran partagé, second moniteur, appli côte à
+     côte), un cas que visibilitychange seul ne voit pas, la page n'étant jamais masquée.
+   Un petit délai (400 ms) avant de compter évite les faux positifs d'un clic bref sur la
+   barre d'adresse ou une boîte de dialogue qui se referme aussitôt ; en dessous de ce
+   délai, rien n'est compté. Le compteur est rappelé dans la restitution finale et l'export.
+   ========================================================= */
+let switchAlertTimeout = null;
+let awayTimer = null;
+let isAway = false;
+let awayCounted = false;
+function showSwitchAlert(){
+  const el = $('switchAlert');
+  if(!el) return;
+  $('switchAlertText').textContent = `⚠️ Changement de fenêtre ou d'onglet détecté (${state.tabSwitches} au total pendant ce test).`;
+  el.classList.add('show');
+  clearTimeout(switchAlertTimeout);
+  switchAlertTimeout = setTimeout(()=> el.classList.remove('show'), 8000);
+}
+function isPageAway(){
+  return document.hidden || !document.hasFocus();
+}
+function handleFocusSignal(){
+  if(!state.started || state.finished) return;
+  const away = isPageAway();
+  if(away && !isAway){
+    isAway = true;
+    awayCounted = false;
+    clearTimeout(awayTimer);
+    awayTimer = setTimeout(()=>{
+      if(isAway){ state.tabSwitches += 1; awayCounted = true; }
+    }, 400);
+  } else if(!away && isAway){
+    isAway = false;
+    clearTimeout(awayTimer);
+    if(awayCounted){ showSwitchAlert(); awayCounted = false; }
+  }
+}
+document.addEventListener('visibilitychange', handleFocusSignal);
+window.addEventListener('blur', handleFocusSignal);
+window.addEventListener('focus', handleFocusSignal);
+$('switchAlertClose').addEventListener('click', ()=>{
+  $('switchAlert').classList.remove('show');
+  clearTimeout(switchAlertTimeout);
+});
+
+/* =========================================================
+   9. INITIALISATION
+   ========================================================= */
+function syncHeaderHeight(){ document.documentElement.style.setProperty('--hdr-h', $('appHeader').offsetHeight + 'px'); }
+window.addEventListener('resize', syncHeaderHeight);
+$('testGauge').innerHTML = gaugeSvg('t');
+renderHome();
+updateGauge();
+renderRevisions();
+updateHomeCta();
+syncHeaderHeight();
+$('appVersion').textContent = 'v' + APP_VERSION;
+</script>
+</body>
+</html>
