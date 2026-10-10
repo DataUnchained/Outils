@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Data Unchained · Test de positionnement Excel
-  Version : 1.5.0
+  Version : 1.5.1
 
   Historique :
     1.0.0 : Version initiale. 3 onglets (Accueil, Test, Révisions), 20 questions QCM réparties
@@ -45,6 +45,20 @@
             d'un bouton 50/50 par question, qui élimine 2 des 3 mauvaises réponses ; s'il
             est utilisé, la question ne rapporte plus que la moitié de ses points (arrondi),
             même en cas de bonne réponse.
+    1.5.1 : Corrections suite à retours utilisateur. (1) Mini-vues Excel harmonisées : les
+            questions dont la formule référence une plage commençant en ligne 2 (ex.
+            A2:A50) affichent désormais une vraie ligne d'en-têtes en ligne 1, au lieu de
+            montrer les données dès la ligne 1 comme si la plage n'avait pas d'en-tête.
+            (2) Correction d'une mise en évidence qui révélait la réponse : la question
+            RECHERCHEV surlignait la cellule contenant la valeur de retour (donc la bonne
+            réponse) au lieu de la clé recherchée ; la question SEQUENCE affichait
+            directement le résultat attendu (1,2,3,4,5) dans sa mini-vue avant même que
+            l'apprenant ne réponde, remplacé par un aperçu neutre (formule + cellules « ? »).
+            (3) Détection de changement de fenêtre : un repère d'activité (souris, clavier,
+            défilement) permet désormais de ne plus compter comme un changement de fenêtre
+            le cas où l'écran s'éteint tout seul après une longue pause de lecture sans
+            interaction ; le cas de l'écran partagé ou du second moniteur (page visible mais
+            sans focus) reste détecté comme avant.
 -->
 <html lang="fr">
 <head>
@@ -377,7 +391,7 @@
 /* =========================================================
    1. DONNÉES : niveaux et questions
    ========================================================= */
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.5.1';
 
 // 5 niveaux, chacun couvre 20 % de la jauge (score sur 100).
 const LEVELS = [
@@ -503,11 +517,13 @@ const POOL = [
   { level:0, theme:`Fonction MOYENNE`, dynamic:true,
     build(){
       let vals, avg;
-      for(let tries=0; tries<15; tries++){
+      for(let tries=0; tries<30; tries++){
         avg = rInt(15,70);
         const v1=rInt(5,avg*2), v2=rInt(5,avg*2), v3=rInt(5,avg*2);
         const v4 = avg*4 - v1-v2-v3;
-        if(v4>=1 && v4<=200){ vals=[v1,v2,v3,v4]; break; }
+        // On évite que la moyenne tombe pile sur une des 4 valeurs affichées : par hasard,
+        // ça donnerait la bonne réponse en toutes lettres dans la mini-vue, sans calcul.
+        if(v4>=1 && v4<=200 && ![v1,v2,v3,v4].includes(avg)){ vals=[v1,v2,v3,v4]; break; }
       }
       if(!vals){ avg=30; vals=[25,28,31,36]; }
       const wrongs = [avg*4, vals[0], Math.round(avg*4/3)];
@@ -600,7 +616,7 @@ const POOL = [
     why:`Le symbole $ verrouille la colonne, la ligne, ou les deux. Sans lui, la référence est relative et suit le déplacement de la formule.`,
     tip:`Raccourci : après avoir cliqué sur une référence dans la formule, la touche F4 bascule entre A1, $A$1, A$1 et $A1. Analogie : le $ est un cadenas.` },
   { level:1, theme:`Fonction NB.SI`,
-    gridGen(){ const rows=Array.from({length:5},()=>[rPick(SAMPLE_CITIES)]); return { rows }; },
+    gridGen(){ const data=Array.from({length:5},()=>[rPick(SAMPLE_NAMES), rPick(SAMPLE_CITIES)]); return { header:true, rows:[['Client','Ville'], ...data] }; },
     q:`Quelle formule compte le nombre de cellules de B2:B50 qui contiennent exactement « Paris » ?`,
     options:[`{{=NB.SI(B2:B50;"Paris")}}`, `{{=NB(B2:B50;"Paris")}}`, `{{=SOMME.SI(B2:B50;"Paris")}}`, `{{=NBVAL(B2:B50;"Paris")}}`], answer:0,
     why:`NB.SI compte les cellules qui respectent une condition. NB ne compte que les cellules contenant des nombres, et NBVAL les cellules non vides, sans condition.`,
@@ -668,7 +684,7 @@ const POOL = [
       };
     } },
   { level:1, theme:`Fonction SOMME.SI`,
-    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_SERVICES), rInt(20,90)]); return { rows }; },
+    gridGen(){ const data=Array.from({length:4},()=>[rPick(SAMPLE_SERVICES), rInt(20,90)]); return { header:true, rows:[['Service','Montant'], ...data] }; },
     q:`Colonne A : service, colonne B : montant (lignes 2 à 50). Quelle formule additionne uniquement les montants du service « IT » ?`,
     options:[`{{=SOMME.SI(A2:A50;"IT";B2:B50)}}`, `{{=SOMME.SI(B2:B50;"IT";A2:A50)}}`, `{{=SOMME(A2:A50;"IT";B2:B50)}}`, `{{=NB.SI(A2:A50;"IT")}}`], answer:0,
     why:`SOMME.SI prend d'abord la plage sur laquelle porte le critère, puis le critère, puis (en option) la plage à additionner si elle diffère de la première.`,
@@ -714,7 +730,7 @@ const POOL = [
           [codes[1], products[1], fmtPrice(prices[1])],
           [codes[2], products[2], fmtPrice(prices[2])],
         ],
-        highlight:['C' + (idx+2)],
+        highlight:['A' + (idx+2)],
       };
       const options = shuffle([correctDisplay, products[idx], searchCode, '#N/A']);
       return {
@@ -726,7 +742,7 @@ const POOL = [
       };
     } },
   { level:2, theme:`SOMME.SI.ENS`,
-    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rPick([2024,2025]), rInt(200,900)]); return { rows }; },
+    gridGen(){ const data=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rPick([2024,2025]), rInt(200,900)]); return { header:true, rows:[['Région','Année','Montant'], ...data] }; },
     q:`Colonne A : région, colonne B : année, colonne C : montant des ventes (lignes 2 à 100). Quelle formule additionne les ventes de la région Sud en 2025 ?`,
     options:[`{{=SOMME.SI.ENS(C2:C100;A2:A100;"Sud";B2:B100;2025)}}`, `{{=SOMME.SI.ENS(A2:A100;"Sud";B2:B100;2025;C2:C100)}}`, `{{=SOMME.SI(C2:C100;A2:A100;"Sud";B2:B100;2025)}}`, `{{=NB.SI.ENS(A2:A100;"Sud";B2:B100;2025)}}`], answer:0,
     why:`Avec SOMME.SI.ENS, on indique d'abord la plage à additionner, puis des paires « plage de critère ; critère ». SOMME.SI n'accepte qu'un seul critère, et NB.SI.ENS compte au lieu d'additionner.`,
@@ -740,14 +756,14 @@ const POOL = [
     tip:`Analogie : Lignes et Colonnes sont les tiroirs, Valeurs est le calcul que tu fais sur les fiches rangées dedans.`,
     link:{ label:`Créer un tableau croisé dynamique (Microsoft Support)`, url:`https://support.microsoft.com/fr-fr/office/cr%C3%A9er-un-tableau-crois%C3%A9-dynamique-pour-analyser-des-donn%C3%A9es-de-feuille-de-calcul-a9a84538-bfe9-40a9-a8e9-f99134456576` } },
   { level:2, theme:`Gestion des erreurs`,
-    gridGen(){ const rows=[['E1','Inconnu'],['P01', rInt(10,90)],['P02', rInt(10,90)]]; return { rows, highlight:['A1'] }; },
-    q:`Que fait {{=SIERREUR(RECHERCHEV(E2;A2:C100;3;FAUX);"Introuvable")}} quand la valeur de E2 n'existe pas dans le tableau ?`,
+    gridGen(){ const products=rPickN(SAMPLE_PRODUCTS,2); const fmt=n=>n.toFixed(2).replace('.',','); return { header:true, rows:[['Code','Produit','Prix'],['P01',products[0],fmt(rFloat(1,9,2))],['P02',products[1],fmt(rFloat(1,9,2))]] }; },
+    q:`Que fait {{=SIERREUR(RECHERCHEV(E2;A2:C100;3;FAUX);"Introuvable")}} quand la valeur de E2 n'existe pas dans le tableau et que le tableau ci-dessus (A1:C3) ne contient que les codes P01 et P02 ?`,
     options:[`Elle affiche « Introuvable » à la place de l'erreur`, `Elle affiche #N/A`, `Elle affiche 0`, `Elle supprime la ligne concernée`], answer:0,
     why:`SIERREUR surveille la formule : si celle-ci renvoie une erreur, elle affiche la valeur de remplacement à la place.`,
     tip:`SI.NON.DISP est plus précise : elle ne masque que #N/A. SIERREUR masque toutes les erreurs, y compris celles qui révèlent un vrai problème.`,
     link:{ label:`Fonction SI.NON.DISP (Microsoft Support)`, url:`https://support.microsoft.com/fr-FR/Excel/functions/ifna-function` } },
   { level:2, theme:`NB.SI.ENS`,
-    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rPick(['Actif','Inactif'])]); return { rows }; },
+    gridGen(){ const data=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rPick(['Actif','Inactif'])]); return { header:true, rows:[['Région','Statut'], ...data] }; },
     q:`Colonne A : région, colonne B : statut (lignes 2 à 80). Quelle formule compte les lignes où la région est « Sud » ET le statut « Actif » ?`,
     options:[`{{=NB.SI.ENS(A2:A80;"Sud";B2:B80;"Actif")}}`, `{{=NB.SI(A2:A80;"Sud";B2:B80;"Actif")}}`, `{{=SOMME.SI.ENS(A2:A80;"Sud";B2:B80;"Actif")}}`, `{{=NB.SI.ENS(A2:A80;"Sud")+NB.SI.ENS(B2:B80;"Actif")}}`], answer:0,
     why:`NB.SI.ENS accepte plusieurs paires « plage ; critère » et ne compte que les lignes qui remplissent toutes les conditions à la fois. NB.SI, lui, n'accepte qu'un seul critère.`,
@@ -793,7 +809,7 @@ const POOL = [
     why:`Le $ placé juste avant la lettre verrouille la colonne ; celui placé juste avant le chiffre verrouille la ligne. {{$A1}} fige la colonne A et laisse la ligne s'adapter à la recopie.`,
     tip:`Retiens l'astuce : le $ « bloque » ce qui le suit immédiatement, lettre ou chiffre.` },
   { level:2, theme:`MOYENNE.SI.ENS`,
-    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_SERVICES), rPick([2024,2025]), rInt(8,20)]); return { rows }; },
+    gridGen(){ const data=Array.from({length:4},()=>[rPick(SAMPLE_SERVICES), rPick([2024,2025]), rInt(8,20)]); return { header:true, rows:[['Service','Année','Note'], ...data] }; },
     q:`Colonne A : service, colonne B : année, colonne C : note (lignes 2 à 60). Quelle formule calcule la note moyenne du service « IT » en 2025 ?`,
     options:[`{{=MOYENNE.SI.ENS(C2:C60;A2:A60;"IT";B2:B60;2025)}}`, `{{=MOYENNE.SI(C2:C60;A2:A60;"IT")}}`, `{{=NB.SI.ENS(C2:C60;A2:A60;"IT";B2:B60;2025)}}`, `{{=MOYENNE(C2:C60)}}`], answer:0,
     why:`MOYENNE.SI.ENS suit la même logique que SOMME.SI.ENS et NB.SI.ENS : la plage à calculer en premier, puis des paires plage/critère. MOYENNE.SI, elle, n'accepte qu'un seul critère, alors qu'il en faut deux ici.`,
@@ -841,7 +857,7 @@ const POOL = [
     why:`Power Query enregistre chaque transformation (supprimer une colonne, fractionner, filtrer...) comme une étape. À la prochaine actualisation, toutes les étapes sont rejouées sur les nouvelles données.`,
     tip:`Analogie : c'est une recette de cuisine enregistrée. Tu changes les ingrédients, la recette s'applique seule.` },
   { level:3, theme:`Fonction SOMMEPROD`,
-    gridGen(){ const rows=Array.from({length:4},()=>[rInt(1,20), rFloat(1,9,2).toFixed(2).replace('.',',')]); return { rows }; },
+    gridGen(){ const data=Array.from({length:4},()=>[rInt(1,20), rFloat(1,9,2).toFixed(2).replace('.',',')]); return { header:true, rows:[['Quantité','Prix unitaire'], ...data] }; },
     q:`Colonne A : quantité, colonne B : prix unitaire (lignes 2 à 20, aucune ligne de sous-total). Quelle formule calcule le chiffre d'affaires total en une seule fois ?`,
     options:[`{{=SOMMEPROD(A2:A20;B2:B20)}}`, `{{=SOMME(A2:A20;B2:B20)}}`, `{{=A2:A20*B2:B20}}`, `{{=PRODUIT(A2:A20;B2:B20)}}`], answer:0,
     why:`SOMMEPROD multiplie les plages terme à terme (quantité × prix pour chaque ligne), puis additionne tous les résultats, sans colonne intermédiaire.`,
@@ -874,7 +890,7 @@ const POOL = [
     why:`« Supprimer les doublons » (onglet Données) compare les colonnes choisies et ne garde qu'une occurrence de chaque combinaison identique.`,
     tip:`Fais toujours une copie de sauvegarde avant : la suppression est immédiate et irréversible par un simple Ctrl+Z une fois le classeur refermé.` },
   { level:3, theme:`Caractères génériques`,
-    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_NAMES).toLowerCase()+'.'+rPick(SAMPLE_NAMES).toLowerCase()+'@data-unchained.fr']); return { rows, forceAlign:'left' }; },
+    gridGen(){ const data=Array.from({length:4},()=>[rPick(SAMPLE_NAMES).toLowerCase()+'.'+rPick(SAMPLE_NAMES).toLowerCase()+'@data-unchained.fr']); return { header:true, forceAlign:'left', rows:[['E-mail'], ...data] }; },
     q:`Colonne A contient des adresses e-mail. Quelle formule compte celles qui se terminent par « @data-unchained.fr » ?`,
     options:[`{{=NB.SI(A2:A100;"*@data-unchained.fr")}}`, `{{=NB.SI(A2:A100;"@data-unchained.fr")}}`, `{{=NB.SI(A2:A100;"?@data-unchained.fr")}}`, `{{=TROUVE(A2:A100;"@data-unchained.fr")}}`], answer:0,
     why:`L'astérisque * remplace n'importe quelle suite de caractères. "*@data-unchained.fr" trouve donc toute chaîne qui se termine par ce domaine, quel que soit ce qui précède.`,
@@ -916,7 +932,7 @@ const POOL = [
     tip:`Elle peut aussi renvoyer plusieurs colonnes d'un coup, ce que RECHERCHEV ne sait pas faire.`,
     link:{ label:`Fonction RECHERCHEX (Microsoft Support)`, url:`https://support.microsoft.com/fr-fr/Excel/functions/xlookup-function` } },
   { level:4, theme:`Fonctions matricielles dynamiques`,
-    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_REGIONS), rInt(100,900)]); return { rows }; },
+    gridGen(){ const data=Array.from({length:4},()=>[rPick(SAMPLE_PRODUCTS), rPick(SAMPLE_REGIONS), rInt(100,900)]); return { header:true, rows:[['Produit','Région','Montant'], ...data] }; },
     q:`Que produit {{=FILTRE(A2:C100;B2:B100="Sud")}} dans Microsoft 365 ?`,
     options:[`Toutes les lignes dont la colonne B vaut « Sud », qui se déversent automatiquement dans les cellules voisines`, `Uniquement la première ligne trouvée`, `Le nombre de lignes dont la colonne B vaut « Sud »`, `Une erreur, il faut valider avec Ctrl+Maj+Entrée`], answer:0,
     why:`Les fonctions matricielles dynamiques (FILTRE, TRIER, UNIQUE...) renvoient plusieurs valeurs qui « débordent » dans les cellules libres en dessous et à droite.`,
@@ -938,19 +954,19 @@ const POOL = [
     why:`LAMBDA permet de définir ses propres fonctions, avec des paramètres, directement en formule. Une fois nommée dans le Gestionnaire de noms, elle se réutilise partout comme une fonction native.`,
     tip:`Combine-la avec LET pour construire des fonctions maison lisibles et sans répétition.` },
   { level:4, theme:`Fonction UNIQUE`,
-    gridGen(){ const c1=rPick(SAMPLE_CITIES); const rows=[[c1],[rPick(SAMPLE_CITIES)],[c1],[rPick(SAMPLE_CITIES)]]; return { rows }; },
+    gridGen(){ const c1=rPick(SAMPLE_CITIES); const data=[[c1],[rPick(SAMPLE_CITIES)],[c1],[rPick(SAMPLE_CITIES)]]; return { header:true, rows:[['Ville'], ...data] }; },
     q:`Que produit {{=UNIQUE(A2:A100)}} dans Microsoft 365, si A2:A100 contient des noms de villes avec des répétitions ?`,
     options:[`La liste des villes, chacune apparaissant une seule fois, qui se déverse dans les cellules voisines`, `Le nombre de villes différentes`, `Uniquement la première ville de la liste`, `La liste triée par ordre alphabétique, doublons compris`], answer:0,
     why:`UNIQUE extrait les valeurs distinctes d'une plage et les renvoie sous forme de tableau matriciel dynamique, qui se déverse automatiquement en dessous.`,
     tip:`Combine-la avec TRIER pour obtenir une liste de valeurs uniques déjà triée : {{=TRIER(UNIQUE(A2:A100))}}.` },
   { level:4, theme:`Fonction TRIERPAR`,
-    gridGen(){ const rows=Array.from({length:4},()=>[rPick(SAMPLE_PRODUCTS), rInt(50,500)]); return { rows }; },
+    gridGen(){ const data=Array.from({length:4},()=>[rPick(SAMPLE_PRODUCTS), rInt(50,500)]); return { header:true, rows:[['Produit','Ventes'], ...data] }; },
     q:`Tu as une liste de produits en A2:A50 et leurs ventes en B2:B50. Quelle formule affiche les produits triés du plus vendu au moins vendu, sans toucher au tableau source ?`,
     options:[`{{=TRIERPAR(A2:A50;B2:B50;-1)}}`, `{{=TRIER(A2:A50)}}`, `{{=INDEX(A2:A50;EQUIV(MAX(B2:B50);B2:B50;0))}}`, `{{=FILTRE(A2:A50;B2:B50>0)}}`], answer:0,
     why:`TRIERPAR trie une plage selon les valeurs d'une autre, sans les mélanger. Le dernier argument -1 demande un ordre décroissant (1 pour croissant).`,
     tip:`Contrairement à un tri classique (onglet Données), TRIERPAR ne modifie jamais les données d'origine : c'est une formule qui se recalcule toute seule.` },
   { level:4, theme:`Fonction SEQUENCE`,
-    grid:{ rows:[[1],[2],[3],[4],[5]], highlight:['A1','A2','A3','A4','A5'] },
+    grid:{ rows:[['=SEQUENCE(5)'],['?'],['?'],['?'],['?']], forceAlign:'left', highlight:['A1'] },
     q:`Que produit {{=SEQUENCE(5)}} dans une cellule ?`,
     options:[`Les nombres 1, 2, 3, 4, 5, déversés verticalement dans les cellules du dessous`, `Le nombre 5 uniquement`, `Une erreur, il manque des arguments obligatoires`, `La date du jour, répétée 5 fois`], answer:0,
     why:`SEQUENCE génère un tableau de nombres consécutifs. Avec un seul argument, elle produit une colonne de 1 à ce nombre, qui se déverse comme les autres fonctions matricielles dynamiques.`,
@@ -1499,11 +1515,20 @@ function launchConfetti(){
    Un petit délai (400 ms) avant de compter évite les faux positifs d'un clic bref sur la
    barre d'adresse ou une boîte de dialogue qui se referme aussitôt ; en dessous de ce
    délai, rien n'est compté. Le compteur est rappelé dans la restitution finale et l'export.
+   Un repère d'activité (souris, clavier, défilement) permet en plus de ne pas confondre
+   l'écran qui s'éteint tout seul après une pause de lecture avec un vrai changement de
+   fenêtre ou d'appli : si la page passe masquée après un long moment sans la moindre
+   interaction, c'est très probablement une mise en veille, pas un alt-tab volontaire.
    ========================================================= */
 let switchAlertTimeout = null;
 let awayTimer = null;
 let isAway = false;
 let awayCounted = false;
+let lastActivityAt = Date.now();
+const IDLE_BEFORE_AWAY_MS = 10000; // au-delà de 10 s sans interaction, on suspecte une veille d'écran
+['mousemove','mousedown','keydown','scroll','touchstart','wheel'].forEach(evt=>{
+  window.addEventListener(evt, ()=>{ lastActivityAt = Date.now(); }, { passive:true, capture:true });
+});
 function showSwitchAlert(){
   const el = $('switchAlert');
   if(!el) return;
@@ -1521,9 +1546,23 @@ function handleFocusSignal(){
   if(away && !isAway){
     isAway = true;
     awayCounted = false;
+    // On capture le contexte dès la bascule (pas après le délai) : c'est l'instant qui
+    // compte pour juger si la page était déjà inactive avant de passer en arrière-plan.
+    const wasHiddenAtTrigger = document.hidden;
+    const idleMsAtTrigger = Date.now() - lastActivityAt;
     clearTimeout(awayTimer);
     awayTimer = setTimeout(()=>{
-      if(isAway){ state.tabSwitches += 1; awayCounted = true; }
+      if(isAway){
+        // Page masquée (hidden) après une longue période sans interaction : ça ressemble à
+        // une mise en veille de l'écran pendant une pause de lecture, on ne la compte pas.
+        // En écran partagé ou second moniteur, la page reste VISIBLE (hidden=false) même
+        // sans focus : ce cas-là reste toujours compté, une mise en veille ne s'y produit pas.
+        const looksLikeScreenSleep = wasHiddenAtTrigger && idleMsAtTrigger > IDLE_BEFORE_AWAY_MS;
+        if(!looksLikeScreenSleep){
+          state.tabSwitches += 1;
+          awayCounted = true;
+        }
+      }
     }, 400);
   } else if(!away && isAway){
     isAway = false;
