@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Data Unchained — Atelier Tableaux Croisés Dynamiques
-  Version : 1.4.0
+  Version : 1.10.0
 
   Historique :
     1.0.0 — Version initiale : atelier (4 zones), missions progressives, cartographie des 4 zones.
@@ -21,6 +21,32 @@
     1.4.2 — Correction de la validation des missions TCD Quest : la comparaison ignore désormais
             le champ posé en Valeurs et ne compare que les valeurs produites, pour accepter tout
             champ équivalent (ex : Nombre sur Employé ou sur Poste donnent le même effectif).
+    1.5.0 — TCD Quest : 10e mission RH, jauge de progression à droite qui monte à chaque mission
+            réussie, petit feu d'artifice à 10/10, et choix entre 4 scénarios de jeu (RH, Achats,
+            Ventes, Qualité). Le scénario choisi change aussi les données du Bac à sable et de la
+            Cartographie. Progression conservée par scénario le temps de la session.
+            (Correctif d'affichage : nom de la table collé au titre dans les panneaux de champs.)
+    1.6.0 — Disposition façon Excel dans Bac à sable et TCD Quest : liste des champs au-dessus des 4
+            zones (colonne de gauche), résultat à droite avec le graphique automatique en dessous.
+            Jauge de TCD Quest placée à côté du résultat. Info-bulle au survol des champs de la table
+            avec un aperçu des données (valeurs fréquentes, min / moyenne / max).
+    1.6.1 — Jauge de TCD Quest sur toute la hauteur, à côté du résultat ET du graphique. Choix du
+            scénario indépendant entre Bac à sable et TCD Quest (chacun garde son jeu de données et
+            ses zones). Compteurs de missions retirés du sélecteur du Bac à sable.
+    1.7.0 — Alignement des colonnes gauche / droite (mêmes hauteurs en bas). Fonction « Nb distinct »
+            retirée (inexistante dans un TCD Excel classique) : 4 missions remplacées, 5 fonctions
+            d'agrégation restantes. Le graphique affiche désormais toutes les mesures posées en
+            Valeurs (ex : Min ET Max côte à côte).
+    1.7.1 — En-têtes explicites dans le tableau croisé et le graphique : « Télétravail : Oui » en
+            colonnes, « Service : IT › Poste : Junior » quand plusieurs champs sont en lignes.
+    1.8.0 — Choix du jeu de données de nouveau disponible dans Cartographie (indépendant du Bac à
+            sable et de TCD Quest). Bouton « Tout vider » remplacé par une gomme + « Vider ».
+    1.9.0 — Le graphique n'est plus automatique : bouton « Insérer un graphique ? » sous le tableau,
+            puis choix du type (histogramme, histogramme empilé, barres, courbes, secteur) avec une
+            info-bulle explicative au survol de chaque type. Le type se change ou se retire à tout moment.
+    1.9.1 — Le graphique prend toute la largeur du tableau croisé et se redimensionne avec la fenêtre.
+    1.10.0 — Nouvel onglet « À propos » (à droite du bandeau) : présentation d'Olivier Faure et de
+            Data Unchained, liens LinkedIn et YouTube, notes de version de l'outil.
 -->
 
 <html lang="fr">
@@ -154,6 +180,8 @@
   button.primary{ background:var(--accent); border-color:var(--accent-dark); color:#3B2F00; }
   button.primary:hover{ background:var(--accent-dark); color:#fff; }
   button.ghost{ background:transparent; border-color:transparent; color:var(--data-blue); padding:4px 6px; font-weight:600; }
+  button.btn-erase{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border-strong); background:#fff; border-radius:4px; padding:4px 10px; }
+  button.btn-erase:hover{ text-decoration:none; background:#FBF0D9; border-color:var(--accent); }
   button.ghost:hover{ text-decoration:underline; background:transparent; }
   button:disabled{ opacity:.45; cursor:not-allowed; }
 
@@ -248,6 +276,7 @@
   .chip .chip-remove:hover{ color:var(--error); background:var(--error-bg); }
 
   /* ---------- Tableau pivot ---------- */
+  .pivot-scroll{ overflow-x:auto; }
   .pivot-wrap{ overflow:auto; padding:0 12px 12px; }
   table.pivot{ border-collapse:collapse; font-size:12.5px; width:100%; min-width:420px; }
   table.pivot th, table.pivot td{ border:1px solid var(--border); padding:6px 10px; text-align:right; white-space:nowrap; }
@@ -376,6 +405,183 @@
   .quest-end{ text-align:center; padding:30px 14px; }
   .quest-end .big{ font-size:34px; margin-bottom:8px; }
 
+  /* ---------- Scénarios, jauge, feu d'artifice ---------- */
+  .scenario-picker{ margin:0 0 14px; }
+  .scn-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); margin-bottom:6px; }
+  .scn-list{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; }
+  .scn-btn{
+    display:flex; align-items:center; gap:8px; text-align:left; cursor:pointer;
+    background:#fff; border:1.5px solid var(--border-strong); border-radius:6px; padding:8px 10px;
+    font-family:var(--sans); color:var(--text-primary); min-width:0;
+  }
+  .scn-btn:hover{ border-color:var(--data-blue); }
+  .scn-btn.active{ border-color:var(--data-blue); background:var(--success-bg); box-shadow:0 0 0 2px #CFE9DA; }
+  .scn-ico{ font-size:20px; flex-shrink:0; }
+  .scn-txt{ display:flex; flex-direction:column; min-width:0; flex:1; }
+  .scn-txt b{ font-size:13px; }
+  .scn-txt small{ font-size:11px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .scn-score{ font-size:11px; font-weight:700; color:var(--text-secondary); background:#F3F2F1; border-radius:10px; padding:2px 7px; flex-shrink:0; }
+  .scn-score.full{ background:var(--accent); color:#fff; }
+  #tab-atelier .scenario-picker{ margin:14px 14px 0; }
+  #tab-cartographie .scenario-picker{ margin:0 0 16px; }
+  @media (max-width:900px){ .scn-list{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:420px){ .scn-list{ grid-template-columns:1fr; } }
+
+  .quest-top{ display:flex; gap:16px; align-items:flex-start; margin-bottom:14px; }
+  .quest-main{ flex:1; min-width:0; }
+  .quest-main #missionZone{ margin-bottom:0; }
+  .gauge-panel{
+    width:130px; flex-shrink:0; background:#fff; border:1px solid var(--border); border-radius:6px;
+    padding:12px 10px; display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .gauge-title{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--accent-dark); }
+  .gauge-tube{
+    --pct:0%;
+    position:relative; width:38px; height:auto; flex:1 1 auto; min-height:210px; border-radius:19px; overflow:hidden;
+    background:#F3F2F1; border:1.5px solid var(--border-strong);
+  }
+  .gauge-fill{
+    position:absolute; left:0; right:0; bottom:0; height:var(--pct);
+    background:linear-gradient(to top, var(--data-blue), var(--brand-yellow));
+    transition:height .9s cubic-bezier(.3,1.2,.4,1);
+  }
+  .gauge-ticks{
+    position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(to top, transparent 0, transparent calc(10% - 1px), rgba(255,255,255,.75) calc(10% - 1px), rgba(255,255,255,.75) 10%);
+  }
+  .gauge-count{ font-size:18px; font-weight:700; color:var(--bg-dark); }
+  .gauge-caption{ font-size:11.5px; line-height:1.4; color:var(--text-secondary); text-align:center; }
+  .gauge-panel.full{ border-color:var(--accent); box-shadow:0 0 0 2px #FBF0D9; }
+  .gauge-panel.full .gauge-fill{ background:linear-gradient(to top, var(--accent-dark), var(--brand-yellow)); }
+  .gauge-panel.full .gauge-count{ color:var(--accent-dark); }
+  @media (max-width:760px){
+    .result-row{ grid-template-columns:minmax(0,1fr); }
+    .result-row .gauge-panel{ order:-1; }
+    .gauge-panel{ width:100%; flex-direction:row; flex-wrap:wrap; align-items:center; padding:10px 12px; }
+    .gauge-title{ order:1; }
+    .gauge-count{ order:2; margin-left:auto; }
+    .gauge-tube{ order:3; width:100%; height:16px; min-height:0; flex:0 0 100%; border-radius:8px; }
+    .gauge-fill{ top:0; right:auto; width:var(--pct); height:auto; transition:width .9s cubic-bezier(.3,1.2,.4,1); }
+    .gauge-ticks{ background:repeating-linear-gradient(to right, transparent 0, transparent calc(10% - 1px), rgba(255,255,255,.75) calc(10% - 1px), rgba(255,255,255,.75) 10%); }
+    .gauge-caption{ order:4; text-align:left; }
+    #btnFireworks{ order:5; }
+  }
+
+  /* ---------- Disposition façon Excel : champs + zones à gauche, résultat + graphique à droite ---------- */
+  .layout-pivot{ grid-template-columns:minmax(320px,400px) minmax(0,1fr); }
+  .left-col, .center-col{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+  .left-col .zones-grid{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .left-col .dropzone{ min-width:0; }
+  .left-col .chip{ max-width:100%; flex-wrap:wrap; }
+  .left-col .chip select{ max-width:90px; }
+
+  /* Colonnes de même hauteur : le dernier bloc de chaque colonne s'étire pour aligner les bords bas */
+  .layout-pivot{ align-items:stretch; }
+  .left-col > .panel:last-child{ flex:1; }
+  .center-col > .panel:last-child, .center-col > .result-row{ flex:1; }
+  .result-stack > .panel:last-child{ flex:1; }
+  .result-row{ display:grid; grid-template-columns:minmax(0,1fr) 130px; gap:14px; align-items:stretch; }
+  .result-stack{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+  .result-row .gauge-panel{ align-self:stretch; }
+  @media (max-width:900px){ .layout-pivot{ grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:760px){ .result-row{ grid-template-columns:minmax(0,1fr); } .result-row .gauge-panel{ order:-1; } }
+  @media (max-width:640px){ .left-col .zones-grid{ grid-template-columns:1fr; } }
+
+  /* ---------- Info-bulle des champs de la table ---------- */
+  .field-tip{
+    position:fixed; z-index:9000; display:none; pointer-events:none;
+    width:290px; max-width:calc(100vw - 20px); box-sizing:border-box;
+    background:#2A2A28; color:#fff; border-radius:6px; padding:10px 12px;
+    font-size:12px; line-height:1.45; box-shadow:0 6px 18px rgba(0,0,0,.28);
+  }
+  .field-tip.show{ display:block; }
+  .field-tip .ft-head{ display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+  .field-tip .ft-name{ font-weight:700; color:var(--brand-yellow); font-size:13px; }
+  .field-tip .ft-type{ font-size:10px; text-transform:uppercase; letter-spacing:.04em; background:#4a4a46; border-radius:3px; padding:1px 5px; }
+  .field-tip .ft-desc{ color:#E8E6E3; margin-bottom:6px; }
+  .field-tip .ft-sub{ font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:#A8A6A3; margin:6px 0 3px; }
+  .field-tip table{ border-collapse:collapse; width:100%; }
+  .field-tip td{ padding:1px 0; font-size:12px; }
+  .field-tip td:last-child{ text-align:right; color:#CFCDCA; font-variant-numeric:tabular-nums; }
+  .field-tip .ft-bar{ display:inline-block; height:5px; background:var(--brand-yellow); border-radius:2px; vertical-align:middle; margin-left:6px; }
+  .field-item:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+
+  /* ---------- Insertion d'un graphique (bouton, choix du type, barre d'outils) ---------- */
+  .chart-empty{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:22px 14px; text-align:center; }
+  .chart-empty small{ color:var(--text-secondary); font-size:12px; }
+  button.btn-insert-chart{ font-size:14px; padding:10px 20px; }
+  .chart-picker{ padding:12px 14px 16px; }
+  .chart-picker-title{ font-size:13px; font-weight:600; margin-bottom:2px; }
+  .chart-picker-sub{ font-size:12px; color:var(--text-secondary); margin-bottom:10px; }
+  .chart-choices{ display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:10px; }
+  .chart-choice{
+    display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px 9px;
+    background:#fff; border:1.5px solid var(--border); border-radius:6px; cursor:pointer; font-family:var(--sans); color:var(--text-primary);
+  }
+  .chart-choice:hover, .chart-choice:focus-visible{ border-color:var(--data-blue); background:var(--success-bg); outline:none; }
+  .chart-choice.current{ border-color:var(--accent); box-shadow:0 0 0 2px #FBF0D9; }
+  .chart-choice svg{ width:56px; height:42px; }
+  .chart-choice b{ font-size:12.5px; }
+  .chart-choice small{ font-size:11px; color:var(--text-secondary); line-height:1.3; text-align:center; }
+  .chart-picker-actions{ margin-top:10px; text-align:right; }
+  .chart-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .chart-bar .chart-bar-type{ display:flex; align-items:center; gap:6px; margin-right:auto; }
+  .chart-bar .chart-bar-type svg{ width:28px; height:21px; }
+  .chart-note{ font-size:11.5px; color:var(--text-secondary); padding:6px 12px 0; }
+  .pie-wrap{ display:flex; flex-wrap:wrap; gap:14px 24px; align-items:center; justify-content:center; padding:10px 12px 14px; }
+  .pie-legend{ display:flex; flex-direction:column; gap:4px; font-size:12px; min-width:160px; }
+  .pie-legend .legend-item{ justify-content:flex-start; }
+  .pie-legend .pl-val{ margin-left:auto; padding-left:12px; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+  .chart-tip{
+    position:fixed; z-index:9000; display:none; pointer-events:none; width:300px; max-width:calc(100vw - 20px); box-sizing:border-box;
+    background:#2A2A28; color:#fff; border-radius:6px; padding:10px 12px; font-size:12px; line-height:1.45; box-shadow:0 6px 18px rgba(0,0,0,.28);
+  }
+  .chart-tip.show{ display:block; }
+  .chart-tip .ct-name{ font-weight:700; color:var(--brand-yellow); font-size:13px; margin-bottom:3px; }
+  .chart-tip .ct-sub{ font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:#A8A6A3; margin:6px 0 2px; }
+  .chart-tip .ct-warn{ color:#F3D163; }
+
+  /* ---------- Onglet À propos ---------- */
+  .tab-btn.tab-right{ margin-left:auto; }
+  .about-wrap{ width:min(1600px,94vw); margin:0 auto; padding:16px 0 8px; }
+  .about-grid{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:14px; margin-bottom:14px; }
+  .about-card{ padding:16px 18px; }
+  .about-card h2{ font-size:17px; margin:0 0 2px; color:var(--bg-dark); }
+  .about-card h3{ font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--accent-dark); margin:14px 0 6px; }
+  .about-role{ color:var(--text-secondary); font-size:13px; margin-bottom:10px; }
+  .about-card p{ font-size:13.5px; line-height:1.55; margin:0 0 8px; }
+  .about-card ul{ margin:0; padding-left:18px; font-size:13.5px; line-height:1.6; }
+  .about-links{ display:flex; flex-wrap:wrap; gap:12px; margin-top:6px; }
+  .about-link{
+    display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; border:1px solid var(--border-strong);
+    border-radius:6px; text-decoration:none; color:var(--text-primary); font-weight:600; font-size:13px; min-width:160px;
+  }
+  .about-link:hover{ border-color:var(--data-blue); background:var(--success-bg); }
+  .about-link small{ display:block; font-weight:400; color:var(--text-secondary); font-size:11.5px; }
+  .about-ico{ width:34px; height:34px; flex-shrink:0; }
+  .tag-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tag{ background:#EAF6EF; color:var(--bg-dark); border-radius:12px; padding:3px 10px; font-size:12px; font-weight:600; }
+  .release-list{ list-style:none; margin:0; padding:0; }
+  .release{ display:grid; grid-template-columns:150px 110px minmax(0,1fr); gap:6px 14px; padding:10px 18px; border-top:1px solid var(--border); font-size:13px; line-height:1.5; }
+  .release:first-child{ border-top:none; }
+  .release .rl-ver{ font-weight:700; color:var(--bg-dark); font-family:var(--mono); }
+  .release .rl-date{ color:var(--text-secondary); }
+  .release .rl-new{ background:var(--accent); color:#fff; border-radius:8px; padding:0 6px; font-size:10.5px; margin-left:6px; font-family:var(--sans); }
+  .energy-card{ padding:16px 18px; margin-bottom:14px; }
+  .energy-card h2{ font-size:15px; margin:0 0 4px; color:var(--bg-dark); }
+  .energy-card p{ font-size:13.5px; line-height:1.55; margin:0 0 10px; }
+  .energy-tiles{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:10px 0; }
+  .energy-tile{ background:#FFF9E6; border:1px solid #EEDD9C; border-radius:6px; padding:10px 12px; }
+  .energy-tile b{ display:block; font-size:20px; color:var(--accent-dark); }
+  .energy-tile span{ font-size:12px; color:var(--text-secondary); }
+  .energy-note{ font-size:12px; color:var(--text-secondary); line-height:1.5; margin:0; }
+  @media (max-width:640px){ .energy-tiles{ grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:900px){ .about-grid{ grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:640px){ .release{ grid-template-columns:minmax(0,1fr); gap:2px; } }
+  #fireworksCanvas{ position:fixed; left:0; top:0; z-index:9999; pointer-events:none; display:none; }
+  #fireworksCanvas.active{ display:block; }
+  @media (prefers-reduced-motion: reduce){ .gauge-fill{ transition:none; } }
+
   code{ font-family:var(--mono); background:#F3F2F1; padding:1px 5px; border-radius:3px; font-size:12px; }
 </style>
 </head>
@@ -390,7 +596,7 @@
   </div>
   <div class="topbar-right">
     <span class="excel-badge" title="Entraînement conçu pour les tableaux croisés dynamiques Excel"><span class="excel-badge-icon">X</span>Excel</span>
-    <span class="sub">Manipule les 4 zones d'un TCD sur un jeu de données RH fictif</span>
+    <span class="sub">Manipule les 4 zones d'un TCD sur des jeux de données fictifs (RH, Achats, Ventes, Qualité)</span>
   </div>
 </div>
 
@@ -399,6 +605,7 @@
   <button class="tab-btn" data-tab="cartographie">🗺 Cartographie</button>
   <button class="tab-btn" data-tab="learn">🎓 TCD Learn</button>
   <button class="tab-btn" data-tab="quest">🎯 TCD Quest</button>
+  <button class="tab-btn tab-right" data-tab="apropos">ℹ️ À propos</button>
 </div>
 </div><!-- /app-header -->
 
@@ -407,52 +614,57 @@
 <!-- ========== ONGLET ATELIER ========== -->
 <div class="tab-panel active" id="tab-atelier">
   <div class="scope-note">
-    <b>Comment ça marche :</b> à gauche, les champs disponibles. Ajoute-les dans une des 4 zones (Filtres, Lignes, Colonnes, Valeurs) soit en <b>glissant</b> le champ dans la zone, soit en <b>cliquant</b> sur le bouton correspondant (F / L / C / Σ). Le tableau se recalcule en direct. Onglet <b>Cartographie</b> pour découvrir la table de données, <b>TCD Learn</b> pour comprendre à quoi sert chaque zone, <b>TCD Quest</b> pour t'entraîner pas à pas.
+    <b>Comment ça marche :</b> à gauche, les champs de la table puis les 4 zones à remplir ; à droite, le résultat et, si tu veux, un graphique à insérer dessous. Ajoute les champs dans une des 4 zones (Filtres, Lignes, Colonnes, Valeurs) soit en <b>glissant</b> le champ dans la zone, soit en <b>cliquant</b> sur le bouton correspondant (F / L / C / Σ). Le tableau se recalcule en direct. Onglet <b>Cartographie</b> pour découvrir la table de données, <b>TCD Learn</b> pour comprendre à quoi sert chaque zone, <b>TCD Quest</b> pour t'entraîner pas à pas.
   </div>
-  <div class="layout">
-    <div class="panel">
-      <div class="panel-title">Champs · Table Salariés</div>
-      <div class="fields-body">
-        <div class="table-node">🗂 Salariés</div>
-        <div id="fieldsList-atelier"></div>
-        <div class="fields-hint">💡 F = Filtres, L = Lignes, C = Colonnes, Σ = Valeurs. Un champ peut être utilisé dans plusieurs zones à la fois.</div>
+  <div class="scenario-picker"></div>
+  <div class="layout layout-pivot">
+    <div class="left-col">
+      <div class="panel">
+        <div class="panel-title"><span>Champs · Table <span class="js-table-name">Salariés</span></span></div>
+        <div class="fields-body">
+          <div class="table-node">🗂 <span class="js-table-name">Salariés</span></div>
+          <div id="fieldsList-atelier"></div>
+          <div class="fields-hint">💡 F = Filtres, L = Lignes, C = Colonnes, Σ = Valeurs. Un champ peut être utilisé dans plusieurs zones à la fois.</div>
+        </div>
       </div>
-    </div>
-
-    <div class="center-col">
-      <div class="panel" style="margin-bottom:14px;">
+    <div class="panel">
         <div class="panel-title">Les 4 zones
-          <button class="ghost" id="btnResetZones-atelier">Tout vider</button>
+          <button class="ghost btn-erase" id="btnResetZones-atelier" title="Vider les 4 zones"><svg class="ico-eraser" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15.2 3.6a2 2 0 0 1 2.8 0l2.4 2.4a2 2 0 0 1 0 2.8L11 18.2H6.2L3.6 15.6a2 2 0 0 1 0-2.8z" fill="#F3D163" stroke="#B98C0A" stroke-width="1.4" stroke-linejoin="round"/><path d="M9.2 7.4l7.4 7.4" stroke="#B98C0A" stroke-width="1.4"/><path d="M6.2 18.2H21" stroke="#B98C0A" stroke-width="1.6" stroke-linecap="round"/></svg><span>Vider</span></button>
         </div>
         <div class="zones-grid" id="zonesGrid-atelier">
           <div class="dropzone" data-zone="filtres">
-            <div class="zone-label"><span class="zone-dot filtres"></span>Filtres<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Filtres</b> réduit le périmètre avant tout calcul. Le champ posé ici ne s'affiche pas dans le tableau : il sert juste à ne garder qu'une partie des lignes.<span class="zone-tooltip-ex">Ex : Contrat = CDI</span></span></span></div>
+            <div class="zone-label"><span class="zone-dot filtres"></span>Filtres<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Filtres</b> réduit le périmètre avant tout calcul. Le champ posé ici ne s'affiche pas dans le tableau : il sert juste à ne garder qu'une partie des lignes.<span class="zone-tooltip-ex" data-ex="filtres">Ex : Contrat = CDI</span></span></span></div>
             <div class="zone-body" id="zone-filtres-atelier"></div>
           </div>
           <div class="dropzone" data-zone="colonnes">
-            <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
+            <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex" data-ex="colonnes">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
             <div class="zone-body" id="zone-colonnes-atelier"></div>
           </div>
           <div class="dropzone" data-zone="lignes">
-            <div class="zone-label"><span class="zone-dot lignes"></span>Lignes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Lignes</b> découpe le tableau verticalement : chaque valeur du champ devient une ligne.<span class="zone-tooltip-ex">Ex : Service → une ligne par service</span></span></span></div>
+            <div class="zone-label"><span class="zone-dot lignes"></span>Lignes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Lignes</b> découpe le tableau verticalement : chaque valeur du champ devient une ligne.<span class="zone-tooltip-ex" data-ex="lignes">Ex : Service → une ligne par service</span></span></span></div>
             <div class="zone-body" id="zone-lignes-atelier"></div>
           </div>
           <div class="dropzone" data-zone="valeurs">
-            <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
+            <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex" data-ex="valeurs">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
             <div class="zone-body" id="zone-valeurs-atelier"></div>
           </div>
         </div>
       </div>
+    </div>
 
+    <div class="center-col">
       <div class="panel">
         <div class="panel-title">Résultat
           <div class="view-switch" id="viewSwitch">
             <button type="button" class="view-btn active" data-view="pivot">📊 Tableau croisé</button>
-            <button type="button" class="view-btn" data-view="chart">📈 Graphique</button>
             <button type="button" class="view-btn" data-view="data">📋 Données sources</button>
           </div>
         </div>
         <div id="resultView-atelier"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">📈 Graphique</div>
+        <div id="chartView-atelier"></div>
       </div>
     </div>
   </div>
@@ -461,10 +673,11 @@
 <!-- ========== ONGLET CARTOGRAPHIE (table de données) ========== -->
 <div class="tab-panel" id="tab-cartographie">
   <div class="carto-wrap">
-    <div class="carto-intro">Avant de croiser les champs, voici la table sur laquelle repose tout l'atelier : une liste fictive de salariés, avec ses 11 champs. Les champs texte (T) servent surtout en Lignes, Colonnes ou Filtres ; les champs numériques (#) servent surtout en Valeurs.</div>
+    <div class="carto-intro" id="cartoIntro"></div>
+    <div class="scenario-picker"></div>
 
     <div class="panel" style="padding:16px; margin-bottom:16px;">
-      <div class="panel-title" style="padding:0 0 12px;border:none;">🗂 Schéma de la table Salariés</div>
+      <div class="panel-title" style="padding:0 0 12px;border:none;"><span>🗂 Schéma de la table <span class="js-table-name">Salariés</span></span></div>
       <div id="schemaTable"></div>
     </div>
 
@@ -476,9 +689,64 @@
 </div>
 
 <!-- ========== ONGLET TCD LEARN ========== -->
+<!-- ========== ONGLET À PROPOS ========== -->
+<div class="tab-panel" id="tab-apropos">
+  <div class="about-wrap">
+    <div class="about-grid">
+      <div class="panel about-card">
+        <h2>Olivier Faure</h2>
+        <div class="about-role">Formateur et concepteur pédagogique indépendant · fondateur de Data Unchained</div>
+        <p>Je forme les équipes à exploiter leurs données et leurs outils du quotidien, avec une idée fixe : <b>apprendre en manipulant</b>. Pas de cours magistral, des exercices concrets, des analogies simples et des outils interactifs comme celui que tu utilises en ce moment.</p>
+        <p>Je réponds aussi à des missions freelance autour de la donnée et d'Excel : développement de fichiers, automatisation, tableaux de bord.</p>
+        <h3>Ce que je propose</h3>
+        <ul>
+          <li><b>Power BI</b> : modélisation, DAX, rapports et tableaux de bord</li>
+          <li><b>Excel</b> : formules avancées, tableaux croisés dynamiques, automatisation</li>
+          <li><b>SQL</b> : interroger et analyser des bases de données, des premiers pas aux requêtes avancées</li>
+          <li><b>Analyse de données</b> : de la donnée brute à la décision</li>
+          <li><b>IA générative et prompt engineering</b> : bien utiliser l'IA au travail</li>
+          <li><b>Outils bureautiques</b> : gagner du temps au quotidien</li>
+          <li><b>Outils pédagogiques interactifs</b> : sur mesure, utilisables hors ligne dans un simple navigateur</li>
+        </ul>
+        <h3>Repères</h3>
+        <div class="tag-row"><span class="tag">Certifié Power BI PL-300 (2025)</span><span class="tag">Titre RNCP niveau 6 Data Analyst (2023)</span><span class="tag">Entreprises et secteur aéronautique</span></div>
+      </div>
+      <div class="panel about-card">
+        <h2>Data Unchained</h2>
+        <div class="about-role">Formation et conseil en données, Excel et IA</div>
+        <p>Data Unchained, c'est l'enseigne sous laquelle je conçois et anime mes formations. Le nom dit l'ambition : libérer la donnée de sa complexité pour que chacun puisse s'en servir sans peur.</p>
+        <h3>Me retrouver</h3>
+        <div class="about-links">
+          <a class="about-link" href="https://www.linkedin.com/in/olivier-faure-35303743" target="_blank" rel="noopener noreferrer"><svg class="about-ico" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="6" fill="#0A66C2"/><text x="17" y="24" font-size="18" font-weight="700" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif">in</text></svg><span>LinkedIn<small>Mon profil professionnel</small></span></a>
+          <a class="about-link" href="https://www.youtube.com/@data-unchained" target="_blank" rel="noopener noreferrer"><svg class="about-ico" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="6" width="32" height="22" rx="7" fill="#E62117"/><path d="M14 12 L23 17 L14 22 Z" fill="#fff"/></svg><span>YouTube<small>La chaîne Data Unchained</small></span></a>
+        </div>
+        <h3>Une version sur mesure pour ton entreprise ?</h3>
+        <p>Cet outil peut être adapté à ton contexte : tes propres données, ton vocabulaire métier, ta charte graphique, d'autres notions à travailler. Si tu veux une version custom pour tes équipes, écris-moi, on en discute.</p>
+        <div class="about-links">
+          <a class="about-link" href="mailto:olivier.faure@dataunchained.fr"><svg class="about-ico" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="6" fill="#175B36"/><rect x="7" y="10" width="20" height="14" rx="2" fill="none" stroke="#fff" stroke-width="1.8"/><path d="M8 12 L17 19 L26 12" fill="none" stroke="#F3D163" stroke-width="1.8" stroke-linejoin="round"/></svg><span>E-mail<small>olivier.faure@dataunchained.fr</small></span></a>
+        </div>
+        <p style="margin-top:12px;font-size:12px;color:var(--text-secondary);">Les liens LinkedIn et YouTube s'ouvrent dans un nouvel onglet et demandent une connexion internet. Le reste de l'outil fonctionne entièrement hors ligne.</p>
+      </div>
+    </div>
+    <div class="panel energy-card">
+      <h2>🔋 Combien d'énergie pour créer cet outil avec l'IA ?</h2>
+      <p>Cet outil a été conçu en échangeant avec une IA (Claude), sur une centaine d'allers-retours : écriture du code, tests automatiques, corrections. Chaque échange mobilise des serveurs, donc de l'électricité. Voici un ordre de grandeur, pour garder à l'esprit que l'IA n'est pas « gratuite » côté énergie.</p>
+      <div class="energy-tiles">
+        <div class="energy-tile"><b>≈ 0,3 kWh</b><span>estimation pour toute la session (fourchette : 0,1 à 1 kWh)</span></div>
+        <div class="energy-tile"><b>≈ 4 h</b><span>de streaming vidéo (fourchette : 1,5 h à 13 h), sur la base d'environ 0,08 kWh par heure (référence IEA : serveurs, réseau et écran)</span></div>
+      </div>
+      <p class="energy-note">💡 À prendre comme un ordre de grandeur, pas comme une mesure : le fournisseur ne publie pas de consommation précise par échange. Le calcul s'appuie sur environ 0,3 Wh pour une requête texte courte (estimations publiques), multiplié ici par 1 à 3 Wh par appel, car chaque appel relit un gros fichier. L'entraînement du modèle et la fabrication du matériel ne sont pas comptés.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Notes de version · Atelier Tableaux Croisés Dynamiques</div>
+      <ul class="release-list" id="releaseList"></ul>
+    </div>
+  </div>
+</div>
+
 <div class="tab-panel" id="tab-learn">
   <div class="carto-wrap">
-    <div class="carto-intro">Un tableau croisé dynamique, c'est une façon de résumer une grande table en croisant des champs entre eux. Imagine ta table Salariés comme un gros tas de fiches individuelles : le TCD te permet de les trier et de les empiler automatiquement selon les critères que tu choisis, sans jamais toucher aux fiches d'origine.</div>
+    <div class="carto-intro">Un tableau croisé dynamique, c'est une façon de résumer une grande table en croisant des champs entre eux. Imagine ta table (ici, la table Salariés du scénario RH) comme un gros tas de fiches individuelles : le TCD te permet de les trier et de les empiler automatiquement selon les critères que tu choisis, sans jamais toucher aux fiches d'origine.</div>
 
     <div class="carto-grid" id="cartoGrid"></div>
 
@@ -508,7 +776,6 @@
               <div class="mockup-row"><span class="mockup-radio"></span>Moyenne</div>
               <div class="mockup-row"><span class="mockup-radio"></span>Max</div>
               <div class="mockup-row"><span class="mockup-radio"></span>Min</div>
-              <div class="mockup-row"><span class="mockup-radio"></span>Nb valeurs distinctes</div>
             </div>
           </div>
           <div class="mockup-caption">🎨 Illustration du principe, pas une capture d'écran réelle d'Excel.</div>
@@ -521,7 +788,7 @@
       <div class="carto-subsection-body">
         <div class="carto-subsection-text">
           <p>Le même menu <b>Paramètres des champs de valeurs</b> a un second onglet, <b>Afficher les valeurs sous</b>, qui propose des options comme « % du total général », « % du total de la ligne » ou « % du total de la colonne » à la place du chiffre brut.</p>
-          <p>💡 <b>Astuce Excel :</b> pour voir le montant ET le pourcentage côte à côte, glisse le même champ deux fois dans Valeurs, puis règle l'un en Somme et l'autre en % du total général. C'est exactement le principe qu'on utilise dans l'atelier pour afficher Min et Max du salaire côte à côte (mission « Étendue des salaires par région »).</p>
+          <p>💡 <b>Astuce Excel :</b> pour voir le montant ET le pourcentage côte à côte, glisse le même champ deux fois dans Valeurs, puis règle l'un en Somme et l'autre en % du total général. C'est exactement le principe qu'on utilise dans TCD Quest pour afficher Min et Max côte à côte (4e mission de chaque scénario).</p>
         </div>
         <div>
           <div class="mockup-window">
@@ -552,47 +819,71 @@
 <div class="tab-panel" id="tab-quest">
   <div class="quest-wrap">
     <div class="quest-intro">Une question à la fois. Configure les zones ci-dessous puis clique sur « Vérifier ». La validation compare le résultat produit par ton tableau, pas la façon exacte dont tu as placé les champs : plusieurs organisations peuvent être correctes tant que le résultat est le bon.</div>
-    <div class="progress-row" id="progressRow"></div>
-    <div id="missionZone" style="margin-bottom:14px;"></div>
+    <div class="scenario-picker"></div>
+    <div class="quest-top">
+      <div class="quest-main">
+        <div class="progress-row" id="progressRow"></div>
+        <div id="missionZone"></div>
+      </div>
+    </div>
 
-    <div class="layout" style="padding:0;">
+    <div class="layout layout-pivot" style="padding:0;">
+      <div class="left-col">
       <div class="panel">
-        <div class="panel-title">Champs · Table Salariés</div>
+        <div class="panel-title"><span>Champs · Table <span class="js-table-name">Salariés</span></span></div>
         <div class="fields-body">
-          <div class="table-node">🗂 Salariés</div>
+          <div class="table-node">🗂 <span class="js-table-name">Salariés</span></div>
           <div id="fieldsList-quest"></div>
           <div class="fields-hint">💡 F = Filtres, L = Lignes, C = Colonnes, Σ = Valeurs.</div>
         </div>
       </div>
 
-      <div class="center-col">
-        <div class="panel" style="margin-bottom:14px;">
-          <div class="panel-title">Les 4 zones
-            <button class="ghost" id="btnResetZones-quest">Tout vider</button>
+      <div class="panel">
+        <div class="panel-title">Les 4 zones
+          <button class="ghost btn-erase" id="btnResetZones-quest" title="Vider les 4 zones"><svg class="ico-eraser" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15.2 3.6a2 2 0 0 1 2.8 0l2.4 2.4a2 2 0 0 1 0 2.8L11 18.2H6.2L3.6 15.6a2 2 0 0 1 0-2.8z" fill="#F3D163" stroke="#B98C0A" stroke-width="1.4" stroke-linejoin="round"/><path d="M9.2 7.4l7.4 7.4" stroke="#B98C0A" stroke-width="1.4"/><path d="M6.2 18.2H21" stroke="#B98C0A" stroke-width="1.6" stroke-linecap="round"/></svg><span>Vider</span></button>
+        </div>
+        <div class="zones-grid" id="zonesGrid-quest">
+          <div class="dropzone" data-zone="filtres">
+            <div class="zone-label"><span class="zone-dot filtres"></span>Filtres<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Filtres</b> réduit le périmètre avant tout calcul. Le champ posé ici ne s'affiche pas dans le tableau : il sert juste à ne garder qu'une partie des lignes.<span class="zone-tooltip-ex" data-ex="filtres">Ex : Contrat = CDI</span></span></span></div>
+            <div class="zone-body" id="zone-filtres-quest"></div>
           </div>
-          <div class="zones-grid" id="zonesGrid-quest">
-            <div class="dropzone" data-zone="filtres">
-              <div class="zone-label"><span class="zone-dot filtres"></span>Filtres<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Filtres</b> réduit le périmètre avant tout calcul. Le champ posé ici ne s'affiche pas dans le tableau : il sert juste à ne garder qu'une partie des lignes.<span class="zone-tooltip-ex">Ex : Contrat = CDI</span></span></span></div>
-              <div class="zone-body" id="zone-filtres-quest"></div>
-            </div>
-            <div class="dropzone" data-zone="colonnes">
-              <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
-              <div class="zone-body" id="zone-colonnes-quest"></div>
-            </div>
-            <div class="dropzone" data-zone="lignes">
-              <div class="zone-label"><span class="zone-dot lignes"></span>Lignes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Lignes</b> découpe le tableau verticalement : chaque valeur du champ devient une ligne.<span class="zone-tooltip-ex">Ex : Service → une ligne par service</span></span></span></div>
-              <div class="zone-body" id="zone-lignes-quest"></div>
-            </div>
-            <div class="dropzone" data-zone="valeurs">
-              <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
-              <div class="zone-body" id="zone-valeurs-quest"></div>
-            </div>
+          <div class="dropzone" data-zone="colonnes">
+            <div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Colonnes</b> découpe le tableau horizontalement : chaque valeur du champ devient une colonne.<span class="zone-tooltip-ex" data-ex="colonnes">Ex : Télétravail → colonnes Oui / Non</span></span></span></div>
+            <div class="zone-body" id="zone-colonnes-quest"></div>
+          </div>
+          <div class="dropzone" data-zone="lignes">
+            <div class="zone-label"><span class="zone-dot lignes"></span>Lignes<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Lignes</b> découpe le tableau verticalement : chaque valeur du champ devient une ligne.<span class="zone-tooltip-ex" data-ex="lignes">Ex : Service → une ligne par service</span></span></span></div>
+            <div class="zone-body" id="zone-lignes-quest"></div>
+          </div>
+          <div class="dropzone" data-zone="valeurs">
+            <div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs<span class="zone-help" tabindex="0">?<span class="zone-tooltip"><b>Σ Valeurs</b> est le calcul affiché dans chaque case du tableau (Somme, Moyenne, Nombre...).<span class="zone-tooltip-ex" data-ex="valeurs">Ex : Somme de Salaire → masse salariale de chaque case</span></span></span></div>
+            <div class="zone-body" id="zone-valeurs-quest"></div>
           </div>
         </div>
+      </div>
+      </div>
 
-        <div class="panel">
-          <div class="panel-title">Résultat</div>
-          <div id="resultView-quest"></div>
+      <div class="center-col">
+        <div class="result-row">
+          <div class="result-stack">
+            <div class="panel">
+              <div class="panel-title">Résultat</div>
+              <div id="resultView-quest"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-title">📈 Graphique</div>
+              <div id="chartView-quest"></div>
+            </div>
+          </div>
+      <aside class="gauge-panel" id="gaugePanel" aria-label="Jauge de progression">
+        <div class="gauge-title">Progression</div>
+        <div class="gauge-tube" id="gaugeTube" role="progressbar" aria-valuemin="0" aria-valuenow="0" aria-valuemax="10">
+          <div class="gauge-fill"></div><div class="gauge-ticks"></div>
+        </div>
+        <div class="gauge-count" id="gaugeCount">0 / 10</div>
+        <div class="gauge-caption" id="gaugeCaption"></div>
+        <button type="button" class="ghost" id="btnFireworks" style="display:none;">🎆 Rejouer</button>
+      </aside>
         </div>
       </div>
     </div>
@@ -600,6 +891,8 @@
 </div>
 
 </div><!-- /wrap -->
+
+<canvas id="fireworksCanvas" aria-hidden="true"></canvas>
 
 <div class="app-footer">Data Unchained · Atelier Tableaux Croisés Dynamiques · <span id="appVersion"></span></div>
 
@@ -609,7 +902,7 @@
    ========================================================= */
 // Numéro de version de l'outil : à incrémenter à chaque évolution notable
 // (voir l'historique en commentaire tout en haut du fichier).
-const APP_VERSION = '1.4.2';
+const APP_VERSION = '1.10.0';
 
 function mulberry32(a){
   return function(){
@@ -658,40 +951,440 @@ function genererDonnees(n){
   }
   return rows;
 }
-const DATA = genererDonnees(72);
+/* =========================================================
+   1bis. SCÉNARIOS — jeux de données fictifs et missions associées
+   =========================================================
+   Chaque scénario regroupe : sa table de données (générée avec une graine fixe, donc
+   toujours identique à chaque ouverture), ses champs, leurs descriptions, ses champs
+   monétaires, ses exemples d'info-bulle et ses 10 missions TCD Quest.
+   Le scénario RH est strictement celui des versions précédentes (graine 1337). */
 
-const FIELDS = [
-  {key:'employe',     label:'Employé',              type:'txt'},
-  {key:'service',     label:'Service',              type:'txt'},
-  {key:'poste',       label:'Poste',                type:'txt'},
-  {key:'contrat',     label:'Contrat',              type:'txt'},
-  {key:'region',      label:'Région',               type:'txt'},
-  {key:'teletravail', label:'Télétravail',          type:'txt'},
-  {key:'anciennete',  label:'Ancienneté (ans)',     type:'num'},
-  {key:'salaire',     label:'Salaire annuel (€)',   type:'num'},
-  {key:'prime',       label:'Prime annuelle (€)',   type:'num'},
-  {key:'note',        label:"Note d'évaluation",    type:'num'},
-  {key:'absences',    label:"Jours d'absence",      type:'num'},
-];
-function fieldByKey(k){ return FIELDS.find(f=>f.key===k); }
+// Générateur pseudo-aléatoire à graine propre, pour les nouveaux scénarios
+// (le scénario RH garde le générateur global `rand` ci-dessus, pour rester identique).
+function makeRng(seed){
+  const r = mulberry32(seed);
+  return {
+    rand: r,
+    pick: arr => arr[Math.floor(r()*arr.length)],
+    randInt: (min,max) => Math.floor(min + r()*(max-min+1)),
+  };
+}
 
-// Descriptions métier utilisées dans l'onglet Cartographie (schéma de la table)
-const FIELD_DESCRIPTIONS = {
-  employe:     "Prénom et initiale du salarié (donnée fictive).",
-  service:     "Département auquel appartient le salarié.",
-  poste:       "Niveau hiérarchique du poste occupé.",
-  contrat:     "Type de contrat de travail.",
-  region:      "Région administrative du site de travail.",
-  teletravail: "Le salarié travaille-t-il à distance ?",
-  anciennete:  "Nombre d'années passées dans l'entreprise.",
-  salaire:     "Rémunération brute annuelle.",
-  prime:       "Prime annuelle versée en plus du salaire.",
-  note:        "Note du dernier entretien annuel, de 1 (faible) à 5 (excellent).",
-  absences:    "Nombre de jours d'absence sur l'année.",
+/* ---------- Scénario ACHATS : commandes d'achat ---------- */
+function genererAchats(n){
+  const g = makeRng(2024);
+  const FOURNISSEURS = [
+    ['Bureau Plus',['Fournitures']], ['Papeteria',['Fournitures','Emballage']],
+    ['TechnoStock',['Informatique']], ['InfoServ',['Informatique','Services']],
+    ['LogiTrans',['Services','Emballage']], ['MétalPro',['Matières premières']],
+    ['EmballOr',['Emballage','Matières premières']], ['CleanNet',['Services','Fournitures']],
+  ];
+  const PRIX = { 'Fournitures':[3,40], 'Informatique':[60,900], 'Emballage':[1,15], 'Matières premières':[20,250], 'Services':[150,2000] };
+  const QTE  = { 'Fournitures':[10,200], 'Informatique':[1,20], 'Emballage':[100,2000], 'Matières premières':[50,1000], 'Services':[1,5] };
+  const ACHETEURS = ['Camille','Julien','Manon','Nicolas','Léa','Hugo'];
+  const SITES = ['Lyon','Nantes','Lille','Toulouse','Strasbourg'];
+  const STATUTS = ['Livrée','Livrée','Livrée','En cours','En retard','Annulée'];
+  const rows = [];
+  for(let i=0;i<n;i++){
+    const [fournisseur, cats] = g.pick(FOURNISSEURS);
+    const categorie = g.pick(cats);
+    const quantite = g.randInt(QTE[categorie][0], QTE[categorie][1]);
+    const prix = g.randInt(PRIX[categorie][0], PRIX[categorie][1]);
+    const statut = g.pick(STATUTS);
+    rows.push({
+      commande: 'CA-' + String(i+1).padStart(4,'0'),
+      fournisseur: fournisseur,
+      categorie: categorie,
+      acheteur: g.pick(ACHETEURS),
+      site: g.pick(SITES),
+      statut: statut,
+      quantite: quantite,
+      prix_unitaire: prix,
+      montant: quantite * prix,
+      delai: g.randInt(2,25),
+      retard: statut==='En retard' ? g.randInt(1,12) : 0,
+    });
+  }
+  return rows;
+}
+
+/* ---------- Scénario VENTES : lignes de vente ---------- */
+function genererVentes(n){
+  const g = makeRng(4242);
+  const PRODUITS = [
+    ['Chaise ergonomique','Mobilier',[120,260]], ['Bureau réglable','Mobilier',[250,600]], ['Lampe LED','Mobilier',[20,70]],
+    ['Écran 24 pouces','Informatique',[120,240]], ['Clavier sans fil','Informatique',[25,80]], ['Souris ergonomique','Informatique',[15,50]],
+    ['Casque audio','Audio-vidéo',[40,150]], ['Webcam HD','Audio-vidéo',[30,90]],
+  ];
+  const COMMERCIAUX = ['Inès','Paul','Sofia','Marc','Lola','Yanis'];
+  const REGIONS_V = ['Nord','Sud','Est','Ouest','Centre'];
+  const CANAUX = ['Magasin','Web','Web','Téléphone'];
+  const TRIMESTRES = ['T1','T2','T3','T4'];
+  const REMISES = [0,0,0,5,5,10,15];
+  const rows = [];
+  for(let i=0;i<n;i++){
+    const [produit, categorie, pr] = g.pick(PRODUITS);
+    const prix = g.randInt(pr[0], pr[1]);
+    const quantite = g.randInt(1,12);
+    const remise = g.pick(REMISES);
+    rows.push({
+      vente: 'V-' + String(i+1).padStart(4,'0'),
+      commercial: g.pick(COMMERCIAUX),
+      region: g.pick(REGIONS_V),
+      categorie: categorie,
+      produit: produit,
+      canal: g.pick(CANAUX),
+      trimestre: g.pick(TRIMESTRES),
+      quantite: quantite,
+      prix_unitaire: prix,
+      remise: remise,
+      ca: Math.round(quantite * prix * (1 - remise/100)),
+    });
+  }
+  return rows;
+}
+
+/* ---------- Scénario QUALITÉ : contrôles en production ---------- */
+function genererQualite(n){
+  const g = makeRng(777);
+  const LIGNES = ['Ligne A','Ligne B','Ligne C','Ligne D'];
+  const PRODUITS_Q = ['Boîtier','Capteur','Connecteur','Carte électronique','Câble'];
+  const EQUIPES = ['Matin','Après-midi','Nuit'];
+  const CONTROLEURS = ['Awa','Bastien','Chiara','Dylan'];
+  const TYPES = ['Rayure','Dimension','Soudure','Emballage'];
+  const rows = [];
+  for(let i=0;i<n;i++){
+    const ligne = g.pick(LIGNES);
+    const produit = g.pick(PRODUITS_Q);
+    const equipe = g.pick(EQUIPES);
+    const controleur = g.pick(CONTROLEURS);
+    const pieces = g.randInt(20,80);
+    const sansDefaut = g.rand() < 0.35;
+    const defauts = sansDefaut ? 0 : g.randInt(1, Math.max(1, Math.round(pieces*0.12)));
+    const type = defauts>0 ? g.pick(TYPES) : 'Aucun';
+    const resultat = defauts===0 ? 'Conforme' : (defauts>=5 ? 'Non conforme' : 'À retoucher');
+    rows.push({
+      controle: 'QC-' + String(i+1).padStart(4,'0'),
+      ligne: ligne,
+      produit: produit,
+      equipe: equipe,
+      controleur: controleur,
+      type_defaut: type,
+      resultat: resultat,
+      nb_pieces: pieces,
+      nb_defauts: defauts,
+      duree: g.randInt(5,45),
+      cout: defauts * g.randInt(8,40),
+    });
+  }
+  return rows;
+}
+
+/* ---------- Définition des scénarios ---------- */
+const SCENARIOS = {
+  rh: {
+    id:'rh', label:'RH', icon:'👥', tableName:'Salariés', blurb:'Salariés, salaires, absences',
+    tableDesc:"une liste fictive de salariés",
+    data: genererDonnees(72),
+    fields: [
+      {key:'employe',     label:'Employé',              type:'txt'},
+      {key:'service',     label:'Service',              type:'txt'},
+      {key:'poste',       label:'Poste',                type:'txt'},
+      {key:'contrat',     label:'Contrat',              type:'txt'},
+      {key:'region',      label:'Région',               type:'txt'},
+      {key:'teletravail', label:'Télétravail',          type:'txt'},
+      {key:'anciennete',  label:'Ancienneté (ans)',     type:'num'},
+      {key:'salaire',     label:'Salaire annuel (€)',   type:'num'},
+      {key:'prime',       label:'Prime annuelle (€)',   type:'num'},
+      {key:'note',        label:"Note d'évaluation",    type:'num'},
+      {key:'absences',    label:"Jours d'absence",      type:'num'},
+    ],
+    descriptions: {
+      employe:     "Prénom et initiale du salarié (donnée fictive).",
+      service:     "Département auquel appartient le salarié.",
+      poste:       "Niveau hiérarchique du poste occupé.",
+      contrat:     "Type de contrat de travail.",
+      region:      "Région administrative du site de travail.",
+      teletravail: "Le salarié travaille-t-il à distance ?",
+      anciennete:  "Nombre d'années passées dans l'entreprise.",
+      salaire:     "Rémunération brute annuelle.",
+      prime:       "Prime annuelle versée en plus du salaire.",
+      note:        "Note du dernier entretien annuel, de 1 (faible) à 5 (excellent).",
+      absences:    "Nombre de jours d'absence sur l'année.",
+    },
+    currency: ['salaire','prime'],
+    examples: {
+      filtres:'Ex : Contrat = CDI',
+      colonnes:'Ex : Télétravail → colonnes Oui / Non',
+      lignes:'Ex : Service → une ligne par service',
+      valeurs:'Ex : Somme de Salaire → masse salariale de chaque case',
+    },
+    missions: [
+  { titre:"Effectif par service", texte:"Affiche le nombre de salariés dans chaque service.",
+    cfg:{ filtres:[], lignes:['service'], colonnes:[], valeurs:[{field:'employe',agg:'nombre'}] },
+    hints:["Le champ qui compte des lignes, peu importe lequel, s'agrège avec « Nombre ».","Place Service en Lignes, puis n'importe quel champ en Valeurs avec la fonction Nombre."] },
+  { titre:"Masse salariale par service", texte:"Calcule le salaire total (la somme) versé dans chaque service.",
+    cfg:{ filtres:[], lignes:['service'], colonnes:[], valeurs:[{field:'salaire',agg:'somme'}] },
+    hints:["« Total » veut dire Somme, pas Moyenne.","Service en Lignes, Salaire en Valeurs avec la fonction Somme."] },
+  { titre:"Salaire moyen par poste", texte:"Calcule le salaire moyen selon le poste (Junior, Confirmé, Senior, Manager).",
+    cfg:{ filtres:[], lignes:['poste'], colonnes:[], valeurs:[{field:'salaire',agg:'moyenne'}] },
+    hints:["« Moyen » se traduit toujours par la fonction Moyenne.","Poste en Lignes, Salaire en Valeurs avec la fonction Moyenne."] },
+  { titre:"Étendue des salaires par région", texte:"Pour chaque région, affiche à la fois le salaire minimum et le salaire maximum.",
+    cfg:{ filtres:[], lignes:['region'], colonnes:[], valeurs:[{field:'salaire',agg:'min'},{field:'salaire',agg:'max'}] },
+    hints:["Le clic n'ajoute un champ qu'une fois dans Valeurs : pour le poser deux fois avec deux fonctions différentes, utilise le glisser-déposer.","Région en Lignes, puis glisse Salaire dans Valeurs une première fois (choisis Min), puis une seconde fois (choisis Max)."] },
+  { titre:"Ancienneté maximale par poste", texte:"Affiche l'ancienneté la plus élevée (en années) pour chaque poste.",
+    cfg:{ filtres:[], lignes:['poste'], colonnes:[], valeurs:[{field:'anciennete',agg:'max'}] },
+    hints:["« La plus élevée » se traduit par la fonction Max.","Poste en Lignes, Ancienneté en Valeurs avec la fonction Max."] },
+  { titre:"Croisement Service × Contrat", texte:"Affiche le nombre de salariés pour chaque combinaison Service / Type de contrat, sous forme de grille.",
+    cfg:{ filtres:[], lignes:['service'], colonnes:['contrat'], valeurs:[{field:'employe',agg:'nombre'}] },
+    hints:["Pour obtenir une vraie grille croisée, il faut un champ en Lignes ET un champ en Colonnes.","Service en Lignes, Contrat en Colonnes, n'importe quel champ en Valeurs avec Nombre."] },
+  { titre:"Focus CDI : salaire moyen par service et télétravail", texte:"Ne garde que les CDI (filtre), puis affiche le salaire moyen croisé par Service (lignes) et Télétravail (colonnes).",
+    cfg:{ filtres:[{field:'contrat', value:'CDI'}], lignes:['service'], colonnes:['teletravail'], valeurs:[{field:'salaire',agg:'moyenne'}] },
+    hints:["Commence par poser Contrat en Filtres et choisis CDI dans la liste déroulante.","Ensuite : Service en Lignes, Télétravail en Colonnes, Salaire en Valeurs avec Moyenne."] },
+  { titre:"Absences moyennes, vue détaillée", texte:"Affiche le nombre moyen de jours d'absence, croisé par Poste puis par Région (deux champs en lignes).",
+    cfg:{ filtres:[], lignes:['poste','region'], colonnes:[], valeurs:[{field:'absences',agg:'moyenne'}] },
+    hints:["Tu peux empiler deux champs dans la même zone Lignes, l'ordre compte pour la lecture.","Poste puis Région en Lignes (dans cet ordre), Jours d'absence en Valeurs avec Moyenne."] },
+  { titre:"Focus Managers : primes par région", texte:"Ne garde que les Managers (filtre), puis calcule la prime totale versée par région.",
+    cfg:{ filtres:[{field:'poste', value:'Manager'}], lignes:['region'], colonnes:[], valeurs:[{field:'prime',agg:'somme'}] },
+    hints:["Le filtre porte sur le champ Poste, valeur Manager.","Région en Lignes, Prime en Valeurs avec la fonction Somme."] },
+  { titre:"Salaire et prime par service", texte:"Affiche, pour chaque service, la somme des salaires et la somme des primes côte à côte.",
+    cfg:{ filtres:[], lignes:['service'], colonnes:[], valeurs:[{field:'salaire',agg:'somme'},{field:'prime',agg:'somme'}] },
+    hints:["Deux mesures différentes peuvent cohabiter dans la zone Valeurs : chaque champ garde sa propre fonction.","Service en Lignes, puis Salaire en Valeurs avec Somme, et Prime en Valeurs avec Somme aussi."] },
+],
+  },
+
+  achats: {
+    id:'achats', label:'Achats', icon:'🛒', tableName:'Commandes', blurb:'Commandes, fournisseurs, retards',
+    tableDesc:"une liste fictive de commandes d'achat passées auprès de fournisseurs",
+    data: genererAchats(80),
+    fields: [
+      {key:'commande',      label:'N° de commande',        type:'txt'},
+      {key:'fournisseur',   label:'Fournisseur',           type:'txt'},
+      {key:'categorie',     label:'Catégorie',             type:'txt'},
+      {key:'acheteur',      label:'Acheteur',              type:'txt'},
+      {key:'site',          label:'Site',                  type:'txt'},
+      {key:'statut',        label:'Statut',                type:'txt'},
+      {key:'quantite',      label:'Quantité commandée',    type:'num'},
+      {key:'prix_unitaire', label:'Prix unitaire (€)',     type:'num'},
+      {key:'montant',       label:'Montant (€)',           type:'num'},
+      {key:'delai',         label:'Délai de livraison (j)',type:'num'},
+      {key:'retard',        label:'Jours de retard',       type:'num'},
+    ],
+    descriptions: {
+      commande:      "Numéro unique de la commande (donnée fictive).",
+      fournisseur:   "Entreprise auprès de laquelle la commande est passée.",
+      categorie:     "Famille d'achat : fournitures, informatique, emballage, matières premières ou services.",
+      acheteur:      "Prénom de l'acheteur qui a passé la commande.",
+      site:          "Site de l'entreprise qui reçoit la commande.",
+      statut:        "Où en est la commande : livrée, en cours, en retard ou annulée.",
+      quantite:      "Nombre d'unités commandées.",
+      prix_unitaire: "Prix d'une unité, en euros.",
+      montant:       "Quantité multipliée par le prix unitaire.",
+      delai:         "Nombre de jours prévus entre la commande et la livraison.",
+      retard:        "Jours de retard constatés (0 si la commande n'est pas en retard).",
+    },
+    currency: ['prix_unitaire','montant'],
+    examples: {
+      filtres:'Ex : Statut = En retard',
+      colonnes:'Ex : Site → une colonne par site',
+      lignes:'Ex : Fournisseur → une ligne par fournisseur',
+      valeurs:'Ex : Somme de Montant → dépense totale de chaque case',
+    },
+    missions: [
+      { titre:"Commandes par fournisseur", texte:"Affiche le nombre de commandes passées auprès de chaque fournisseur.",
+        cfg:{ filtres:[], lignes:['fournisseur'], colonnes:[], valeurs:[{field:'commande',agg:'nombre'}] },
+        hints:["Compter des commandes, c'est la fonction Nombre. Le champ choisi en Valeurs n'a pas d'importance.","Fournisseur en Lignes, puis n'importe quel champ (par exemple N° de commande) en Valeurs avec Nombre."] },
+      { titre:"Dépense totale par catégorie", texte:"Calcule le montant total dépensé dans chaque catégorie d'achat.",
+        cfg:{ filtres:[], lignes:['categorie'], colonnes:[], valeurs:[{field:'montant',agg:'somme'}] },
+        hints:["« Total dépensé » veut dire Somme.","Catégorie en Lignes, Montant en Valeurs avec la fonction Somme."] },
+      { titre:"Délai moyen par fournisseur", texte:"Calcule le délai de livraison moyen de chaque fournisseur.",
+        cfg:{ filtres:[], lignes:['fournisseur'], colonnes:[], valeurs:[{field:'delai',agg:'moyenne'}] },
+        hints:["« Moyen » se traduit par la fonction Moyenne.","Fournisseur en Lignes, Délai de livraison en Valeurs avec Moyenne."] },
+      { titre:"Étendue des quantités par site", texte:"Pour chaque site, affiche à la fois la plus petite et la plus grande quantité commandée.",
+        cfg:{ filtres:[], lignes:['site'], colonnes:[], valeurs:[{field:'quantite',agg:'min'},{field:'quantite',agg:'max'}] },
+        hints:["Le clic n'ajoute un champ qu'une fois dans Valeurs : pour le poser deux fois avec deux fonctions différentes, utilise le glisser-déposer.","Site en Lignes, puis glisse Quantité commandée dans Valeurs une première fois (choisis Min), puis une seconde fois (choisis Max)."] },
+      { titre:"Plus grosse commande par catégorie", texte:"Affiche le montant de la commande la plus élevée dans chaque catégorie d'achat.",
+        cfg:{ filtres:[], lignes:['categorie'], colonnes:[], valeurs:[{field:'montant',agg:'max'}] },
+        hints:["« La plus élevée » se traduit par la fonction Max.","Catégorie en Lignes, Montant en Valeurs avec la fonction Max."] },
+      { titre:"Croisement Catégorie × Statut", texte:"Affiche le nombre de commandes pour chaque combinaison Catégorie / Statut, sous forme de grille.",
+        cfg:{ filtres:[], lignes:['categorie'], colonnes:['statut'], valeurs:[{field:'commande',agg:'nombre'}] },
+        hints:["Pour une vraie grille croisée, il faut un champ en Lignes ET un champ en Colonnes.","Catégorie en Lignes, Statut en Colonnes, n'importe quel champ en Valeurs avec Nombre."] },
+      { titre:"Focus retards : retard moyen par fournisseur et site", texte:"Ne garde que les commandes en retard (filtre), puis affiche le nombre moyen de jours de retard par Fournisseur (lignes) et par Site (colonnes).",
+        cfg:{ filtres:[{field:'statut', value:'En retard'}], lignes:['fournisseur'], colonnes:['site'], valeurs:[{field:'retard',agg:'moyenne'}] },
+        hints:["Commence par poser Statut en Filtres et choisis « En retard » dans la liste déroulante.","Ensuite : Fournisseur en Lignes, Site en Colonnes, Jours de retard en Valeurs avec Moyenne."] },
+      { titre:"Quantités par catégorie puis statut", texte:"Calcule la quantité totale commandée, détaillée par Catégorie puis par Statut (deux champs en lignes).",
+        cfg:{ filtres:[], lignes:['categorie','statut'], colonnes:[], valeurs:[{field:'quantite',agg:'somme'}] },
+        hints:["Tu peux empiler deux champs dans la même zone Lignes, l'ordre compte pour la lecture.","Catégorie puis Statut en Lignes (dans cet ordre), Quantité commandée en Valeurs avec Somme."] },
+      { titre:"Focus Informatique : dépense par site et statut", texte:"Ne garde que la catégorie Informatique (filtre), puis calcule le montant total par Site (lignes) et par Statut (colonnes).",
+        cfg:{ filtres:[{field:'categorie', value:'Informatique'}], lignes:['site'], colonnes:['statut'], valeurs:[{field:'montant',agg:'somme'}] },
+        hints:["Le filtre porte sur le champ Catégorie, valeur Informatique.","Site en Lignes, Statut en Colonnes, Montant en Valeurs avec Somme."] },
+      { titre:"Bilan des livraisons réussies", texte:"Ne garde que les commandes livrées (filtre), puis affiche le montant total par Acheteur (lignes) et par Catégorie (colonnes).",
+        cfg:{ filtres:[{field:'statut', value:'Livrée'}], lignes:['acheteur'], colonnes:['categorie'], valeurs:[{field:'montant',agg:'somme'}] },
+        hints:["Filtre sur Statut, valeur Livrée.","Acheteur en Lignes, Catégorie en Colonnes, Montant en Valeurs avec Somme."] },
+    ],
+  },
+
+  ventes: {
+    id:'ventes', label:'Ventes', icon:'💶', tableName:'Ventes', blurb:'Produits, canaux, chiffre d\'affaires',
+    tableDesc:"une liste fictive de lignes de vente d'une entreprise de mobilier et d'accessoires",
+    data: genererVentes(90),
+    fields: [
+      {key:'vente',         label:'N° de vente',           type:'txt'},
+      {key:'commercial',    label:'Commercial',            type:'txt'},
+      {key:'region',        label:'Région',                type:'txt'},
+      {key:'categorie',     label:'Catégorie',             type:'txt'},
+      {key:'produit',       label:'Produit',               type:'txt'},
+      {key:'canal',         label:'Canal de vente',        type:'txt'},
+      {key:'trimestre',     label:'Trimestre',             type:'txt'},
+      {key:'quantite',      label:'Quantité vendue',       type:'num'},
+      {key:'prix_unitaire', label:'Prix unitaire (€)',     type:'num'},
+      {key:'remise',        label:'Remise (%)',            type:'num'},
+      {key:'ca',            label:"Chiffre d'affaires (€)",type:'num'},
+    ],
+    descriptions: {
+      vente:         "Numéro unique de la ligne de vente (donnée fictive).",
+      commercial:    "Prénom du commercial qui a réalisé la vente.",
+      region:        "Zone commerciale où la vente a eu lieu.",
+      categorie:     "Famille du produit : mobilier, informatique ou audio-vidéo.",
+      produit:       "Article vendu.",
+      canal:         "Par où est passée la vente : magasin, web ou téléphone.",
+      trimestre:     "Période de l'année où la vente a eu lieu (T1 à T4).",
+      quantite:      "Nombre d'unités vendues.",
+      prix_unitaire: "Prix catalogue d'une unité, avant remise.",
+      remise:        "Pourcentage de remise accordé au client.",
+      ca:            "Chiffre d'affaires de la ligne : quantité × prix, remise déduite.",
+    },
+    currency: ['prix_unitaire','ca'],
+    examples: {
+      filtres:'Ex : Trimestre = T4',
+      colonnes:'Ex : Canal de vente → colonnes Magasin / Web / Téléphone',
+      lignes:'Ex : Région → une ligne par région',
+      valeurs:"Ex : Somme de Chiffre d'affaires → ventes de chaque case",
+    },
+    missions: [
+      { titre:"Ventes par région", texte:"Affiche le nombre de lignes de vente enregistrées dans chaque région.",
+        cfg:{ filtres:[], lignes:['region'], colonnes:[], valeurs:[{field:'vente',agg:'nombre'}] },
+        hints:["Compter des ventes, c'est la fonction Nombre. Le champ choisi en Valeurs n'a pas d'importance.","Région en Lignes, puis n'importe quel champ (par exemple N° de vente) en Valeurs avec Nombre."] },
+      { titre:"Chiffre d'affaires par commercial", texte:"Calcule le chiffre d'affaires total réalisé par chaque commercial.",
+        cfg:{ filtres:[], lignes:['commercial'], colonnes:[], valeurs:[{field:'ca',agg:'somme'}] },
+        hints:["« Total » veut dire Somme, pas Moyenne.","Commercial en Lignes, Chiffre d'affaires en Valeurs avec la fonction Somme."] },
+      { titre:"Vente moyenne par canal", texte:"Calcule le chiffre d'affaires moyen d'une ligne de vente selon le canal (Magasin, Web, Téléphone).",
+        cfg:{ filtres:[], lignes:['canal'], colonnes:[], valeurs:[{field:'ca',agg:'moyenne'}] },
+        hints:["« Moyenne » d'une ligne de vente : c'est la fonction Moyenne.","Canal de vente en Lignes, Chiffre d'affaires en Valeurs avec Moyenne."] },
+      { titre:"Étendue des prix par catégorie", texte:"Pour chaque catégorie, affiche à la fois le prix unitaire minimum et le prix unitaire maximum.",
+        cfg:{ filtres:[], lignes:['categorie'], colonnes:[], valeurs:[{field:'prix_unitaire',agg:'min'},{field:'prix_unitaire',agg:'max'}] },
+        hints:["Le clic n'ajoute un champ qu'une fois dans Valeurs : pour le poser deux fois avec deux fonctions différentes, utilise le glisser-déposer.","Catégorie en Lignes, puis glisse Prix unitaire dans Valeurs une première fois (choisis Min), puis une seconde fois (choisis Max)."] },
+      { titre:"Plus grosse vente par commercial", texte:"Affiche le chiffre d'affaires de la vente la plus élevée réalisée par chaque commercial.",
+        cfg:{ filtres:[], lignes:['commercial'], colonnes:[], valeurs:[{field:'ca',agg:'max'}] },
+        hints:["« La plus élevée » se traduit par la fonction Max.","Commercial en Lignes, Chiffre d'affaires en Valeurs avec la fonction Max."] },
+      { titre:"Croisement Région × Canal", texte:"Affiche le nombre de ventes pour chaque combinaison Région / Canal de vente, sous forme de grille.",
+        cfg:{ filtres:[], lignes:['region'], colonnes:['canal'], valeurs:[{field:'vente',agg:'nombre'}] },
+        hints:["Pour une vraie grille croisée, il faut un champ en Lignes ET un champ en Colonnes.","Région en Lignes, Canal de vente en Colonnes, n'importe quel champ en Valeurs avec Nombre."] },
+      { titre:"Focus T4 : chiffre d'affaires par catégorie et canal", texte:"Ne garde que le trimestre T4 (filtre), puis affiche le chiffre d'affaires total par Catégorie (lignes) et par Canal de vente (colonnes).",
+        cfg:{ filtres:[{field:'trimestre', value:'T4'}], lignes:['categorie'], colonnes:['canal'], valeurs:[{field:'ca',agg:'somme'}] },
+        hints:["Commence par poser Trimestre en Filtres et choisis T4 dans la liste déroulante.","Ensuite : Catégorie en Lignes, Canal de vente en Colonnes, Chiffre d'affaires en Valeurs avec Somme."] },
+      { titre:"Remise moyenne par catégorie puis canal", texte:"Calcule la remise moyenne accordée, détaillée par Catégorie puis par Canal de vente (deux champs en lignes).",
+        cfg:{ filtres:[], lignes:['categorie','canal'], colonnes:[], valeurs:[{field:'remise',agg:'moyenne'}] },
+        hints:["Tu peux empiler deux champs dans la même zone Lignes, l'ordre compte pour la lecture.","Catégorie puis Canal de vente en Lignes (dans cet ordre), Remise en Valeurs avec Moyenne."] },
+      { titre:"Focus Web : quantités par produit", texte:"Ne garde que les ventes en ligne (filtre), puis calcule la quantité totale vendue pour chaque produit.",
+        cfg:{ filtres:[{field:'canal', value:'Web'}], lignes:['produit'], colonnes:[], valeurs:[{field:'quantite',agg:'somme'}] },
+        hints:["Le filtre porte sur le champ Canal de vente, valeur Web.","Produit en Lignes, Quantité vendue en Valeurs avec la fonction Somme."] },
+      { titre:"Performance des commerciaux par trimestre", texte:"Affiche le chiffre d'affaires total de chaque commercial (lignes) trimestre par trimestre (colonnes).",
+        cfg:{ filtres:[], lignes:['commercial'], colonnes:['trimestre'], valeurs:[{field:'ca',agg:'somme'}] },
+        hints:["Pas de filtre ici : toutes les ventes comptent.","Commercial en Lignes, Trimestre en Colonnes, Chiffre d'affaires en Valeurs avec Somme."] },
+    ],
+  },
+
+  qualite: {
+    id:'qualite', label:'Qualité', icon:'✅', tableName:'Contrôles', blurb:'Défauts, lignes, équipes',
+    tableDesc:"une liste fictive de contrôles qualité réalisés sur des lignes de production",
+    data: genererQualite(84),
+    fields: [
+      {key:'controle',    label:'N° de contrôle',            type:'txt'},
+      {key:'ligne',       label:'Ligne de production',       type:'txt'},
+      {key:'produit',     label:'Produit',                   type:'txt'},
+      {key:'equipe',      label:'Équipe',                    type:'txt'},
+      {key:'controleur',  label:'Contrôleur',                type:'txt'},
+      {key:'type_defaut', label:'Type de défaut',            type:'txt'},
+      {key:'resultat',    label:'Résultat',                  type:'txt'},
+      {key:'nb_pieces',   label:'Pièces contrôlées',         type:'num'},
+      {key:'nb_defauts',  label:'Défauts constatés',         type:'num'},
+      {key:'duree',       label:'Durée du contrôle (min)',   type:'num'},
+      {key:'cout',        label:'Coût de non-qualité (€)',   type:'num'},
+    ],
+    descriptions: {
+      controle:    "Numéro unique du contrôle (donnée fictive).",
+      ligne:       "Ligne de production contrôlée.",
+      produit:     "Type de pièce fabriquée.",
+      equipe:      "Équipe de travail au moment du contrôle : matin, après-midi ou nuit.",
+      controleur:  "Prénom du contrôleur qualité.",
+      type_defaut: "Nature du défaut principal constaté (« Aucun » si tout est bon).",
+      resultat:    "Verdict du contrôle : conforme, à retoucher ou non conforme.",
+      nb_pieces:   "Nombre de pièces examinées pendant le contrôle.",
+      nb_defauts:  "Nombre de pièces défectueuses trouvées.",
+      duree:       "Temps passé sur le contrôle, en minutes.",
+      cout:        "Coût estimé des retouches et rebuts liés aux défauts.",
+    },
+    currency: ['cout'],
+    examples: {
+      filtres:'Ex : Résultat = Non conforme',
+      colonnes:'Ex : Équipe → colonnes Matin / Après-midi / Nuit',
+      lignes:'Ex : Ligne de production → une ligne par ligne',
+      valeurs:'Ex : Somme de Défauts constatés → total de défauts de chaque case',
+    },
+    missions: [
+      { titre:"Contrôles par ligne de production", texte:"Affiche le nombre de contrôles réalisés sur chaque ligne de production.",
+        cfg:{ filtres:[], lignes:['ligne'], colonnes:[], valeurs:[{field:'controle',agg:'nombre'}] },
+        hints:["Compter des contrôles, c'est la fonction Nombre. Le champ choisi en Valeurs n'a pas d'importance.","Ligne de production en Lignes, puis n'importe quel champ (par exemple N° de contrôle) en Valeurs avec Nombre."] },
+      { titre:"Défauts totaux par produit", texte:"Calcule le nombre total de défauts constatés pour chaque produit.",
+        cfg:{ filtres:[], lignes:['produit'], colonnes:[], valeurs:[{field:'nb_defauts',agg:'somme'}] },
+        hints:["« Total » veut dire Somme.","Produit en Lignes, Défauts constatés en Valeurs avec la fonction Somme."] },
+      { titre:"Durée moyenne de contrôle par équipe", texte:"Calcule la durée moyenne d'un contrôle selon l'équipe (Matin, Après-midi, Nuit).",
+        cfg:{ filtres:[], lignes:['equipe'], colonnes:[], valeurs:[{field:'duree',agg:'moyenne'}] },
+        hints:["« Moyenne » se traduit par la fonction Moyenne.","Équipe en Lignes, Durée du contrôle en Valeurs avec Moyenne."] },
+      { titre:"Étendue des défauts par ligne", texte:"Pour chaque ligne de production, affiche à la fois le plus petit et le plus grand nombre de défauts constatés sur un contrôle.",
+        cfg:{ filtres:[], lignes:['ligne'], colonnes:[], valeurs:[{field:'nb_defauts',agg:'min'},{field:'nb_defauts',agg:'max'}] },
+        hints:["Le clic n'ajoute un champ qu'une fois dans Valeurs : pour le poser deux fois avec deux fonctions différentes, utilise le glisser-déposer.","Ligne de production en Lignes, puis glisse Défauts constatés dans Valeurs une première fois (choisis Min), puis une seconde fois (choisis Max)."] },
+      { titre:"Contrôle le plus long par produit", texte:"Affiche la durée du contrôle le plus long pour chaque produit.",
+        cfg:{ filtres:[], lignes:['produit'], colonnes:[], valeurs:[{field:'duree',agg:'max'}] },
+        hints:["« Le plus long » se traduit par la fonction Max.","Produit en Lignes, Durée de contrôle en Valeurs avec la fonction Max."] },
+      { titre:"Croisement Ligne × Résultat", texte:"Affiche le nombre de contrôles pour chaque combinaison Ligne de production / Résultat, sous forme de grille.",
+        cfg:{ filtres:[], lignes:['ligne'], colonnes:['resultat'], valeurs:[{field:'controle',agg:'nombre'}] },
+        hints:["Pour une vraie grille croisée, il faut un champ en Lignes ET un champ en Colonnes.","Ligne de production en Lignes, Résultat en Colonnes, n'importe quel champ en Valeurs avec Nombre."] },
+      { titre:"Focus non conformes : coût par ligne et équipe", texte:"Ne garde que les contrôles non conformes (filtre), puis affiche le coût de non-qualité total par Ligne de production (lignes) et par Équipe (colonnes).",
+        cfg:{ filtres:[{field:'resultat', value:'Non conforme'}], lignes:['ligne'], colonnes:['equipe'], valeurs:[{field:'cout',agg:'somme'}] },
+        hints:["Commence par poser Résultat en Filtres et choisis « Non conforme » dans la liste déroulante.","Ensuite : Ligne de production en Lignes, Équipe en Colonnes, Coût de non-qualité en Valeurs avec Somme."] },
+      { titre:"Défauts par produit puis type", texte:"Calcule le nombre total de défauts, détaillé par Produit puis par Type de défaut (deux champs en lignes).",
+        cfg:{ filtres:[], lignes:['produit','type_defaut'], colonnes:[], valeurs:[{field:'nb_defauts',agg:'somme'}] },
+        hints:["Tu peux empiler deux champs dans la même zone Lignes, l'ordre compte pour la lecture.","Produit puis Type de défaut en Lignes (dans cet ordre), Défauts constatés en Valeurs avec Somme."] },
+      { titre:"Focus équipe de nuit : défauts moyens par ligne", texte:"Ne garde que l'équipe de nuit (filtre), puis calcule le nombre moyen de défauts constatés par ligne de production.",
+        cfg:{ filtres:[{field:'equipe', value:'Nuit'}], lignes:['ligne'], colonnes:[], valeurs:[{field:'nb_defauts',agg:'moyenne'}] },
+        hints:["Le filtre porte sur le champ Équipe, valeur Nuit.","Ligne de production en Lignes, Défauts constatés en Valeurs avec la fonction Moyenne."] },
+      { titre:"Coût de non-qualité par contrôleur et équipe", texte:"Affiche le coût de non-qualité total de chaque contrôleur (lignes) équipe par équipe (colonnes).",
+        cfg:{ filtres:[], lignes:['controleur'], colonnes:['equipe'], valeurs:[{field:'cout',agg:'somme'}] },
+        hints:["Pas de filtre ici : tous les contrôles comptent.","Contrôleur en Lignes, Équipe en Colonnes, Coût de non-qualité en Valeurs avec Somme."] },
+    ],
+  },
 };
+const SCENARIO_ORDER = ['rh','achats','ventes','qualite'];
 
-const AGG_LABELS = { somme:'Somme', moyenne:'Moyenne', nombre:'Nombre', nombre_distinct:'Nb distinct', min:'Min', max:'Max' };
-const CURRENCY_FIELDS = ['salaire','prime'];
+// Scénario actif. DATA, FIELDS, etc. pointent toujours vers celui qui est sélectionné
+// (changement via applyScenario(), voir la section 12bis). RH au démarrage.
+let currentScenarioId = 'rh';
+// Chaque onglet de manipulation (Bac à sable, TCD Quest) a son propre scénario et ses propres zones.
+let activeCtx = 'atelier';
+const ctxScn = { atelier:'rh', quest:'rh', carto:'rh' };
+const ctxZones = { atelier:null, quest:null, carto:null };
+let DATA = SCENARIOS.rh.data;
+let FIELDS = SCENARIOS.rh.fields;
+let FIELD_DESCRIPTIONS = SCENARIOS.rh.descriptions;
+let CURRENCY_FIELDS = SCENARIOS.rh.currency;
+let MISSIONS = SCENARIOS.rh.missions;
+function fieldByKey(k){ return FIELDS.find(f=>f.key===k); }
+function currentScenario(){ return SCENARIOS[currentScenarioId]; }
+
+const AGG_LABELS = { somme:'Somme', moyenne:'Moyenne', nombre:'Nombre', min:'Min', max:'Max' };
+
 
 /* =========================================================
    2. ÉTAT — zones actuellement configurées par l'apprenant
@@ -750,7 +1443,7 @@ function renderFieldsInto(suffix){
       return `<button type="button" class="zbtn${on}" data-zone="${z}" data-key="${f.key}" title="${letter==='F'?'Filtres':letter==='L'?'Lignes':letter==='C'?'Colonnes':'Valeurs'}">${letter}</button>`;
     }).join('');
     return `
-    <div class="field-item" draggable="true" data-key="${f.key}">
+    <div class="field-item" draggable="true" tabindex="0" data-key="${f.key}">
       <span class="field-icon ${f.type}">${f.type==='num'?'#':'T'}</span>
       <span class="field-name">${f.label}</span>
       <span class="zone-toggles">${btns}</span>
@@ -769,7 +1462,74 @@ function renderFieldsInto(suffix){
     });
   });
 }
-function renderFields(){ UI_INSTANCES.forEach(renderFieldsInto); }
+function renderFields(){ hideFieldTip(); UI_INSTANCES.forEach(renderFieldsInto); }
+
+/* ---------- 3b. Info-bulle d'aperçu des données au survol d'un champ ---------- */
+function formatRaw(field, v){
+  if(field && CURRENCY_FIELDS && CURRENCY_FIELDS.includes(field.key)) return Number(v).toLocaleString('fr-FR')+' €';
+  return typeof v==='number' ? v.toLocaleString('fr-FR') : String(v);
+}
+function buildFieldTipHtml(key){
+  const f = fieldByKey(key);
+  if(!f) return '';
+  const vals = DATA.map(r=>r[key]);
+  const desc = (typeof FIELD_DESCRIPTIONS!=='undefined' && FIELD_DESCRIPTIONS[key]) || '';
+  let h = `<div class="ft-head"><span class="ft-name">${escapeXml(f.label)}</span><span class="ft-type">${f.type==='num'?'Numérique':'Texte'}</span></div>`;
+  if(desc) h += `<div class="ft-desc">${escapeXml(desc)}</div>`;
+  if(f.type==='num'){
+    const nums = vals.map(Number).filter(n=>!isNaN(n));
+    const min = Math.min(...nums), max = Math.max(...nums);
+    const avg = nums.reduce((a,b)=>a+b,0)/nums.length;
+    const fmt = n => formatRaw(f, Math.round(n*100)/100);
+    h += `<div class="ft-sub">Aperçu (${vals.length} lignes)</div><table>`
+      + `<tr><td>Minimum</td><td>${escapeXml(fmt(min))}</td></tr>`
+      + `<tr><td>Moyenne</td><td>${escapeXml(fmt(avg))}</td></tr>`
+      + `<tr><td>Maximum</td><td>${escapeXml(fmt(max))}</td></tr></table>`;
+    h += `<div class="ft-sub">Premières valeurs</div><div>${vals.slice(0,5).map(v=>escapeXml(formatRaw(f,v))).join(' · ')}</div>`;
+  } else {
+    const counts = {};
+    vals.forEach(v=>{ counts[v]=(counts[v]||0)+1; });
+    const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],'fr'));
+    h += `<div class="ft-sub">${entries.length} valeur${entries.length>1?'s':''} distincte${entries.length>1?'s':''} · ${vals.length} lignes</div>`;
+    if(entries.length>12){
+      h += `<div>Ex : ${entries.slice(0,4).map(e=>escapeXml(e[0])).join(', ')}...</div>`;
+    } else {
+      const top = entries.slice(0,6), mx = top[0][1];
+      h += '<table>' + top.map(e=>`<tr><td>${escapeXml(e[0])}</td><td>${e[1]}<span class="ft-bar" style="width:${Math.max(4,Math.round(e[1]/mx*40))}px"></span></td></tr>`).join('') + '</table>';
+      if(entries.length>top.length) h += `<div style="color:#A8A6A3;margin-top:2px;">+ ${entries.length-top.length} autre(s)</div>`;
+    }
+  }
+  return h;
+}
+const fieldTipEl = document.createElement('div');
+fieldTipEl.className = 'field-tip'; fieldTipEl.id = 'fieldTip'; fieldTipEl.setAttribute('role','tooltip');
+document.body.appendChild(fieldTipEl);
+function hideFieldTip(){ fieldTipEl.classList.remove('show'); }
+function showFieldTip(item){
+  fieldTipEl.innerHTML = buildFieldTipHtml(item.dataset.key);
+  fieldTipEl.classList.add('show');
+  const r = item.getBoundingClientRect(), tw = fieldTipEl.offsetWidth, th = fieldTipEl.offsetHeight;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let left, top;
+  if(r.right + 10 + tw <= vw - 6){ left = r.right + 10; top = r.top; }
+  else if(r.left - 10 - tw >= 6){ left = r.left - 10 - tw; top = r.top; }
+  else { left = Math.max(10, Math.min(r.left, vw - tw - 10)); top = r.bottom + 6; if(top + th > vh - 6) top = Math.max(6, r.top - th - 6); }
+  top = Math.max(6, Math.min(top, vh - th - 6));
+  fieldTipEl.style.left = left+'px'; fieldTipEl.style.top = top+'px';
+}
+// Listeners délégués, attachés une seule fois.
+['atelier','quest'].forEach(suf=>{
+  const box = document.getElementById('fieldsList-'+suf);
+  if(!box) return;
+  box.addEventListener('mouseover', e=>{ const it=e.target.closest('.field-item'); if(it && box.contains(it)) showFieldTip(it); });
+  box.addEventListener('mouseout', e=>{ const it=e.target.closest('.field-item'); if(it && !it.contains(e.relatedTarget)) hideFieldTip(); });
+  box.addEventListener('focusin', e=>{ const it=e.target.closest('.field-item'); if(it) showFieldTip(it); });
+  box.addEventListener('focusout', hideFieldTip);
+  box.addEventListener('dragstart', hideFieldTip);
+  box.addEventListener('touchstart', hideFieldTip, {passive:true});
+});
+window.addEventListener('scroll', hideFieldTip, {passive:true});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideFieldTip(); });
 
 /* =========================================================
    4. RENDU — zones de dépose
@@ -859,7 +1619,6 @@ function groupKeyParts(row, fieldKeys){ return fieldKeys.map(k=>String(row[k]));
 
 function aggregate(rows, field, agg){
   if(agg==='nombre') return rows.length;
-  if(agg==='nombre_distinct') return new Set(rows.map(r=>r[field])).size;
   const vals = rows.map(r=>Number(r[field])).filter(v=>!isNaN(v));
   if(vals.length===0) return 0;
   if(agg==='somme') return vals.reduce((a,b)=>a+b,0);
@@ -870,7 +1629,7 @@ function aggregate(rows, field, agg){
 }
 function formatValue(field, agg, value){
   const rounded = (agg==='moyenne') ? Math.round(value*10)/10 : Math.round(value);
-  if(CURRENCY_FIELDS.includes(field) && agg!=='nombre' && agg!=='nombre_distinct'){
+  if(CURRENCY_FIELDS.includes(field) && agg!=='nombre'){
     return Math.round(value).toLocaleString('fr-FR') + ' €';
   }
   return rounded.toLocaleString('fr-FR');
@@ -961,6 +1720,13 @@ function currentConfig(){
   };
 }
 
+// Libellé d'une combinaison : « Champ : valeur » (séparées par › quand plusieurs champs).
+// Les colonnes sont toujours nommées ; les lignes le sont dès qu'il y a plusieurs champs
+// (avec un seul champ en lignes, son nom est déjà dans l'en-tête de la première colonne).
+function comboLabel(parts, keys, force){
+  if(!force && keys.length<2) return parts.join(' › ');
+  return parts.map((v,i)=> (keys[i] ? fieldByKey(keys[i]).label+' : ' : '') + v).join(' › ');
+}
 function renderPivotTable(pivot, containerId){
   const el = document.getElementById(containerId);
   if(pivot.empty){
@@ -975,7 +1741,7 @@ function renderPivotTable(pivot, containerId){
   let head2 = '';
   if(hasCols){
     pivot.colCombos.forEach(cc=>{
-      const label = cc.parts.join(' › ');
+      const label = comboLabel(cc.parts, pivot.colonnesF, true);
       head1 += `<th colspan="${pivot.valeursF.length}">${label}</th>`;
     });
     head1 += `<th colspan="${pivot.valeursF.length}" class="total-col">Total général</th></tr>`;
@@ -992,7 +1758,7 @@ function renderPivotTable(pivot, containerId){
 
   let body = '';
   pivot.rowCombos.forEach(rc=>{
-    body += `<tr><td class="rowhead">${rc.parts.join(' › ')}</td>`;
+    body += `<tr><td class="rowhead">${comboLabel(rc.parts, pivot.lignesF)}</td>`;
     if(hasCols){
       pivot.colCombos.forEach(cc=>{
         const cellKey = rc.key+'||'+cc.key;
@@ -1029,7 +1795,7 @@ function renderPivotTable(pivot, containerId){
   });
   body += '</tr>';
 
-  el.innerHTML = `<table class="pivot">${head1}${head2}<tbody>${body}</tbody></table>`;
+  el.innerHTML = `<div class="pivot-scroll"><table class="pivot">${head1}${head2}<tbody>${body}</tbody></table></div>`;
 }
 
 /* =========================================================
@@ -1042,89 +1808,290 @@ function escapeXml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;
 // mesure de la zone Valeurs (un graphique lisible = un seul indicateur à la fois).
 function buildChartData(pivot){
   if(pivot.empty || pivot.valeursF.length===0 || pivot.rowCombos.length===0) return null;
-  const v = pivot.valeursF[0];
-  const categories = pivot.rowCombos.map(rc=>({key:rc.key, label:rc.parts.join(' › ')}));
-  let series;
+  // Toutes les mesures posées en Valeurs sont tracées (ex : Min ET Max côte à côte).
+  const measures = pivot.valeursF;
+  const multi = measures.length>1;
+  const categories = pivot.rowCombos.map(rc=>({key:rc.key, label:comboLabel(rc.parts, pivot.lignesF)}));
+  const mLabel = v => AGG_LABELS[v.agg]+' '+fieldByKey(v.field).label;
+  const series = [];
   if(pivot.colonnesF.length>0){
-    series = pivot.colCombos.map((cc,i)=>({
-      label: cc.parts.join(' › '),
-      color: CHART_COLORS[i % CHART_COLORS.length],
-      values: categories.map(cat => pivot.cells.get(cat.key+'||'+cc.key+'||'+v.field+'_'+v.agg) || 0),
-    }));
+    measures.forEach(v=>{
+      pivot.colCombos.forEach(cc=>{
+        series.push({
+          label: (multi ? mLabel(v)+' · ' : '') + comboLabel(cc.parts, pivot.colonnesF, true),
+          color: CHART_COLORS[series.length % CHART_COLORS.length], field:v.field, agg:v.agg,
+          values: categories.map(cat => pivot.cells.get(cat.key+'||'+cc.key+'||'+v.field+'_'+v.agg) || 0),
+        });
+      });
+    });
   } else {
-    series = [{
-      label: AGG_LABELS[v.agg]+' '+fieldByKey(v.field).label,
-      color: CHART_COLORS[0],
-      values: categories.map(cat => pivot.rowTotals.get(cat.key+'||'+v.field+'_'+v.agg) || 0),
-    }];
+    measures.forEach(v=>{
+      series.push({
+        label: mLabel(v), color: CHART_COLORS[series.length % CHART_COLORS.length], field:v.field, agg:v.agg,
+        values: categories.map(cat => pivot.rowTotals.get(cat.key+'||'+v.field+'_'+v.agg) || 0),
+      });
+    });
   }
-  return { categories, series, field:v.field, agg:v.agg,
-    measureLabel: AGG_LABELS[v.agg]+' de '+fieldByKey(v.field).label };
+  return { categories, series, field:measures[0].field, agg:measures[0].agg,
+    measureLabel: measures.map(v=>AGG_LABELS[v.agg]+' de '+fieldByKey(v.field).label).join(' et ') };
 }
 
-function renderChart(pivot, containerId){
-  const el = document.getElementById(containerId);
-  const cd = buildChartData(pivot);
-  if(!cd){
-    el.innerHTML = '<div class="pivot-empty">Configure au moins un champ en <b>Lignes</b> (ou Colonnes) et un champ en <b>Valeurs</b> pour voir apparaître un graphique.</div>';
-    return;
-  }
-  const nCats = cd.categories.length, nSeries = cd.series.length;
-  const W = Math.max(480, nCats * (nSeries>1 ? 90 : 60) + 90);
-  const H = 320, padL = 66, padB = 74, padT = 18, padR = 16;
-  const plotW = W - padL - padR, plotH = H - padT - padB;
-  const maxVal = Math.max(1, ...cd.series.flatMap(s=>s.values));
-  const groupWidth = plotW / nCats;
-  const barGap = 6;
-  const barWidth = Math.max(6, (groupWidth - barGap*(nSeries+1)) / nSeries);
-  const showLabels = nCats <= 14;
+/* ---------- 7b. Types de graphique proposés (Insérer un graphique) ---------- */
+const CHART_TYPES = [
+  { id:'colonnes', nom:'Histogramme', tag:'Comparer des catégories',
+    icon:'<svg viewBox="0 0 56 42"><rect x="6" y="18" width="9" height="20" fill="#1D8A57"/><rect x="19" y="8" width="9" height="30" fill="#1D8A57"/><rect x="32" y="24" width="9" height="14" fill="#1D8A57"/><rect x="45" y="14" width="7" height="24" fill="#1D8A57"/><line x1="3" y1="38.5" x2="54" y2="38.5" stroke="#6B6B6B"/></svg>',
+    quand:"Une barre verticale par catégorie : tu compares d'un coup d'œil les valeurs entre elles. C'est le graphique le plus courant.",
+    exemple:"Effectif par service, chiffre d'affaires par commercial.",
+    attention:"Au-delà d'une quinzaine de catégories, les barres deviennent trop serrées pour être lues." },
+  { id:'empile', nom:'Histogramme empilé', tag:'Voir la composition',
+    icon:'<svg viewBox="0 0 56 42"><rect x="8" y="22" width="11" height="16" fill="#1D8A57"/><rect x="8" y="10" width="11" height="12" fill="#DDA40D"/><rect x="25" y="14" width="11" height="24" fill="#1D8A57"/><rect x="25" y="6" width="11" height="8" fill="#DDA40D"/><rect x="42" y="26" width="11" height="12" fill="#1D8A57"/><rect x="42" y="16" width="11" height="10" fill="#DDA40D"/><line x1="3" y1="38.5" x2="54" y2="38.5" stroke="#6B6B6B"/></svg>',
+    quand:"Les séries sont empilées dans une même barre : tu vois le total de chaque catégorie ET la part de chaque morceau.",
+    exemple:"Effectif par service, découpé par type de contrat (champ en Colonnes).",
+    attention:"Il faut au moins 2 séries (un champ en Colonnes, ou 2 champs en Valeurs). Seul le premier morceau est facile à comparer, les autres « flottent »." },
+  { id:'barres', nom:'Barres', tag:'Classer, libellés longs',
+    icon:'<svg viewBox="0 0 56 42"><rect x="6" y="6" width="38" height="8" fill="#1D8A57"/><rect x="6" y="18" width="26" height="8" fill="#1D8A57"/><rect x="6" y="30" width="44" height="8" fill="#1D8A57"/><line x1="5.5" y1="3" x2="5.5" y2="40" stroke="#6B6B6B"/></svg>',
+    quand:"Même principe que l'histogramme, mais à l'horizontale : les noms de catégories ont toute la place pour s'écrire. Parfait pour un classement.",
+    exemple:"Top des fournisseurs par montant, poste par salaire moyen.",
+    attention:"Les catégories s'affichent dans l'ordre du tableau. Trie ton champ en Lignes si tu veux un vrai classement." },
+  { id:'courbes', nom:'Courbes', tag:'Suivre une évolution',
+    icon:'<svg viewBox="0 0 56 42"><polyline points="6,32 19,16 32,24 50,8" fill="none" stroke="#1D8A57" stroke-width="2.5"/><circle cx="6" cy="32" r="3" fill="#1D8A57"/><circle cx="19" cy="16" r="3" fill="#1D8A57"/><circle cx="32" cy="24" r="3" fill="#1D8A57"/><circle cx="50" cy="8" r="3" fill="#1D8A57"/><line x1="3" y1="38.5" x2="54" y2="38.5" stroke="#6B6B6B"/></svg>',
+    quand:"Les points sont reliés entre eux : on voit tout de suite la tendance (hausse, baisse, stabilité). Fait pour des données qui suivent un ordre, surtout le temps.",
+    exemple:"Chiffre d'affaires par trimestre, une courbe par canal de vente.",
+    attention:"Relier des catégories sans ordre logique (des services, des régions) n'a pas de sens : préfère un histogramme." },
+  { id:'secteur', nom:'Secteur', tag:'Parts d\'un tout',
+    icon:'<svg viewBox="0 0 56 42"><path d="M28 21 L28 4 A17 17 0 0 1 43.6 28 Z" fill="#DDA40D"/><path d="M28 21 L43.6 28 A17 17 0 0 1 15 32 Z" fill="#B95E01"/><path d="M28 21 L15 32 A17 17 0 0 1 28 4 Z" fill="#1D8A57"/></svg>',
+    quand:"Un camembert : chaque part représente le poids d'une catégorie dans le total (100 %). Idéal pour répondre à « quelle proportion ? ».",
+    exemple:"Répartition de l'effectif par type de contrat.",
+    attention:"Une seule série à la fois, valeurs positives, et pas plus de 5 à 7 parts : au-delà, l'œil ne distingue plus les écarts." },
+];
+function chartTypeById(id){ return CHART_TYPES.find(t=>t.id===id); }
 
-  let bars = '', xlabels = '';
-  cd.categories.forEach((cat,ci)=>{
-    const groupX = padL + ci*groupWidth;
-    cd.series.forEach((s,si)=>{
-      const val = s.values[ci];
-      const barH = maxVal>0 ? (val/maxVal)*plotH : 0;
-      const x = groupX + barGap + si*(barWidth+barGap);
-      const y = padT + (plotH - barH);
-      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barH.toFixed(1)}" fill="${s.color}" rx="2"><title>${escapeXml(cat.label)} · ${escapeXml(s.label)} : ${formatValue(cd.field, cd.agg, val)}</title></rect>`;
-      if(showLabels && barH>14){
-        bars += `<text x="${(x+barWidth/2).toFixed(1)}" y="${(y-4).toFixed(1)}" font-size="9.5" text-anchor="middle" fill="var(--text-secondary)">${formatValue(cd.field, cd.agg, val)}</text>`;
-      }
-    });
-    const shortLabel = cat.label.length>14 ? cat.label.slice(0,13)+'…' : cat.label;
-    xlabels += `<text x="${(groupX+groupWidth/2).toFixed(1)}" y="${(H-padB+16).toFixed(1)}" font-size="10.5" text-anchor="middle" fill="var(--text-primary)">${escapeXml(shortLabel)}</text>`;
-  });
-
-  let gridLines = '';
-  const steps = 4;
-  for(let i=0;i<=steps;i++){
-    const yVal = maxVal * i/steps;
-    const y = padT + plotH - (yVal/maxVal)*plotH;
-    gridLines += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
-    gridLines += `<text x="${padL-8}" y="${(y+3).toFixed(1)}" font-size="10" text-anchor="end" fill="var(--text-secondary)">${formatValue(cd.field, cd.agg, yVal)}</text>`;
-  }
-
-  let legend = '';
-  if(cd.series.length>1){
-    legend = '<div class="chart-legend">' + cd.series.map(s=>
-      `<span class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${escapeXml(s.label)}</span>`
-    ).join('') + '</div>';
-  }
-
-  const axisTitle = pivot.colonnesF.length
+function chartAxisTitle(pivot, cd){
+  return pivot.colonnesF.length
     ? cd.measureLabel+' par '+pivot.lignesF.map(k=>fieldByKey(k).label).join(', ')+' (couleur = '+pivot.colonnesF.map(k=>fieldByKey(k).label).join(', ')+')'
     : cd.measureLabel+' par '+pivot.lignesF.map(k=>fieldByKey(k).label).join(', ');
-
-  el.innerHTML = `<div class="chart-title">${escapeXml(axisTitle)}</div>
-    ${legend}
-    <div class="chart-scroll"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="max-width:100%;">
-      ${gridLines}
-      ${bars}
-      ${xlabels}
-      <line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" stroke="var(--border-strong)" stroke-width="1.3"/>
-    </svg></div>`;
 }
+function chartLegend(series){
+  return '<div class="chart-legend">' + series.map(s=>
+    `<span class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${escapeXml(s.label)}</span>`
+  ).join('') + '</div>';
+}
+
+// Dessine le graphique du type demandé dans l'élément `el`.
+function renderChartSvg(pivot, el, type){
+  const cd = buildChartData(pivot);
+  if(!cd){
+    el.innerHTML = '<div class="pivot-empty">Configure au moins un champ en <b>Lignes</b> (ou Colonnes) et un champ en <b>Valeurs</b> pour voir apparaître le graphique.</div>';
+    return;
+  }
+  // Largeur disponible (celle du tableau croisé) : le graphique s'y étire, et défile si trop de catégories.
+  const avail = Math.max(480, (el.clientWidth||0) - 24);
+  const title = `<div class="chart-title">${escapeXml(chartAxisTitle(pivot, cd))}</div>`;
+  const nCats = cd.categories.length;
+  let series = cd.series, note = '';
+
+  /* --- Secteur : une seule série, parts en % --- */
+  if(type==='secteur'){
+    const s = series[0];
+    if(series.length>1) note = `Le secteur ne représente qu'une série à la fois : ici « ${escapeXml(s.label)} ». Les autres sont ignorées.`;
+    else if(nCats>7) note = `Attention : ${nCats} parts, c'est beaucoup pour un secteur. Un histogramme serait plus lisible.`;
+    const vals = s.values.map(v=>Math.max(0,v));
+    const total = vals.reduce((a,b)=>a+b,0);
+    if(total<=0){ el.innerHTML = title + '<div class="pivot-empty">Rien à répartir : toutes les valeurs sont nulles.</div>'; return; }
+    const cx=130, cy=130, r=110;
+    let ang=-Math.PI/2, paths='', labels='';
+    vals.forEach((v,i)=>{
+      const frac = v/total, a2 = ang + frac*2*Math.PI;
+      const col = CHART_COLORS[i % CHART_COLORS.length];
+      const tip = `<title>${escapeXml(cd.categories[i].label)} : ${formatValue(s.field,s.agg,s.values[i])} (${(frac*100).toFixed(1).replace('.',',')} %)</title>`;
+      if(frac>=0.9999){ paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" stroke="#fff" stroke-width="2">${tip}</circle>`; }
+      else if(frac>0){
+        const x1=cx+r*Math.cos(ang), y1=cy+r*Math.sin(ang), x2=cx+r*Math.cos(a2), y2=cy+r*Math.sin(a2);
+        paths += `<path d="M${cx} ${cy} L${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${frac>0.5?1:0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${col}" stroke="#fff" stroke-width="2">${tip}</path>`;
+      }
+      if(frac>=0.05){
+        const mid=(ang+a2)/2;
+        labels += `<text x="${(cx+r*0.62*Math.cos(mid)).toFixed(1)}" y="${(cy+r*0.62*Math.sin(mid)+4).toFixed(1)}" font-size="12" font-weight="700" text-anchor="middle" fill="#fff">${(frac*100).toFixed(0)} %</text>`;
+      }
+      ang = a2;
+    });
+    const legend = '<div class="pie-legend">' + vals.map((v,i)=>
+      `<span class="legend-item"><span class="legend-swatch" style="background:${CHART_COLORS[i % CHART_COLORS.length]}"></span>${escapeXml(cd.categories[i].label)}<span class="pl-val">${formatValue(s.field,s.agg,s.values[i])}</span></span>`
+    ).join('') + '</div>';
+    el.innerHTML = title + (note?`<div class="chart-note">${note}</div>`:'') +
+      `<div class="pie-wrap"><svg viewBox="0 0 260 260" width="260" height="260" style="max-width:100%;">${paths}${labels}</svg>${legend}</div>`;
+    return;
+  }
+
+  const nSeries = series.length;
+  if(type==='empile' && nSeries<2) note = "Un seul morceau à empiler : le résultat est identique à un histogramme. Ajoute un champ en Colonnes ou un 2e champ en Valeurs.";
+  if(type==='courbes' && nCats<3) note = "Une courbe a besoin d'au moins 3 points pour montrer une tendance.";
+  const noteHtml = note ? `<div class="chart-note">${note}</div>` : '';
+  const legend = nSeries>1 ? chartLegend(series) : '';
+  const fmt = (s,v)=>formatValue(s.field, s.agg, v);
+  const fmt0 = v=>formatValue(cd.field, cd.agg, v);
+  const stacked = type==='empile';
+  const maxVal = Math.max(1, ...(stacked
+    ? cd.categories.map((c,ci)=>series.reduce((a,s)=>a+Math.max(0,s.values[ci]),0))
+    : series.flatMap(s=>s.values)));
+  const shortLabel = l => l.length>(type==='barres'?24:14) ? l.slice(0,(type==='barres'?23:13))+'…' : l;
+
+  /* --- Barres horizontales --- */
+  if(type==='barres'){
+    const padL = 150, padR = 56, padT = 10, padB = 28;
+    const rowH = Math.max(22, nSeries*13 + 8);
+    const H = padT + padB + nCats*rowH, W = avail;
+    const plotW = W - padL - padR;
+    const bh = Math.max(5, (rowH-8)/nSeries);
+    let bars='', grid='';
+    for(let i=0;i<=4;i++){
+      const x = padL + plotW*i/4;
+      grid += `<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${H-padB}" stroke="var(--border)"/>`;
+      grid += `<text x="${x.toFixed(1)}" y="${H-padB+14}" font-size="10" text-anchor="middle" fill="var(--text-secondary)">${fmt0(maxVal*i/4)}</text>`;
+    }
+    cd.categories.forEach((cat,ci)=>{
+      const y0 = padT + ci*rowH + 4;
+      bars += `<text x="${padL-8}" y="${(y0 + (rowH-8)/2 + 4).toFixed(1)}" font-size="10.5" text-anchor="end" fill="var(--text-primary)">${escapeXml(shortLabel(cat.label))}</text>`;
+      series.forEach((s,si)=>{
+        const w = (Math.max(0,s.values[ci])/maxVal)*plotW, y = y0 + si*bh;
+        bars += `<rect x="${padL}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(bh-1).toFixed(1)}" fill="${s.color}" rx="2"><title>${escapeXml(cat.label)} · ${escapeXml(s.label)} : ${fmt(s,s.values[ci])}</title></rect>`;
+        if(nCats*nSeries<=24) bars += `<text x="${(padL+w+4).toFixed(1)}" y="${(y+bh/2+3).toFixed(1)}" font-size="9.5" fill="var(--text-secondary)">${fmt(s,s.values[ci])}</text>`;
+      });
+    });
+    el.innerHTML = title + legend + noteHtml + `<div class="chart-scroll"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${grid}${bars}<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="var(--border-strong)" stroke-width="1.3"/></svg></div>`;
+    return;
+  }
+
+  /* --- Histogramme, empilé, courbes : axe vertical --- */
+  const W = Math.max(avail, nCats * ((nSeries>1 && !stacked && type!=='courbes') ? 90 : 60) + 90);
+  const H = 320, padL = 66, padB = 74, padT = 18, padR = 16;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const groupWidth = plotW / nCats;
+  let grid = '';
+  for(let i=0;i<=4;i++){
+    const yVal = maxVal*i/4, y = padT + plotH - (yVal/maxVal)*plotH;
+    grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--border)"/>`;
+    grid += `<text x="${padL-8}" y="${(y+3).toFixed(1)}" font-size="10" text-anchor="end" fill="var(--text-secondary)">${fmt0(yVal)}</text>`;
+  }
+  let marks='', xl='';
+  const showLabels = nCats*nSeries <= 20;
+  cd.categories.forEach((cat,ci)=>{
+    const gx = padL + ci*groupWidth;
+    xl += `<text x="${(gx+groupWidth/2).toFixed(1)}" y="${(H-padB+16).toFixed(1)}" font-size="10.5" text-anchor="middle" fill="var(--text-primary)">${escapeXml(shortLabel(cat.label))}</text>`;
+    if(type==='colonnes'){
+      const barGap=6, bw = Math.max(6, (groupWidth - barGap*(nSeries+1))/nSeries);
+      series.forEach((s,si)=>{
+        const val=s.values[ci], bhh = (Math.max(0,val)/maxVal)*plotH, x = gx+barGap+si*(bw+barGap), y = padT+plotH-bhh;
+        marks += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bhh.toFixed(1)}" fill="${s.color}" rx="2"><title>${escapeXml(cat.label)} · ${escapeXml(s.label)} : ${fmt(s,val)}</title></rect>`;
+        if(showLabels && bhh>14) marks += `<text x="${(x+bw/2).toFixed(1)}" y="${(y-4).toFixed(1)}" font-size="9.5" text-anchor="middle" fill="var(--text-secondary)">${fmt(s,val)}</text>`;
+      });
+    } else if(type==='empile'){
+      const bw = Math.min(70, groupWidth*0.62), x = gx + (groupWidth-bw)/2;
+      let acc = 0;
+      series.forEach(s=>{
+        const val=Math.max(0,s.values[ci]), bhh=(val/maxVal)*plotH, y = padT+plotH-((acc+val)/maxVal)*plotH;
+        marks += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bhh.toFixed(1)}" fill="${s.color}" stroke="#fff" stroke-width="1"><title>${escapeXml(cat.label)} · ${escapeXml(s.label)} : ${fmt(s,val)}</title></rect>`;
+        if(showLabels && bhh>13) marks += `<text x="${(x+bw/2).toFixed(1)}" y="${(y+bhh/2+3.5).toFixed(1)}" font-size="9.5" text-anchor="middle" fill="#fff">${fmt(s,val)}</text>`;
+        acc += val;
+      });
+    }
+  });
+  if(type==='courbes'){
+    series.forEach(s=>{
+      const pts = s.values.map((v,ci)=>[padL+ci*groupWidth+groupWidth/2, padT+plotH-(Math.max(0,v)/maxVal)*plotH]);
+      marks += `<polyline points="${pts.map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+      pts.forEach((q,ci)=>{
+        marks += `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="4" fill="${s.color}" stroke="#fff" stroke-width="1.5"><title>${escapeXml(cd.categories[ci].label)} · ${escapeXml(s.label)} : ${fmt(s,s.values[ci])}</title></circle>`;
+        if(showLabels) marks += `<text x="${q[0].toFixed(1)}" y="${(q[1]-8).toFixed(1)}" font-size="9.5" text-anchor="middle" fill="var(--text-secondary)">${fmt(s,s.values[ci])}</text>`;
+      });
+    });
+  }
+  el.innerHTML = title + legend + noteHtml + `<div class="chart-scroll"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${grid}${marks}${xl}<line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" stroke="var(--border-strong)" stroke-width="1.3"/></svg></div>`;
+}
+
+/* ---------- 7c. Panneau « Insérer un graphique ? » ---------- */
+// État par onglet : type choisi (null = aucun graphique) et sélecteur ouvert ou non.
+const chartState = { atelier:{type:null, picking:false}, quest:{type:null, picking:false} };
+
+function renderChartPanel(suffix, pivot){
+  const el = document.getElementById('chartView-'+suffix);
+  if(!el) return;
+  const st = chartState[suffix];
+  hideChartTip();
+  if(st.picking){
+    el.innerHTML = `<div class="chart-picker">
+      <div class="chart-picker-title">Quel graphique choisir ?</div>
+      <div class="chart-picker-sub">Survole chaque type pour comprendre à quoi il sert, puis clique sur celui qui raconte le mieux tes chiffres.</div>
+      <div class="chart-choices">${CHART_TYPES.map(t=>`
+        <button type="button" class="chart-choice${st.type===t.id?' current':''}" data-chart-type="${t.id}">
+          ${t.icon}<b>${t.nom}</b><small>${t.tag}</small>
+        </button>`).join('')}</div>
+      ${st.type ? '<div class="chart-picker-actions"><button type="button" class="ghost" data-chart-act="cancel">Annuler</button></div>' : ''}
+    </div>`;
+    return;
+  }
+  if(!st.type){
+    el.innerHTML = `<div class="chart-empty">
+      <button type="button" class="primary btn-insert-chart" data-chart-act="open">📊 Insérer un graphique ?</button>
+      <small>Le graphique se base sur ton tableau croisé et se met à jour avec lui.</small>
+    </div>`;
+    return;
+  }
+  const t = chartTypeById(st.type);
+  el.innerHTML = `<div class="chart-bar">
+      <span class="chart-bar-type">${t.icon}<span><b>${t.nom}</b></span></span>
+      <button type="button" class="ghost" data-chart-act="open">Changer de type</button>
+      <button type="button" class="ghost" data-chart-act="remove">✕ Retirer le graphique</button>
+    </div><div class="chart-canvas"></div>`;
+  renderChartSvg(pivot, el.querySelector('.chart-canvas'), st.type);
+}
+
+// Info-bulle explicative d'un type de graphique (même principe que celle des champs).
+const chartTipEl = document.createElement('div');
+chartTipEl.className = 'chart-tip'; chartTipEl.id = 'chartTip'; chartTipEl.setAttribute('role','tooltip');
+document.body.appendChild(chartTipEl);
+function hideChartTip(){ chartTipEl.classList.remove('show'); }
+function showChartTip(btn){
+  const t = chartTypeById(btn.dataset.chartType);
+  if(!t) return;
+  chartTipEl.innerHTML = `<div class="ct-name">${t.nom}</div><div>${t.quand}</div>
+    <div class="ct-sub">Exemple</div><div>${t.exemple}</div>
+    <div class="ct-sub">À savoir</div><div class="ct-warn">${t.attention}</div>`;
+  chartTipEl.classList.add('show');
+  const r = btn.getBoundingClientRect(), tw = chartTipEl.offsetWidth, th = chartTipEl.offsetHeight;
+  let top = r.top - th - 8;
+  if(top < 6) top = r.bottom + 8;
+  const left = Math.max(10, Math.min(r.left + r.width/2 - tw/2, window.innerWidth - tw - 10));
+  chartTipEl.style.left = left+'px'; chartTipEl.style.top = top+'px';
+}
+// Listeners délégués, attachés une seule fois.
+document.addEventListener('mouseover', e=>{ const b=e.target.closest ? e.target.closest('.chart-choice') : null; if(b) showChartTip(b); });
+document.addEventListener('mouseout', e=>{ const b=e.target.closest ? e.target.closest('.chart-choice') : null; if(b && !b.contains(e.relatedTarget)) hideChartTip(); });
+document.addEventListener('focusin', e=>{ const b=e.target.closest ? e.target.closest('.chart-choice') : null; if(b) showChartTip(b); });
+document.addEventListener('focusout', e=>{ if(e.target.closest && e.target.closest('.chart-choice')) hideChartTip(); });
+window.addEventListener('scroll', hideChartTip, {passive:true});
+// Le graphique s'adapte à la largeur disponible : on le redessine au redimensionnement et au changement d'onglet.
+function redrawCharts(){ const pv = computePivot(currentConfig()); ['atelier','quest'].forEach(sfx=>{ if(chartState[sfx].type && !chartState[sfx].picking) renderChartPanel(sfx, pv); }); }
+let chartResizeTimer = null;
+window.addEventListener('resize', ()=>{ clearTimeout(chartResizeTimer); chartResizeTimer = setTimeout(redrawCharts, 120); });
+document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('.tab-btn')) setTimeout(redrawCharts, 0); });
+document.addEventListener('click', e=>{
+  const host = e.target.closest ? e.target.closest('[id^="chartView-"]') : null;
+  if(!host) return;
+  const suffix = host.id.replace('chartView-','');
+  const st = chartState[suffix];
+  if(!st) return;
+  const typeBtn = e.target.closest('[data-chart-type]');
+  const actBtn = e.target.closest('[data-chart-act]');
+  if(typeBtn){ st.type = typeBtn.dataset.chartType; st.picking = false; }
+  else if(actBtn){
+    const act = actBtn.dataset.chartAct;
+    if(act==='open') st.picking = true;
+    else if(act==='cancel') st.picking = false;
+    else if(act==='remove'){ st.type = null; st.picking = false; }
+  } else return;
+  renderChartPanel(suffix, computePivot(currentConfig()));
+});
 
 /* =========================================================
    8. RENDU — table de données sources
@@ -1138,7 +2105,7 @@ function renderDataTable(containerId, filtres){
     return `<td class="${f.type==='txt' ? 'rowhead' : ''}">${escapeXml(v)}</td>`;
   }).join('')+'</tr>').join('');
 
-  el.innerHTML = `<div class="chart-title">Table Salariés — ${filtered.length} ligne(s)${filtres.length ? ' après filtre' : ''} sur ${DATA.length}</div>
+  el.innerHTML = `<div class="chart-title">Table ${currentScenario().tableName} — ${filtered.length} ligne(s)${filtres.length ? ' après filtre' : ''} sur ${DATA.length}</div>
     <div class="pivot-wrap raw-data-wrap"><table class="pivot data-table">
       <thead><tr>${FIELDS.map(f=>`<th>${f.label}</th>`).join('')}</tr></thead>
       <tbody>${rows}</tbody>
@@ -1153,11 +2120,13 @@ let atelierView = 'pivot';
 
 function renderResult(){
   const pivot = computePivot(currentConfig());
-  if(atelierView==='pivot') renderPivotTable(pivot, 'resultView-atelier');
-  else if(atelierView==='chart') renderChart(pivot, 'resultView-atelier');
-  else if(atelierView==='data') renderDataTable('resultView-atelier', zones.filtres);
-  // Onglet TCD Quest : toujours le tableau croisé, pour vérifier son travail sans changer d'onglet.
+  if(atelierView==='data') renderDataTable('resultView-atelier', zones.filtres);
+  else renderPivotTable(pivot, 'resultView-atelier');
+  // Le graphique n'apparaît que si l'utilisateur l'a inséré (bouton « Insérer un graphique ? »).
+  renderChartPanel('atelier', pivot);
+  // Onglet TCD Quest : tableau croisé + graphique, pour vérifier son travail sans changer d'onglet.
   renderPivotTable(pivot, 'resultView-quest');
+  renderChartPanel('quest', pivot);
 }
 
 function renderAll(){
@@ -1184,7 +2153,18 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-    if(btn.dataset.tab==='quest') renderMissionZone();
+    const tab = btn.dataset.tab;
+    const t = tab==='cartographie' ? 'carto' : tab;
+    if((t==='atelier' || t==='quest' || t==='carto') && t!==activeCtx){
+      // Chaque onglet retrouve son propre scénario et ses propres zones.
+      ctxZones[activeCtx] = zones;
+      activeCtx = t;
+      const saved = ctxZones[t];
+      if(currentScenarioId !== ctxScn[t]) applyScenario(ctxScn[t], saved);
+      else { zones = saved || { filtres:[], lignes:[], colonnes:[], valeurs:[] }; renderAll(); }
+      renderScenarioPickers();
+    }
+    if(t==='quest') renderMissionZone();
   });
 });
 
@@ -1293,37 +2273,181 @@ renderSchemaPreview();
 /* =========================================================
    12. TCD QUEST (missions)
    ========================================================= */
-const MISSIONS = [
-  { titre:"Effectif par service", texte:"Affiche le nombre de salariés dans chaque service.",
-    cfg:{ filtres:[], lignes:['service'], colonnes:[], valeurs:[{field:'employe',agg:'nombre'}] },
-    hints:["Le champ qui compte des lignes, peu importe lequel, s'agrège avec « Nombre ».","Place Service en Lignes, puis n'importe quel champ en Valeurs avec la fonction Nombre."] },
-  { titre:"Masse salariale par service", texte:"Calcule le salaire total (la somme) versé dans chaque service.",
-    cfg:{ filtres:[], lignes:['service'], colonnes:[], valeurs:[{field:'salaire',agg:'somme'}] },
-    hints:["« Total » veut dire Somme, pas Moyenne.","Service en Lignes, Salaire en Valeurs avec la fonction Somme."] },
-  { titre:"Salaire moyen par poste", texte:"Calcule le salaire moyen selon le poste (Junior, Confirmé, Senior, Manager).",
-    cfg:{ filtres:[], lignes:['poste'], colonnes:[], valeurs:[{field:'salaire',agg:'moyenne'}] },
-    hints:["« Moyen » se traduit toujours par la fonction Moyenne.","Poste en Lignes, Salaire en Valeurs avec la fonction Moyenne."] },
-  { titre:"Étendue des salaires par région", texte:"Pour chaque région, affiche à la fois le salaire minimum et le salaire maximum.",
-    cfg:{ filtres:[], lignes:['region'], colonnes:[], valeurs:[{field:'salaire',agg:'min'},{field:'salaire',agg:'max'}] },
-    hints:["Le clic n'ajoute un champ qu'une fois dans Valeurs : pour le poser deux fois avec deux fonctions différentes, utilise le glisser-déposer.","Région en Lignes, puis glisse Salaire dans Valeurs une première fois (choisis Min), puis une seconde fois (choisis Max)."] },
-  { titre:"Diversité des postes par service", texte:"Compte le nombre de postes différents (distincts) représentés dans chaque service.",
-    cfg:{ filtres:[], lignes:['service'], colonnes:[], valeurs:[{field:'poste',agg:'nombre_distinct'}] },
-    hints:["« Différents » est le mot-clé qui pointe vers Nb distinct, pas Nombre tout court.","Service en Lignes, Poste en Valeurs avec la fonction Nb distinct."] },
-  { titre:"Croisement Service × Contrat", texte:"Affiche le nombre de salariés pour chaque combinaison Service / Type de contrat, sous forme de grille.",
-    cfg:{ filtres:[], lignes:['service'], colonnes:['contrat'], valeurs:[{field:'employe',agg:'nombre'}] },
-    hints:["Pour obtenir une vraie grille croisée, il faut un champ en Lignes ET un champ en Colonnes.","Service en Lignes, Contrat en Colonnes, n'importe quel champ en Valeurs avec Nombre."] },
-  { titre:"Focus CDI : salaire moyen par service et télétravail", texte:"Ne garde que les CDI (filtre), puis affiche le salaire moyen croisé par Service (lignes) et Télétravail (colonnes).",
-    cfg:{ filtres:[{field:'contrat', value:'CDI'}], lignes:['service'], colonnes:['teletravail'], valeurs:[{field:'salaire',agg:'moyenne'}] },
-    hints:["Commence par poser Contrat en Filtres et choisis CDI dans la liste déroulante.","Ensuite : Service en Lignes, Télétravail en Colonnes, Salaire en Valeurs avec Moyenne."] },
-  { titre:"Absences moyennes, vue détaillée", texte:"Affiche le nombre moyen de jours d'absence, croisé par Poste puis par Région (deux champs en lignes).",
-    cfg:{ filtres:[], lignes:['poste','region'], colonnes:[], valeurs:[{field:'absences',agg:'moyenne'}] },
-    hints:["Tu peux empiler deux champs dans la même zone Lignes, l'ordre compte pour la lecture.","Poste puis Région en Lignes (dans cet ordre), Jours d'absence en Valeurs avec Moyenne."] },
-  { titre:"Focus Managers : primes par région", texte:"Ne garde que les Managers (filtre), puis calcule la prime totale versée par région.",
-    cfg:{ filtres:[{field:'poste', value:'Manager'}], lignes:['region'], colonnes:[], valeurs:[{field:'prime',agg:'somme'}] },
-    hints:["Le filtre porte sur le champ Poste, valeur Manager.","Région en Lignes, Prime en Valeurs avec la fonction Somme."] },
-];
 
-let questState = { current:0, done:new Array(MISSIONS.length).fill(false), hintsShown:new Array(MISSIONS.length).fill(0) };
+/* =========================================================
+   12bis. SCÉNARIOS, JAUGE ET FEU D'ARTIFICE
+   ========================================================= */
+// État de progression de chaque scénario, gardé en mémoire le temps de la session
+// (pas de stockage local : tout repart de zéro à la réouverture du fichier).
+function newQuestState(n){
+  return { current:0, done:new Array(n).fill(false), hintsShown:new Array(n).fill(0) };
+}
+const questStates = {};
+function ensureQuestState(id){
+  if(!questStates[id]) questStates[id] = newQuestState(SCENARIOS[id].missions.length);
+  return questStates[id];
+}
+let questState = ensureQuestState('rh');
+
+// Met à jour tous les libellés qui dépendent du scénario (noms de table, exemples des
+// info-bulles, introduction de la Cartographie).
+function renderScenarioLabels(){
+  const sc = currentScenario();
+  document.querySelectorAll('.js-table-name').forEach(el=> el.textContent = sc.tableName);
+  document.querySelectorAll('.js-scenario-name').forEach(el=> el.textContent = sc.label);
+  document.querySelectorAll('[data-ex]').forEach(el=> el.textContent = sc.examples[el.dataset.ex]);
+  const intro = document.getElementById('cartoIntro');
+  if(intro){
+    intro.innerHTML = `Avant de croiser les champs, voici la table sur laquelle repose le scénario <b>${sc.label}</b> : ${sc.tableDesc}, avec ses ${FIELDS.length} champs. Les champs texte (T) servent surtout en Lignes, Colonnes ou Filtres ; les champs numériques (#) servent surtout en Valeurs. Tu peux changer de jeu de données juste en dessous.`;
+  }
+}
+
+// Sélecteur de scénario (affiché dans le Bac à sable et dans TCD Quest).
+function ctxOfElement(el){
+  return el.closest('#tab-quest') ? 'quest' : el.closest('#tab-cartographie') ? 'carto' : 'atelier';
+}
+function renderScenarioPickers(){
+  const html = SCENARIO_ORDER.map(id=>{
+    const sc = SCENARIOS[id];
+    const n = ensureQuestState(id).done.filter(Boolean).length;
+    const total = sc.missions.length;
+    return { id, sc, n, total };
+  });
+  document.querySelectorAll('.scenario-picker').forEach(el=>{
+    const ctx = ctxOfElement(el);
+    el.innerHTML = '<div class="scn-label">'+(ctx==='quest'?'Scénario de jeu':'Jeu de données')+'</div><div class="scn-list">'+html.map(h=>{
+      const active = h.id===ctxScn[ctx];
+      // Compteur de missions : uniquement dans TCD Quest (inutile dans le Bac à sable).
+      const score = ctx==='quest' ? `<span class="scn-score${h.n===h.total?' full':''}" title="Missions réussies">${h.n}/${h.total}</span>` : '';
+      return `<button type="button" class="scn-btn${active?' active':''}" data-scn="${h.id}" aria-pressed="${active}">
+      <span class="scn-ico">${h.sc.icon}</span>
+      <span class="scn-txt"><b>${h.sc.label}</b><small>${h.sc.blurb}</small></span>${score}
+    </button>`;
+    }).join('')+'</div>';
+  });
+}
+
+// Bascule vers un autre scénario : les données, les champs, les missions et tous
+// les libellés changent ; les zones sont vidées (les champs ne sont plus les mêmes).
+function applyScenario(id, keepZones){
+  if(!SCENARIOS[id]) return;
+  const sc = SCENARIOS[id];
+  ctxScn[activeCtx] = id;
+  currentScenarioId = id;
+  DATA = sc.data;
+  FIELDS = sc.fields;
+  FIELD_DESCRIPTIONS = sc.descriptions;
+  CURRENCY_FIELDS = sc.currency;
+  MISSIONS = sc.missions;
+  zones = keepZones || { filtres:[], lignes:[], colonnes:[], valeurs:[] };
+  questState = ensureQuestState(id);
+  renderScenarioLabels();
+  renderScenarioPickers();
+  renderAll();
+  renderSchema();
+  renderSchemaPreview();
+  renderMissionZone();   // appelle aussi renderProgress() et renderGauge()
+}
+
+function initScenarioUI(){
+  // Un seul écouteur pour tous les sélecteurs (ils sont recréés à chaque rendu).
+  document.addEventListener('click', e=>{
+    const btn = e.target.closest ? e.target.closest('.scn-btn') : null;
+    if(!btn) return;
+    const ctx = ctxOfElement(btn);
+    if(ctx===activeCtx && btn.dataset.scn !== ctxScn[ctx]) applyScenario(btn.dataset.scn);
+  });
+  document.getElementById('btnFireworks').addEventListener('click', launchFireworks);
+}
+
+/* ---------- Jauge de progression ---------- */
+function renderGauge(){
+  const total = MISSIONS.length;
+  const n = questState.done.filter(Boolean).length;
+  const panel = document.getElementById('gaugePanel');
+  const tube = document.getElementById('gaugeTube');
+  tube.style.setProperty('--pct', (n/total*100)+'%');
+  tube.setAttribute('aria-valuenow', n);
+  tube.setAttribute('aria-valuemax', total);
+  document.getElementById('gaugeCount').textContent = n+' / '+total;
+  panel.classList.toggle('full', n===total);
+  document.getElementById('btnFireworks').style.display = (n===total) ? '' : 'none';
+  let msg;
+  if(n===0) msg = "À toi de jouer !";
+  else if(n===total) msg = "Jauge pleine, bravo !";
+  else if(total-n===1) msg = "Plus qu'une mission !";
+  else if(n<total/2) msg = "C'est parti, continue !";
+  else msg = "Plus que "+(total-n)+" missions";
+  document.getElementById('gaugeCaption').textContent = msg;
+}
+
+/* ---------- Feu d'artifice (canvas maison, sans dépendance) ---------- */
+let fireworksRunning = false;
+function launchFireworks(){
+  const canvas = document.getElementById('fireworksCanvas');
+  if(!canvas || fireworksRunning) return;
+  // Respect des préférences d'accessibilité : pas d'animation si l'utilisateur les a désactivées.
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  fireworksRunning = true;
+  const dpr = window.devicePixelRatio || 1;
+  const W = window.innerWidth, H = window.innerHeight;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  canvas.classList.add('active');
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const COLORS = ['#DDA40D','#F3D163','#1D8A57','#B95E01','#FFFFFF','#3F8F6B'];
+  const TOTAL_BURSTS = 7;
+  const particles = [];
+  let bursts = 0, nextBurst = 0;
+  const t0 = performance.now();
+
+  function burst(x, y){
+    const base = COLORS[Math.floor(Math.random()*COLORS.length)];
+    for(let k=0;k<46;k++){
+      const angle = Math.random()*Math.PI*2;
+      const speed = 1.2 + Math.random()*4.6;
+      particles.push({
+        x, y, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+        life:1, decay:0.010 + Math.random()*0.012,
+        size:1.6 + Math.random()*1.8,
+        color: Math.random()<0.25 ? COLORS[Math.floor(Math.random()*COLORS.length)] : base,
+      });
+    }
+  }
+  function frame(now){
+    const elapsed = now - t0;
+    if(bursts < TOTAL_BURSTS && elapsed >= nextBurst){
+      burst(W*(0.15+Math.random()*0.7), H*(0.12+Math.random()*0.38));
+      bursts++;
+      nextBurst += 330 + Math.random()*260;
+    }
+    // Fondu léger pour laisser une traînée derrière chaque étincelle
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.045; p.vx *= 0.985; p.vy *= 0.985;
+      p.life -= p.decay;
+      if(p.life<=0){ particles.splice(i,1); continue; }
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if(bursts >= TOTAL_BURSTS && particles.length===0){
+      ctx.clearRect(0, 0, W, H);
+      canvas.classList.remove('active');
+      fireworksRunning = false;
+      return;
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
 
 // Compare le RÉSULTAT produit (les valeurs de chaque case), pas la configuration exacte :
 // le nom du champ posé en Valeurs ne fait pas partie de la signature. Ça permet par exemple
@@ -1380,13 +2504,15 @@ function renderProgress(){
 
 function renderMissionZone(){
   renderProgress();
+  renderGauge();
   const zone = document.getElementById('missionZone');
   if(questState.done.every(Boolean)){
     zone.innerHTML = `<div class="quest-end"><div class="big">🏆</div><div style="font-size:16px;font-weight:600;margin-bottom:6px;">Toutes les missions sont terminées !</div>
-      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Tu maîtrises les 4 zones et les 6 fonctions d'agrégation d'un tableau croisé dynamique.</div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Scénario <b>${currentScenario().label}</b> bouclé : tu maîtrises les 4 zones et les 5 fonctions d'agrégation d'un tableau croisé dynamique. Tu peux recommencer, ou tenter un autre scénario dans le sélecteur ci-dessus.</div>
       <button class="primary" id="btnRestart">Recommencer depuis le début</button></div>`;
     document.getElementById('btnRestart').addEventListener('click', ()=>{
-      questState = { current:0, done:new Array(MISSIONS.length).fill(false), hintsShown:new Array(MISSIONS.length).fill(0) };
+      questState = questStates[currentScenarioId] = newQuestState(MISSIONS.length);
+      renderScenarioPickers();
       renderMissionZone();
     });
     return;
@@ -1405,7 +2531,7 @@ function renderMissionZone(){
 
   zone.innerHTML = `
     <div class="mission-card">
-      <div class="mission-eyebrow">Mission ${i+1} / ${MISSIONS.length}</div>
+      <div class="mission-eyebrow">Mission ${i+1} / ${MISSIONS.length} · ${currentScenario().label}</div>
       <div class="mission-title">${m.titre}</div>
       <div class="mission-text">${m.texte}</div>
       <div class="mission-actions">
@@ -1427,6 +2553,9 @@ function renderMissionZone(){
       msg.textContent = "✓ Bien joué, c'est le bon résultat !";
       questState.done[i] = true;
       if(i < MISSIONS.length-1) questState.current = i+1;
+      renderGauge();            // la jauge monte tout de suite
+      renderScenarioPickers();  // le score du scénario aussi
+      if(questState.done.every(Boolean)) launchFireworks();   // 10/10 : feu d'artifice
       setTimeout(renderMissionZone, 900);
     } else {
       msg.classList.add('error');
@@ -1449,8 +2578,34 @@ function renderMissionZone(){
    13. INITIALISATION
    ========================================================= */
 initDropzones();
-renderAll();
+initScenarioUI();
+applyScenario('rh');
 document.getElementById('appVersion').textContent = 'v' + APP_VERSION;
+
+/* =========================================================
+   À PROPOS : notes de version (de la plus récente à la plus ancienne)
+   ========================================================= */
+const RELEASE_NOTES = [
+  { v:'1.10.0', d:'11 oct. 2026', t:"Nouvel onglet « À propos » : présentation d'Olivier Faure et de Data Unchained, liens LinkedIn et YouTube, notes de version." },
+  { v:'1.9.1',  d:'11 oct. 2026', t:"Le graphique prend toute la largeur du tableau croisé et se redimensionne avec la fenêtre." },
+  { v:'1.9.0',  d:'11 oct. 2026', t:"Le graphique n'est plus automatique : bouton « Insérer un graphique ? », choix du type (histogramme, histogramme empilé, barres, courbes, secteur) avec une info-bulle explicative au survol de chaque type." },
+  { v:'1.8.0',  d:'9 oct. 2026',  t:"Choix du jeu de données aussi dans Cartographie (indépendant des autres onglets). Bouton « Tout vider » remplacé par une gomme et « Vider »." },
+  { v:'1.7.1',  d:'9 oct. 2026',  t:"En-têtes explicites dans le tableau croisé et le graphique : « Télétravail : Oui » en colonnes, « Service : IT › Poste : Junior » en lignes." },
+  { v:'1.7.0',  d:'9 oct. 2026',  t:"Colonnes gauche et droite alignées. Fonction « Nb distinct » retirée (absente d'un TCD Excel classique) et 4 missions remplacées. Le graphique trace toutes les mesures posées en Valeurs (Min ET Max côte à côte)." },
+  { v:'1.6.1',  d:'9 oct. 2026',  t:"Jauge de TCD Quest sur toute la hauteur, à côté du résultat et du graphique. Scénario indépendant entre Bac à sable et TCD Quest, chacun gardant ses zones." },
+  { v:'1.6.0',  d:'9 oct. 2026',  t:"Disposition façon Excel : champs au-dessus des 4 zones à gauche, résultat et graphique à droite. Info-bulle d'aperçu des données au survol des champs de la table." },
+  { v:'1.5.0',  d:'oct. 2026',    t:"TCD Quest : 10e mission, jauge de progression, feu d'artifice à 10/10 et 4 scénarios de jeu (RH, Achats, Ventes, Qualité)." },
+  { v:'1.4.2',  d:'oct. 2026',    t:"Validation des missions sur le résultat produit, pas sur le champ choisi : tout champ équivalent est accepté." },
+  { v:'1.4.1',  d:'oct. 2026',    t:"Ordre des 4 zones aligné sur celui d'Excel (Filtres et Colonnes en haut, Lignes et Valeurs en bas)." },
+  { v:'1.4.0',  d:'oct. 2026',    t:"Onglet renommé « Bac à sable ». Info-bulles explicatives sur les 4 zones." },
+  { v:'1.3.0',  d:'oct. 2026',    t:"Nouvel onglet « Cartographie » : schéma des champs et aperçu des données. Numéro de version en pied de page." },
+  { v:'1.2.0',  d:'oct. 2026',    t:"TCD Learn enrichi (actualisation, changement de fonction, pourcentages, illustrations). Bandeau supérieur figé au défilement." },
+  { v:'1.1.0',  d:'oct. 2026',    t:"Vues Graphique et Données sources dans l'atelier. Missions fusionnées avec les champs dans « TCD Quest »." },
+  { v:'1.0.0',  d:'oct. 2026',    t:"Version initiale : atelier à 4 zones, missions progressives, présentation des zones." },
+];
+document.getElementById('releaseList').innerHTML = RELEASE_NOTES.map((r,i)=>
+  `<li class="release"><span class="rl-ver">v${r.v}${i===0?'<span class="rl-new">actuelle</span>':''}</span><span class="rl-date">${r.d}</span><span>${escapeXml(r.t)}</span></li>`
+).join('');
 </script>
 </body>
 </html>
