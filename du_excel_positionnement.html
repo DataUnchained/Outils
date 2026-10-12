@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Data Unchained · Test de positionnement Excel
-  Version : 1.5.1
+  Version : 1.6.0
 
   Historique :
     1.0.0 : Version initiale. 3 onglets (Accueil, Test, Révisions), 20 questions QCM réparties
@@ -59,6 +59,9 @@
             le cas où l'écran s'éteint tout seul après une longue pause de lecture sans
             interaction ; le cas de l'écran partagé ou du second moniteur (page visible mais
             sans focus) reste détecté comme avant.
+    1.6.0 : Nouvel onglet « À propos » (à droite du bandeau) : présentation d'Olivier Faure et
+            de Data Unchained, liens LinkedIn et YouTube, encart sur l'énergie consommée pour
+            concevoir l'outil avec l'IA, et notes de version complètes.
 -->
 <html lang="fr">
 <head>
@@ -294,6 +297,44 @@
   .export-field input{ width:100%; padding:7px 9px; border:1px solid var(--border-strong); border-radius:var(--radius); font-family:var(--sans); font-size:13px; }
   .export-actions{ display:flex; gap:8px; flex-wrap:wrap; }
   .export-note{ font-size:11.5px; color:var(--text-secondary); margin:10px 0 0; line-height:1.55; }
+
+  /* ---------- Onglet À propos ---------- */
+  .tab-btn.tab-right{ margin-left:auto; }
+  .about-wrap{ width:min(1600px,94vw); margin:0 auto; padding:16px 0 8px; }
+  .about-grid{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:14px; margin-bottom:14px; }
+  .about-card{ padding:16px 18px; }
+  .about-card h2{ font-size:17px; margin:0 0 2px; color:var(--bg-dark); }
+  .about-card h3{ font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--accent-dark); margin:14px 0 6px; }
+  .about-role{ color:var(--text-secondary); font-size:13px; margin-bottom:10px; }
+  .about-card p{ font-size:13.5px; line-height:1.55; margin:0 0 8px; }
+  .about-card ul{ margin:0; padding-left:18px; font-size:13.5px; line-height:1.6; }
+  .about-links{ display:flex; flex-wrap:wrap; gap:12px; margin-top:6px; }
+  .about-link{
+    display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; border:1px solid var(--border-strong);
+    border-radius:6px; text-decoration:none; color:var(--text-primary); font-weight:600; font-size:13px; min-width:160px;
+  }
+  .about-link:hover{ border-color:var(--data-blue); background:var(--success-bg); }
+  .about-link small{ display:block; font-weight:400; color:var(--text-secondary); font-size:11.5px; }
+  .about-ico{ width:34px; height:34px; flex-shrink:0; }
+  .tag-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tag{ background:#EAF6EF; color:var(--bg-dark); border-radius:12px; padding:3px 10px; font-size:12px; font-weight:600; }
+  .release-list{ list-style:none; margin:0; padding:0; }
+  .release{ display:grid; grid-template-columns:150px 110px minmax(0,1fr); gap:6px 14px; padding:10px 18px; border-top:1px solid var(--border); font-size:13px; line-height:1.5; }
+  .release:first-child{ border-top:none; }
+  .release .rl-ver{ font-weight:700; color:var(--bg-dark); font-family:var(--mono); }
+  .release .rl-date{ color:var(--text-secondary); }
+  .release .rl-new{ background:var(--accent); color:#fff; border-radius:8px; padding:0 6px; font-size:10.5px; margin-left:6px; font-family:var(--sans); }
+  .energy-card{ padding:16px 18px; margin-bottom:14px; }
+  .energy-card h2{ font-size:15px; margin:0 0 4px; color:var(--bg-dark); }
+  .energy-card p{ font-size:13.5px; line-height:1.55; margin:0 0 10px; }
+  .energy-tiles{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:10px 0; }
+  .energy-tile{ background:#FFF9E6; border:1px solid #EEDD9C; border-radius:6px; padding:10px 12px; }
+  .energy-tile b{ display:block; font-size:20px; color:var(--accent-dark); }
+  .energy-tile span{ font-size:12px; color:var(--text-secondary); }
+  .energy-note{ font-size:12px; color:var(--text-secondary); line-height:1.5; margin:0; }
+  @media (max-width:640px){ .energy-tiles{ grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:900px){ .about-grid{ grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:640px){ .release{ grid-template-columns:minmax(0,1fr); gap:2px; } }
 </style>
 </head>
 <body>
@@ -320,6 +361,7 @@
   <button class="tab-btn active" role="tab" data-tab="accueil">🏠 Accueil</button>
   <button class="tab-btn" role="tab" data-tab="test">📝 Test</button>
   <button class="tab-btn" role="tab" data-tab="revisions">📚 Révisions<span class="tab-badge" id="revBadge" hidden></span></button>
+  <button class="tab-btn tab-right" role="tab" data-tab="apropos">ℹ️ À propos</button>
 </div>
 </div><!-- /app-header -->
 
@@ -383,6 +425,61 @@
   <div class="rev-wrap" id="revHost"></div>
 </div>
 
+<!-- ========== ONGLET À PROPOS ========== -->
+<div class="tab-panel" id="tab-apropos">
+  <div class="about-wrap">
+    <div class="about-grid">
+      <div class="panel about-card">
+        <h2>Olivier Faure</h2>
+        <div class="about-role">Formateur et concepteur pédagogique indépendant · fondateur de Data Unchained</div>
+        <p>Je forme les équipes à exploiter leurs données et leurs outils du quotidien, avec une idée fixe : <b>apprendre en manipulant</b>. Pas de cours magistral, des exercices concrets, des analogies simples et des outils interactifs comme celui que tu utilises en ce moment.</p>
+        <p>Je réponds aussi à des missions freelance autour de la donnée et d'Excel : développement de fichiers, automatisation, tableaux de bord.</p>
+        <h3>Ce que je propose</h3>
+        <ul>
+          <li><b>Power BI</b> : modélisation, DAX, rapports et tableaux de bord</li>
+          <li><b>Excel</b> : formules avancées, tableaux croisés dynamiques, automatisation</li>
+          <li><b>SQL</b> : interroger et analyser des bases de données, des premiers pas aux requêtes avancées</li>
+          <li><b>Analyse de données</b> : de la donnée brute à la décision</li>
+          <li><b>IA générative et prompt engineering</b> : bien utiliser l'IA au travail</li>
+          <li><b>Outils bureautiques</b> : gagner du temps au quotidien</li>
+          <li><b>Outils pédagogiques interactifs</b> : sur mesure, utilisables hors ligne dans un simple navigateur</li>
+        </ul>
+        <h3>Repères</h3>
+        <div class="tag-row"><span class="tag">Certifié Power BI PL-300 (2025)</span><span class="tag">Titre RNCP niveau 6 Data Analyst (2023)</span><span class="tag">Entreprises et secteur aéronautique</span></div>
+      </div>
+      <div class="panel about-card">
+        <h2>Data Unchained</h2>
+        <div class="about-role">Formation et conseil en données, Excel et IA</div>
+        <p>Data Unchained, c'est l'enseigne sous laquelle je conçois et anime mes formations. Le nom dit l'ambition : libérer la donnée de sa complexité pour que chacun puisse s'en servir sans peur.</p>
+        <h3>Me retrouver</h3>
+        <div class="about-links">
+          <a class="about-link" href="https://www.linkedin.com/in/olivier-faure-35303743" target="_blank" rel="noopener noreferrer"><svg class="about-ico" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="6" fill="#0A66C2"/><text x="17" y="24" font-size="18" font-weight="700" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif">in</text></svg><span>LinkedIn<small>Mon profil professionnel</small></span></a>
+          <a class="about-link" href="https://www.youtube.com/@data-unchained" target="_blank" rel="noopener noreferrer"><svg class="about-ico" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="6" width="32" height="22" rx="7" fill="#E62117"/><path d="M14 12 L23 17 L14 22 Z" fill="#fff"/></svg><span>YouTube<small>La chaîne Data Unchained</small></span></a>
+        </div>
+        <h3>Une version sur mesure pour ton entreprise ?</h3>
+        <p>Cet outil peut être adapté à ton contexte : tes propres données, ton vocabulaire métier, ta charte graphique, d'autres notions à travailler. Si tu veux une version custom pour tes équipes, écris-moi, on en discute.</p>
+        <div class="about-links">
+          <a class="about-link" href="mailto:olivier.faure@dataunchained.fr"><svg class="about-ico" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="6" fill="#175B36"/><rect x="7" y="10" width="20" height="14" rx="2" fill="none" stroke="#fff" stroke-width="1.8"/><path d="M8 12 L17 19 L26 12" fill="none" stroke="#F3D163" stroke-width="1.8" stroke-linejoin="round"/></svg><span>E-mail<small>olivier.faure@dataunchained.fr</small></span></a>
+        </div>
+        <p style="margin-top:12px;font-size:12px;color:var(--text-secondary);">Les liens LinkedIn et YouTube s'ouvrent dans un nouvel onglet et demandent une connexion internet. Le reste de l'outil fonctionne entièrement hors ligne.</p>
+      </div>
+    </div>
+    <div class="panel energy-card">
+      <h2>🔋 Combien d'énergie pour créer cet outil avec l'IA ?</h2>
+      <p>Cet outil a été conçu en échangeant avec une IA (Claude), sur de nombreux allers-retours : écriture du code, tests automatiques, corrections. Chaque échange mobilise des serveurs, donc de l'électricité. Voici un ordre de grandeur, pour garder à l'esprit que l'IA n'est pas « gratuite » côté énergie.</p>
+      <div class="energy-tiles">
+        <div class="energy-tile"><b>≈ 0,3 kWh</b><span>estimation pour toute la session (fourchette : 0,1 à 1 kWh)</span></div>
+        <div class="energy-tile"><b>≈ 4 h</b><span>de streaming vidéo (fourchette : 1,5 h à 13 h), sur la base d'environ 0,08 kWh par heure (référence IEA : serveurs, réseau et écran)</span></div>
+      </div>
+      <p class="energy-note">💡 À prendre comme un ordre de grandeur, pas comme une mesure : le fournisseur ne publie pas de consommation précise par échange. Le calcul s'appuie sur environ 0,3 Wh pour une requête texte courte (estimations publiques), multiplié ici par 1 à 3 Wh par appel, car chaque appel relit un gros fichier. L'entraînement du modèle et la fabrication du matériel ne sont pas comptés.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Notes de version · Test de positionnement Excel</div>
+      <ul class="release-list" id="releaseList"></ul>
+    </div>
+  </div>
+</div>
+
 </div><!-- /wrap -->
 
 <div class="app-footer">Data Unchained · Test de positionnement Excel · <span id="appVersion"></span></div>
@@ -391,7 +488,7 @@
 /* =========================================================
    1. DONNÉES : niveaux et questions
    ========================================================= */
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.6.0';
 
 // 5 niveaux, chacun couvre 20 % de la jauge (score sur 100).
 const LEVELS = [
@@ -1590,6 +1687,26 @@ renderRevisions();
 updateHomeCta();
 syncHeaderHeight();
 $('appVersion').textContent = 'v' + APP_VERSION;
+
+/* =========================================================
+   10. À PROPOS : notes de version (de la plus récente à la plus ancienne)
+   ========================================================= */
+const RELEASE_NOTES = [
+  { v:'1.6.0', d:'12 oct. 2026', t:"Nouvel onglet « À propos » : présentation d'Olivier Faure et de Data Unchained, liens LinkedIn et YouTube, notes de version." },
+  { v:'1.5.1', d:'10 oct. 2026', t:"Corrections suite à retours : mini-vues Excel harmonisées (en-têtes cohérents avec les plages des formules), mise en évidence qui révélait la réponse corrigée (RECHERCHEV, SEQUENCE), détection de changement de fenêtre qui ignore désormais une mise en veille de l'écran pendant une pause de lecture." },
+  { v:'1.5.0', d:'oct. 2026', t:"Barème (points par niveau, total sur 100) affiché sur la page d'Accueil. Bouton 50/50 par question, qui élimine 2 des 3 mauvaises réponses (question à moitié de points si utilisé)." },
+  { v:'1.4.1', d:'oct. 2026', t:"Détection de changement de fenêtre renforcée : en plus du changement d'onglet, repère aussi la perte de focus avec la page restée visible (écran partagé, second moniteur)." },
+  { v:'1.4.0', d:'oct. 2026', t:"Mini-vue façon Excel associée à la plupart des questions, valeurs régénérées à chaque tirage. 5 questions parmi les plus fondamentales entièrement dynamiques (énoncé, grille, options et bonne réponse recalculés à chaque session)." },
+  { v:'1.3.0', d:'oct. 2026', t:"Banque de questions élargie à 80. Message d'encouragement adapté au score et pluie de confettis en cas de score parfait." },
+  { v:'1.2.2', d:'oct. 2026', t:"Jauge de niveau affichée aussi dans la carte de restitution finale, à côté du score. Mise en page à deux colonnes, qui repasse en une seule sur petit écran." },
+  { v:'1.2.1', d:'oct. 2026', t:"Mode d'emploi de l'Accueil allégé visuellement, avec une icône par consigne." },
+  { v:'1.2.0', d:'oct. 2026', t:"Détection des changements de fenêtre ou d'onglet pendant le test. Export du résultat par e-mail ou copie dans le presse-papiers." },
+  { v:'1.1.0', d:'oct. 2026', t:"Banque de questions élargie à 60 : 4 questions tirées au hasard par niveau à chaque lancement, pour varier le contenu d'une session à l'autre." },
+  { v:'1.0.0', d:'oct. 2026', t:"Version initiale : 3 onglets (Accueil, Test, Révisions), 20 questions QCM réparties en 5 niveaux, jauge de niveau mise à jour en direct." },
+];
+$('releaseList').innerHTML = RELEASE_NOTES.map((r,i)=>
+  `<li class="release"><span class="rl-ver">v${r.v}${i===0?'<span class="rl-new">actuelle</span>':''}</span><span class="rl-date">${r.d}</span><span>${esc(r.t)}</span></li>`
+).join('');
 </script>
 </body>
 </html>
