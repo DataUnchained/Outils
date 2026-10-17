@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <!--
   Data Unchained, Cahier de vacances Excel
-  Version : 1.5.0
+  Version : 1.6.0
 
   Historique :
+    1.6.0 : Encadrés repliés (Comment ça marche, Avant de commencer : 2 lignes puis « Lire la suite »),
+            sommaire repliable sur téléphone avec saut direct au module choisi.
     1.5.0 : Pointage tactile : tap sur une cellule, poignée de recopie (rond doré) pour étendre la plage,
             tap sur un en-tête de colonne ou de ligne, bouton Plage, barre de symboles ; ; : ( ) $ etc.
     1.4.0 : Les 4 derniers exercices de SOMME, MOYENNE et MIN/MAX passent aux fonctions .SI.ENS
@@ -362,6 +364,30 @@ body.touch table.sheet td{ height:38px; }
 .symbtn.rng{ font-family:var(--sans); font-size:13px; padding:0 14px; background:#FFF6D6; border-color:var(--accent-dark); }
 .symbtn.rng.on{ background:var(--accent); color:#fff; }
 
+/* --- Encadrés repliés : 2 lignes visibles, le reste sur action --- */
+.scope-text, .intro-ana{ margin:0; }
+.scope-note:not(.open) .scope-text, .intro:not(.open) .intro-ana{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.intro:not(.open) .intro-more{ display:none; }
+.intro{ background:rgba(255,249,230,.92); border:1px solid #EEDD9C; border-radius:var(--radius); margin:10px 0 14px; padding:8px 14px 6px; color:#5C4A00; }
+.intro-title{ font-weight:700; font-size:13px; margin-bottom:2px; }
+.intro .intro-body{ padding:0; }
+.more-toggle{ display:inline-block; margin:2px 0 0; padding:4px 0; background:none; border:none; color:#7A5C00; font-size:12.5px; font-weight:700; cursor:pointer; text-decoration:underline; }
+.scope-note .more-toggle{ display:block; }
+/* --- Sommaire repliable sur écran étroit --- */
+.toc-toggle{ display:none; }
+@media (max-width:900px){
+  .toc .panel-title{ display:none; }
+  .toc-toggle{ display:flex; align-items:center; gap:8px; width:100%; padding:11px 14px; background:#fff; border:none; border-radius:var(--radius); font-size:14px; text-align:left; cursor:pointer; }
+  .tt-lab{ font-weight:700; color:var(--text-secondary); flex-shrink:0; }
+  .tt-cur{ flex:1; min-width:0; font-weight:700; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tt-chev{ transition:transform .15s; }
+  .toc.open .tt-chev{ transform:rotate(180deg); }
+  .toc .toc-body{ display:none; border-top:1px solid var(--border); max-height:60vh; overflow:auto; }
+  .toc.open .toc-body{ display:block; }
+  .layout{ padding:10px; gap:10px; }
+  .scope-note{ margin:10px 10px 0; padding:8px 12px; }
+}
+
 </style>
 </head>
 <body>
@@ -390,9 +416,7 @@ body.touch table.sheet td{ height:38px; }
 
 <!-- ========== ONGLET CAHIER ========== -->
 <div class="tab-panel active" id="tab-cahier">
-  <div class="scope-note">
-    <b>Comment ça marche :</b> choisis un module dans le sommaire (une fonction ou une famille de fonctions), puis résous les 10 exercices dans l'ordre. Tape ta formule dans la barre de formule : dès les premières lettres d'une fonction, des suggestions apparaissent, avec leur mode d'emploi. Tu peux aussi <b>cliquer ou glisser sur les cellules du tableau</b> pour insérer leurs références, comme dans Excel (après le <code>=</code>, une parenthèse ou un point-virgule). Sur téléphone : touche une cellule, puis fais glisser le <b>rond doré</b> pour étendre la plage, ou touche l'en-tête d'une colonne pour prendre toutes ses données. Valide avec <b>Entrée</b>. Ton résultat est comparé au résultat attendu, y compris quand les valeurs changent : plusieurs écritures peuvent donc être correctes. Chaque exercice réussi rapporte un badge : <b>Or</b> (aucun indice, au plus une erreur), <b>Argent</b> (un indice, au plus trois erreurs), <b>Bronze</b> (le reste). Si tu regardes la solution, l'exercice est validé mais sans badge. Tu peux toujours le refaire pour décrocher mieux.
-  </div>
+  <div class="scope-note" id="scopeNote"><div class="scope-text"><b>Comment ça marche :</b> choisis un module dans le sommaire (une fonction ou une famille de fonctions), puis résous les 10 exercices dans l'ordre. Tape ta formule dans la barre de formule : dès les premières lettres d'une fonction, des suggestions apparaissent, avec leur mode d'emploi. Tu peux aussi <b>cliquer ou glisser sur les cellules du tableau</b> pour insérer leurs références, comme dans Excel (après le <code>=</code>, une parenthèse ou un point-virgule). Sur téléphone : touche une cellule, puis fais glisser le <b>rond doré</b> pour étendre la plage, ou touche l'en-tête d'une colonne pour prendre toutes ses données. Valide avec <b>Entrée</b>. Ton résultat est comparé au résultat attendu, y compris quand les valeurs changent : plusieurs écritures peuvent donc être correctes. Chaque exercice réussi rapporte un badge : <b>Or</b> (aucun indice, au plus une erreur), <b>Argent</b> (un indice, au plus trois erreurs), <b>Bronze</b> (le reste). Si tu regardes la solution, l'exercice est validé mais sans badge. Tu peux toujours le refaire pour décrocher mieux.</div><button class="more-toggle" data-action="scope-toggle" aria-expanded="false" aria-controls="scopeNote">Lire la suite ▾</button></div>
   <div class="layout">
     <nav class="panel toc" id="toc" aria-label="Sommaire des modules"></nav>
     <main id="cahierMain"></main>
@@ -3047,8 +3071,9 @@ MODULES.push({
 /* =========================================================
    4. ÉTAT ET OUTILS
    ========================================================= */
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 const RELEASE_NOTES = [
+  { v: '1.6.0', d: 'oct. 2026', t: "Encadrés Comment ça marche et Avant de commencer repliés sur 2 lignes (bouton Lire la suite). Sommaire repliable sur téléphone, avec saut direct vers le module choisi." },
   { v: '1.5.0', d: 'oct. 2026', t: "Pointage tactile pour smartphone : un tap insère une cellule, un rond doré (poignée de recopie) s'étend par glisser, un tap sur l'en-tête d'une colonne ou d'une ligne prend toutes ses données, bouton Plage en deux taps, barre de symboles au-dessus du clavier." },
   { v: '1.4.0', d: 'oct. 2026', t: "Les 4 derniers exercices de SOMME, MOYENNE et MIN/MAX utilisent maintenant SOMME.SI.ENS, MOYENNE.SI.ENS, MAX.SI.ENS et MIN.SI.ENS, avec leurs fiches dans Excel Learn. Sommaire élargi. Excel 365 devient Fonctions modernes." },
   { v: '1.3.0', d: 'oct. 2026', t: "Les dates se rangent en deux groupes : basiques (JOUR, MOIS, ANNEE, DATE...) et avancées (jours ouvrés, DATEDIF, MOIS.DECALER...). Nouveaux modules dans Les bases : MOYENNE, MIN et MAX, SOUS.TOTAL et AGREGAT. Le total passe à 110 exercices." },
@@ -3508,7 +3533,8 @@ function linksHTML(names) {
 }
 
 function renderToc() {
-  let h = '<div class="panel-title">Sommaire</div>';
+  const cur = MODULES.find((x) => x.id === S.mod);
+  let h = '<div class="panel-title">Sommaire</div><button class="toc-toggle" data-action="toc-toggle" aria-expanded="' + ($('toc').classList.contains('open') ? 'true' : 'false') + '"><span class="tt-lab">📚 Sommaire</span><span class="tt-cur">' + esc(cur ? cur.nom : '') + '</span><span class="tt-chev">▾</span></button><div class="toc-body">';
   let lastGrp = null;
   FAMS.forEach((f) => {
     if (f.grp) { if (f.grp !== lastGrp) h += '<div class="toc-fam">' + esc(f.grp) + '</div>'; }
@@ -3519,7 +3545,7 @@ function renderToc() {
         '<div class="toc-dots">' + m.qs.map((q) => '<span class="dot ' + (S.done[q.id] ? medalOf(q) : '') + '"></span>').join('') + '</div></span><span class="toc-count">' + modDone(m) + '/' + m.qs.length + '</span></button>';
     });
   });
-  $('toc').innerHTML = h;
+  $('toc').innerHTML = h + '</div>';
 }
 function renderScore() {
   $('scorePill').textContent = '🏅 ' + countBadges() + ' / ' + TOTAL;
@@ -3536,15 +3562,15 @@ function pillsHTML(m) {
 }
 function renderModule() {
   const m = curMod(); const fam = FAMS.find((f) => f.id === m.fam);
-  const started = modDone(m) > 0;
   const it = m.intro;
   $('cahierMain').innerHTML =
     '<section class="page">' +
     '<div class="mod-head"><div class="mod-ico">' + esc(m.ico) + '</div><div><div class="mod-fam">' + esc(fam.label) + '</div><h2 class="mod-title">Module ' + (MODULES.indexOf(m) + 1) + ' · ' + esc(m.nom) + '</h2></div></div>' +
-    '<details class="intro"' + (started ? '' : ' open') + '><summary>💡 Avant de commencer : l\'essentiel</summary><div class="intro-body">' +
-    '<p style="margin:6px 0"><b>Analogie :</b> ' + esc(it.ana) + '</p><span class="syntax">' + esc(it.syn) + '</span>' +
+    '<div class="intro" id="intro"><div class="intro-title">💡 Avant de commencer : l\'essentiel</div><div class="intro-body">' +
+    '<p class="intro-ana"><b>Analogie :</b> ' + esc(it.ana) + '</p><div class="intro-more"><span class="syntax">' + esc(it.syn) + '</span>' +
     '<b>À retenir</b><ul>' + it.retenir.map((x) => '<li>' + x + '</li>').join('') + '</ul>' +
-    '<div>' + linksHTML(it.lk) + '</div></div></details>' +
+    '<div>' + linksHTML(it.lk) + '</div></div></div>' +
+    '<button class="more-toggle" data-action="intro-toggle" aria-expanded="false" aria-controls="intro">Lire la suite ▾</button></div>' +
     '<div id="pillsArea"></div><div id="exArea"></div></section>';
   renderEx(false);
 }
@@ -3622,6 +3648,11 @@ function doAction(action, el) {
   switch (action) {
     case 'validate': doValidate(); break;
     case 'sym': insertSym(el.dataset.s); break;
+    case 'intro-toggle': case 'scope-toggle': {
+      const box = el.parentElement, open = box.classList.toggle('open');
+      el.setAttribute('aria-expanded', open ? 'true' : 'false'); el.textContent = open ? 'Réduire ▴' : 'Lire la suite ▾'; break;
+    }
+    case 'toc-toggle': { const t = $('toc'), open = t.classList.toggle('open'); el.setAttribute('aria-expanded', open ? 'true' : 'false'); break; }
     case 'range-mode': PT.rangeMode = !PT.rangeMode; syncRangeBtn(); pointTip(PT.rangeMode ? 'Mode plage : touche la première cellule, puis la dernière.' : ''); break;
     case 'hint': if (st.hints < q.h.length) { if ($('fin')) st.text = $('fin').value; st.hints++; renderEx(true); } break;
     case 'sol': if ($('fin')) st.text = $('fin').value; st.solOpen = !st.solOpen; if (st.solOpen && !st.win) st.solSeen = true; renderEx(true); break;
@@ -3631,7 +3662,15 @@ function doAction(action, el) {
     case 'next-mod': { const nm = MODULES[MODULES.indexOf(m) + 1]; if (nm) { S.mod = nm.id; renderCahier(); window.scrollTo({ top: 0 }); } break; }
     case 'to-badges': showTab('badges'); break;
     case 'goto': { const i = +el.dataset.i; if (isUnlocked(m, i)) { if ($('fin')) st.text = $('fin').value; S.cur[m.id] = i; renderEx(true); } break; }
-    case 'open-mod': S.mod = el.dataset.mod; renderCahier(); window.scrollTo({ top: 0 }); break;
+    case 'open-mod': {
+      S.mod = el.dataset.mod; $('toc').classList.remove('open'); renderCahier();
+      if (window.matchMedia('(max-width:900px)').matches) {
+        // Sur téléphone : on saute directement au module, juste sous le bandeau figé
+        const hh = document.querySelector('.app-header').offsetHeight;
+        window.scrollTo({ top: Math.max(0, $('cahierMain').getBoundingClientRect().top + window.scrollY - hh - 8) });
+      } else window.scrollTo({ top: 0 });
+      break;
+    }
     case 'focus-formula': { const i = $('fin'); if (i) i.focus(); break; }
   }
 }
