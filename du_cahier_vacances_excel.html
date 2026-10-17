@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <!--
   Data Unchained, Cahier de vacances Excel
-  Version : 1.4.0
+  Version : 1.5.0
 
   Historique :
+    1.5.0 : Pointage tactile : tap sur une cellule, poignée de recopie (rond doré) pour étendre la plage,
+            tap sur un en-tête de colonne ou de ligne, bouton Plage, barre de symboles ; ; : ( ) $ etc.
     1.4.0 : Les 4 derniers exercices de SOMME, MOYENNE et MIN/MAX passent aux fonctions .SI.ENS
             (SOMME.SI.ENS, MOYENNE.SI.ENS, MAX.SI.ENS, MIN.SI.ENS), visibles dans le sommaire et dans
             Excel Learn. Sommaire élargi. « Excel 365 » devient « Fonctions modernes ».
@@ -344,6 +346,22 @@
 
 .toc-sub{ font-size:12px; font-weight:600; color:var(--green-dark,#175B36); padding:4px 12px 2px 20px; }
 
+/* --- Tactile : poignée de recopie, en-têtes, barre de symboles --- */
+table.sheet th.ch, table.sheet th.rhp{ cursor:pointer; }
+table.sheet th.ch:hover, table.sheet th.rhp:hover{ background:#E9E6DC; }
+.pt-handle{ position:absolute; width:44px; height:44px; margin:-22px 0 0 -22px; z-index:5; touch-action:none; cursor:grab; }
+.pt-handle::after{ content:''; position:absolute; left:13px; top:13px; width:18px; height:18px; border-radius:50%; background:var(--accent); border:2.5px solid #fff;
+  box-shadow:0 0 0 1.5px var(--accent-dark), 0 2px 6px rgba(0,0,0,.35); transition:transform .1s; }
+.pt-handle.drag::after{ transform:scale(1.3); }
+body.touch .sheet-scroll{ position:relative; padding:0 22px 22px 0; }
+body.touch table.sheet th{ padding:7px 10px; font-size:12px; }
+body.touch table.sheet td{ height:38px; }
+.symbar{ display:flex; gap:6px; overflow-x:auto; padding:8px 0 2px; }
+.symbtn{ flex:0 0 auto; min-width:42px; height:40px; border:1px solid var(--border-strong); border-radius:8px; background:#fff; font-family:var(--mono); font-size:18px; font-weight:700; color:var(--ink); padding:0 8px; }
+.symbtn:active{ background:#FFF6D6; }
+.symbtn.rng{ font-family:var(--sans); font-size:13px; padding:0 14px; background:#FFF6D6; border-color:var(--accent-dark); }
+.symbtn.rng.on{ background:var(--accent); color:#fff; }
+
 </style>
 </head>
 <body>
@@ -373,7 +391,7 @@
 <!-- ========== ONGLET CAHIER ========== -->
 <div class="tab-panel active" id="tab-cahier">
   <div class="scope-note">
-    <b>Comment ça marche :</b> choisis un module dans le sommaire (une fonction ou une famille de fonctions), puis résous les 10 exercices dans l'ordre. Tape ta formule dans la barre de formule : dès les premières lettres d'une fonction, des suggestions apparaissent, avec leur mode d'emploi. Tu peux aussi <b>cliquer ou glisser sur les cellules du tableau</b> pour insérer leurs références, comme dans Excel (après le <code>=</code>, une parenthèse ou un point-virgule). Valide avec <b>Entrée</b>. Ton résultat est comparé au résultat attendu, y compris quand les valeurs changent : plusieurs écritures peuvent donc être correctes. Chaque exercice réussi rapporte un badge : <b>Or</b> (aucun indice, au plus une erreur), <b>Argent</b> (un indice, au plus trois erreurs), <b>Bronze</b> (le reste). Si tu regardes la solution, l'exercice est validé mais sans badge. Tu peux toujours le refaire pour décrocher mieux.
+    <b>Comment ça marche :</b> choisis un module dans le sommaire (une fonction ou une famille de fonctions), puis résous les 10 exercices dans l'ordre. Tape ta formule dans la barre de formule : dès les premières lettres d'une fonction, des suggestions apparaissent, avec leur mode d'emploi. Tu peux aussi <b>cliquer ou glisser sur les cellules du tableau</b> pour insérer leurs références, comme dans Excel (après le <code>=</code>, une parenthèse ou un point-virgule). Sur téléphone : touche une cellule, puis fais glisser le <b>rond doré</b> pour étendre la plage, ou touche l'en-tête d'une colonne pour prendre toutes ses données. Valide avec <b>Entrée</b>. Ton résultat est comparé au résultat attendu, y compris quand les valeurs changent : plusieurs écritures peuvent donc être correctes. Chaque exercice réussi rapporte un badge : <b>Or</b> (aucun indice, au plus une erreur), <b>Argent</b> (un indice, au plus trois erreurs), <b>Bronze</b> (le reste). Si tu regardes la solution, l'exercice est validé mais sans badge. Tu peux toujours le refaire pour décrocher mieux.
   </div>
   <div class="layout">
     <nav class="panel toc" id="toc" aria-label="Sommaire des modules"></nav>
@@ -3029,8 +3047,9 @@ MODULES.push({
 /* =========================================================
    4. ÉTAT ET OUTILS
    ========================================================= */
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 const RELEASE_NOTES = [
+  { v: '1.5.0', d: 'oct. 2026', t: "Pointage tactile pour smartphone : un tap insère une cellule, un rond doré (poignée de recopie) s'étend par glisser, un tap sur l'en-tête d'une colonne ou d'une ligne prend toutes ses données, bouton Plage en deux taps, barre de symboles au-dessus du clavier." },
   { v: '1.4.0', d: 'oct. 2026', t: "Les 4 derniers exercices de SOMME, MOYENNE et MIN/MAX utilisent maintenant SOMME.SI.ENS, MOYENNE.SI.ENS, MAX.SI.ENS et MIN.SI.ENS, avec leurs fiches dans Excel Learn. Sommaire élargi. Excel 365 devient Fonctions modernes." },
   { v: '1.3.0', d: 'oct. 2026', t: "Les dates se rangent en deux groupes : basiques (JOUR, MOIS, ANNEE, DATE...) et avancées (jours ouvrés, DATEDIF, MOIS.DECALER...). Nouveaux modules dans Les bases : MOYENNE, MIN et MAX, SOUS.TOTAL et AGREGAT. Le total passe à 110 exercices." },
   { v: '1.2.0', d: 'oct. 2026', t: "Saisie à la souris, comme dans Excel : un clic ou un glisser sur le tableau insère la référence (B2 ou B2:B5) dans la barre de formule, un second clic la remplace, et les cellules citées sont colorées dans le tableau." },
@@ -3115,12 +3134,12 @@ function sheetHTML(grid, opt) {
     return row1.length >= 2 && row1.every((x) => x.k === 's') && Object.keys(grid.cells).some((k) => grid.cells[k].k !== 's');
   })();
   let h = '<div class="sheet-scroll"><table class="sheet"><thead><tr><th class="rh"></th>';
-  for (let c = 1; c <= nC; c++) h += '<th>' + colLetter(c) + '</th>';
+  for (let c = 1; c <= nC; c++) h += opt.point ? '<th class="ch" data-col="' + colLetter(c) + '">' + colLetter(c) + '</th>' : '<th>' + colLetter(c) + '</th>';
   h += '</tr></thead><tbody>';
   const hid = grid.hide ? new Set([].concat(grid.hide.filter || [], grid.hide.manual || [])) : new Set();
   for (let r = 1; r <= nR; r++) {
     if (hid.has(r)) continue;
-    h += '<tr><th class="rh">' + r + '</th>';
+    h += opt.point ? '<tr><th class="rh rhp" data-row="' + r + '">' + r + '</th>' : '<tr><th class="rh">' + r + '</th>';
     for (let c = 1; c <= nC; c++) {
       const addr = colLetter(c) + r;
       let v, cls = '', kind;
@@ -3349,28 +3368,123 @@ function paintRefs() {
       if (td) { td.style.outline = '2px solid ' + col; td.style.outlineOffset = '-2px'; td.style.background = col + '22'; }
     }
   }
+  placeHandle();
 }
-function pointDown(e) {
-  const td = e.target.closest && e.target.closest('#exArea td[data-addr]');
-  if (!td || e.button !== 0) return;
-  e.preventDefault();
-  const input = $('fin'); if (!input) return;
-  if (document.activeElement !== input) { input.focus(); }
+// Tactile (téléphone, tablette) : tap, poignée de recopie, en-têtes, barre de symboles
+const TOUCH = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+if (TOUCH) document.body.classList.add('touch');
+PT.end = null; PT.rangeMode = false; PT.lastTouch = 0; PT.tap = null; PT.hdrag = null; PT.timer = null;
+function pointTip(html) { const t = $('ftip'); if (t) t.innerHTML = html; }
+// Insère (ou remplace) la référence visée dans la formule. endAddr : plage complète d'un coup (en-têtes).
+function pointStart(addr, shift, endAddr) {
+  const input = $('fin'); if (!input) return false;
+  if (!TOUCH && document.activeElement !== input) input.focus();
   const caret = input.selectionStart == null ? input.value.length : input.selectionStart;
   const replacing = PT.valid && caret === PT.start + PT.len && input.value.slice(PT.start, PT.start + PT.len) === PT.text;
   if (!replacing && !canPoint(input.value.slice(0, caret))) {
-    $('ftip').innerHTML = 'Pour insérer une cellule en cliquant, place le curseur juste après <code>=</code>, <code>(</code>, <code>;</code> ou un opérateur (<code>+</code>, <code>&gt;=</code>…). Commence par taper le nom de la fonction, puis <code>(</code>.';
-    return;
+    pointTip('Pour insérer une cellule en ' + (TOUCH ? 'la touchant' : 'cliquant') + ', place le curseur juste après <code>=</code>, <code>(</code>, <code>;</code> ou un opérateur (<code>+</code>, <code>&gt;=</code>…). Commence par taper le nom de la fonction, puis <code>(</code>.');
+    return false;
   }
-  const addr = td.dataset.addr;
-  if (e.shiftKey && replacing && PT.anchor) { /* extension de la plage depuis l'ancre */ } else PT.anchor = addr;
-  PT.dragging = true;
-  setPointText(rangeText(PT.anchor, addr)); paintRefs();
+  if (endAddr) { PT.anchor = addr; PT.end = endAddr; PT.rangeMode = false; }
+  else if (PT.rangeMode && replacing && PT.anchor) { PT.end = addr; PT.rangeMode = false; }
+  else if (shift && replacing && PT.anchor) { PT.end = addr; }
+  else { PT.anchor = addr; PT.end = addr; }
+  setPointText(rangeText(PT.anchor, PT.end)); paintRefs(); syncRangeBtn();
+  return true;
+}
+function pointDown(e) {
+  if (Date.now() - PT.lastTouch < 700) return;
+  const td = e.target.closest && e.target.closest('#exArea td[data-addr]');
+  if (!td || e.button !== 0) return;
+  e.preventDefault();
+  if (pointStart(td.dataset.addr, e.shiftKey)) PT.dragging = true;
 }
 function pointOver(e) {
   if (!PT.dragging) return;
   const td = e.target.closest && e.target.closest('#exArea td[data-addr]');
-  if (td) { setPointText(rangeText(PT.anchor, td.dataset.addr)); paintRefs(); }
+  if (td) { PT.end = td.dataset.addr; setPointText(rangeText(PT.anchor, PT.end)); paintRefs(); }
+}
+/* --- Poignée de recopie (rond doré au coin de la sélection) --- */
+function placeHandle() {
+  let hd = document.getElementById('ptHandle');
+  const input = $('fin'), sc = document.querySelector('#exArea .sheet-scroll');
+  const ok = TOUCH && input && sc && PT.valid && PT.anchor && PT.end && PT.text && input.value.slice(PT.start, PT.start + PT.len) === PT.text;
+  let td = null;
+  if (ok) { const p = parseAddr(PT.anchor), q = parseAddr(PT.end); td = sc.querySelector('td[data-addr="' + colLetter(Math.max(p.c, q.c)) + Math.max(p.r, q.r) + '"]'); }
+  if (!td) { if (hd) hd.remove(); return; }
+  if (!hd || hd.parentElement !== sc) {
+    if (hd) hd.remove();
+    hd = document.createElement('div'); hd.id = 'ptHandle'; hd.className = 'pt-handle';
+    hd.setAttribute('role', 'button'); hd.setAttribute('aria-label', 'Poignée : fais-la glisser pour étendre la sélection'); sc.appendChild(hd);
+  }
+  const a = td.getBoundingClientRect(), b = sc.getBoundingClientRect();
+  hd.style.left = (a.right - b.left - sc.clientLeft + sc.scrollLeft) + 'px';
+  hd.style.top = (a.bottom - b.top - sc.clientTop + sc.scrollTop) + 'px';
+}
+function handleDown(e, hd) {
+  e.preventDefault(); e.stopPropagation();
+  const r = hd.getBoundingClientRect(), p = parseAddr(PT.anchor), q = parseAddr(PT.end);
+  PT.anchor = colLetter(Math.min(p.c, q.c)) + Math.min(p.r, q.r); PT.end = colLetter(Math.max(p.c, q.c)) + Math.max(p.r, q.r);
+  PT.hdrag = { id: e.pointerId, dx: r.left + r.width / 2 - e.clientX, dy: r.top + r.height / 2 - e.clientY, x: e.clientX, y: e.clientY };
+  try { hd.setPointerCapture(e.pointerId); } catch (_) { }
+  hd.classList.add('drag');
+  clearInterval(PT.timer); PT.timer = setInterval(handleTick, 40);
+}
+function handleSample() {
+  const h = PT.hdrag; if (!h) return;
+  const el = document.elementFromPoint(h.x + h.dx - 12, h.y + h.dy - 14);
+  const td = el && el.closest && el.closest('#exArea td[data-addr]'); if (!td) return;
+  const a = parseAddr(PT.anchor), t = parseAddr(td.dataset.addr);
+  const end = colLetter(Math.max(t.c, a.c)) + Math.max(t.r, a.r);
+  if (end !== PT.end) { PT.end = end; setPointText(rangeText(PT.anchor, PT.end)); paintRefs(); }
+}
+function handleTick() {
+  const h = PT.hdrag; if (!h) return;
+  const sc = document.querySelector('#exArea .sheet-scroll');
+  if (sc) { const rc = sc.getBoundingClientRect(); if (h.x > rc.right - 40) sc.scrollLeft += 14; else if (h.x < rc.left + 40) sc.scrollLeft -= 14; }
+  if (h.y > window.innerHeight - 100) window.scrollBy(0, 14); else if (h.y < 150) window.scrollBy(0, -14);
+  handleSample();
+}
+function handleEnd() {
+  clearInterval(PT.timer); PT.hdrag = null;
+  const hd = document.getElementById('ptHandle'); if (hd) hd.classList.remove('drag');
+}
+/* --- Raccourcis : en-têtes de colonne et de ligne --- */
+function dataRangeFor(kind, key) {
+  const q = curQ(), g = q.g, at = parseAddr(q.at), cells = g.cells;
+  const hdr = (() => {
+    const r1 = []; for (let c = 1; c <= g.nCols; c++) { const x = cells[colLetter(c) + '1']; if (x) r1.push(x); }
+    return r1.length >= 2 && r1.every((x) => x.k === 's') && Object.keys(cells).some((k) => cells[k].k !== 's');
+  })();
+  if (kind === 'col') {
+    const c = parseAddr(key + '1').c, rows = [];
+    for (let r = 1; r <= g.nRows; r++) { if (cells[colLetter(c) + r] && r !== at.r && !(hdr && r === 1)) rows.push(r); }
+    return rows.length ? [key + rows[0], key + rows[rows.length - 1]] : null;
+  }
+  const r = +key, cols = [];
+  for (let c = 1; c <= g.nCols; c++) if (cells[colLetter(c) + r]) cols.push(c);
+  while (cols.length > 1 && cells[colLetter(cols[0]) + r].k === 's') cols.shift();
+  return cols.length ? [colLetter(cols[0]) + r, colLetter(cols[cols.length - 1]) + r] : null;
+}
+function applyTap(t) {
+  if (t.addr) { pointStart(t.addr, false); return; }
+  const rg = dataRangeFor(t.col ? 'col' : 'row', t.col || t.row);
+  if (!rg) { pointTip('Il n\'y a pas de données à prendre dans cette ' + (t.col ? 'colonne.' : 'ligne.')); return; }
+  pointStart(rg[0], false, rg[1]);
+}
+function syncRangeBtn() { const b = $('rangeBtn'); if (b) b.classList.toggle('on', !!PT.rangeMode); }
+/* --- Barre de symboles (tactile) --- */
+function symbarHTML() {
+  return '<div class="symbar" id="symbar"><button class="symbtn rng" id="rangeBtn" data-action="range-mode" title="Touche la première puis la dernière cellule">Plage</button>' +
+    [';', ':', '(', ')', '$', '"', '=', '&', '<', '>'].map((s) => '<button class="symbtn" data-action="sym" data-s="' + esc(s) + '" aria-label="Insérer ' + esc(s) + '">' + esc(s) + '</button>').join('') + '</div>';
+}
+function insertSym(s) {
+  const input = $('fin'); if (!input) return;
+  const v = input.value, a = input.selectionStart == null ? v.length : input.selectionStart, b = input.selectionEnd == null ? a : input.selectionEnd;
+  input.value = v.slice(0, a) + s + v.slice(b);
+  const pos = a + s.length; input.setSelectionRange(pos, pos);
+  exState(curQ()).text = input.value; PT.valid = false; IS.sel = 0;
+  updateIntellisense(); paintRefs();
 }
 
 function acceptSuggestion(i) {
@@ -3440,11 +3554,12 @@ function exerciseHTML(q) {
     '<p class="ex-ctx">' + q.ctx + '</p>' +
     '<div class="ex-q"><span class="lbl">À toi de jouer :</span>' + q.q + '</div>' +
     sheetHTML(q.g, { at: q.at, res: st.res === null ? undefined : st.res, fmt: q.fmt, point: true }) +
+    (TOUCH ? '<div class="sheet-note">Touche une cellule pour l\'insérer, puis fais glisser le rond doré pour étendre la sélection. Touche l\'en-tête d\'une colonne (B) ou d\'une ligne (3) pour prendre toutes ses données.</div>' : '') +
     (q.pre ? '<div class="sheet-note">Une formule est déjà saisie dans la barre : elle contient un défaut à corriger.</div>' : '') +
     '<div class="fbar-wrap"><div class="fbar"><span class="namebox" title="Cellule active">' + q.at + '</span><span class="fx">fx</span>' +
     '<input id="fin" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Barre de formule" placeholder="=…" value="' + esc(st.text) + '">' +
     '<button class="primary" data-action="validate">Valider ↵</button></div>' +
-    '<div class="isense" id="isense" hidden></div><div class="ftip" id="ftip"></div></div>';
+    (TOUCH ? symbarHTML() : '') + '<div class="isense" id="isense" hidden></div><div class="ftip" id="ftip"></div></div>';
   h += '<div class="ex-actions">' +
     '<button class="ghost" data-action="hint"' + (st.hints >= q.h.length ? ' disabled' : '') + '>💡 Indice (' + st.hints + '/' + q.h.length + ')</button>' +
     '<button class="ghost" data-action="sol">' + (st.solOpen ? 'Masquer la solution' : 'Voir la solution (sans badge)') + '</button>' +
@@ -3506,6 +3621,8 @@ function doAction(action, el) {
   const m = curMod(), q = curQ(), st = exState(q);
   switch (action) {
     case 'validate': doValidate(); break;
+    case 'sym': insertSym(el.dataset.s); break;
+    case 'range-mode': PT.rangeMode = !PT.rangeMode; syncRangeBtn(); pointTip(PT.rangeMode ? 'Mode plage : touche la première cellule, puis la dernière.' : ''); break;
     case 'hint': if (st.hints < q.h.length) { if ($('fin')) st.text = $('fin').value; st.hints++; renderEx(true); } break;
     case 'sol': if ($('fin')) st.text = $('fin').value; st.solOpen = !st.solOpen; if (st.solOpen && !st.win) st.solSeen = true; renderEx(true); break;
     case 'paste-sol': st.text = q.sol; renderEx(true); break;
@@ -3679,7 +3796,36 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if (el && !el.disabled) dispatch(el.dataset.action, el);
 });
-document.addEventListener('mousedown', (e) => { if (e.target.closest('.is-item')) e.preventDefault(); else pointDown(e); });
+document.addEventListener('mousedown', (e) => { if (e.target.closest('.is-item, .symbtn, .pt-handle')) e.preventDefault(); else pointDown(e); });
+// Tactile : un tap (sans défilement) sur une cellule ou un en-tête, et la poignée de recopie
+document.addEventListener('pointerdown', (e) => {
+  const hd = e.target.closest && e.target.closest('#ptHandle');
+  if (hd) { PT.lastTouch = Date.now(); handleDown(e, hd); return; }
+  if (e.pointerType !== 'touch') return;
+  const t = e.target.closest && e.target.closest('#exArea td[data-addr], #exArea th[data-col], #exArea th[data-row]');
+  if (!t) return;
+  e.preventDefault(); PT.lastTouch = Date.now();
+  PT.tap = { id: e.pointerId, x: e.clientX, y: e.clientY, t: Date.now(), addr: t.dataset.addr, col: t.dataset.col, row: t.dataset.row };
+});
+document.addEventListener('pointermove', (e) => {
+  const h = PT.hdrag;
+  if (h && h.id === e.pointerId) { h.x = e.clientX; h.y = e.clientY; handleSample(); return; }
+  if (PT.tap && PT.tap.id === e.pointerId && Math.hypot(e.clientX - PT.tap.x, e.clientY - PT.tap.y) > 10) PT.tap = null;
+});
+document.addEventListener('pointerup', (e) => {
+  if (e.pointerType === 'touch') PT.lastTouch = Date.now();
+  if (PT.hdrag && PT.hdrag.id === e.pointerId) { handleEnd(); return; }
+  const t = PT.tap; if (!t || t.id !== e.pointerId) return;
+  PT.tap = null;
+  if (Date.now() - t.t < 700) applyTap(t);
+});
+document.addEventListener('pointercancel', () => { PT.tap = null; if (PT.hdrag) handleEnd(); });
+// Souris : un clic sur un en-tête de colonne ou de ligne prend toutes les données
+document.addEventListener('click', (e) => {
+  if (Date.now() - PT.lastTouch < 700) return;
+  const th = e.target.closest && e.target.closest('#exArea th[data-col], #exArea th[data-row]');
+  if (th) applyTap({ col: th.dataset.col, row: th.dataset.row });
+});
 document.addEventListener('mouseover', pointOver);
 document.addEventListener('mouseup', () => { PT.dragging = false; });
 document.addEventListener('input', (e) => {
