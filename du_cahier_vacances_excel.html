@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <!--
   Data Unchained, Cahier de vacances Excel
-  Version : 1.6.0
+  Version : 1.7.0
 
   Historique :
+    1.7.0 : Vocabulaire : « badge » devient « médaille » partout (onglet, messages, trophées, notes).
     1.6.0 : Encadrés repliés (Comment ça marche, Avant de commencer : 2 lignes puis « Lire la suite »),
             sommaire repliable sur téléphone avec saut direct au module choisi.
     1.5.0 : Pointage tactile : tap sur une cellule, poignée de recopie (rond doré) pour étendre la plage,
@@ -21,8 +22,8 @@
     1.0.0 : Version initiale. 7 modules et 70 exercices (SOMME, SI et SI.CONDITIONS, ET/OU/NON,
             SIERREUR, dates et jours ouvrés, RECHERCHEX, FILTRE/TRIER/UNIQUE). Moteur de formules
             embarqué, saisie avec suggestions de type intellisense, correction par résultat (avec
-            jeux de valeurs alternatifs), badges Or/Argent/Bronze, trophées, onglet Excel Learn,
-            onglet Badges avec code de sauvegarde, onglet À propos.
+            jeux de valeurs alternatifs), médailles Or/Argent/Bronze, trophées, onglet Excel Learn,
+            onglet Médailles avec code de sauvegarde, onglet À propos.
 -->
 <html lang="fr">
 <head>
@@ -400,14 +401,14 @@ body.touch table.sheet td{ height:38px; }
   </div>
   <div class="topbar-right">
     <span class="excel-badge" title="Entraînement conçu pour les formules Excel"><span class="excel-badge-icon">X</span>Excel</span>
-    <span class="score-pill" id="scorePill" title="Badges obtenus sur le total d'exercices">🏅 0 / 70</span>
+    <span class="score-pill" id="scorePill" title="Médailles obtenues sur le total d'exercices">🏅 0 / 70</span>
   </div>
 </div>
 
 <div class="tabbar" role="tablist">
   <button class="tab-btn active" data-tab="cahier" role="tab">📓 Cahier</button>
   <button class="tab-btn" data-tab="learn" role="tab">🎓 Excel Learn</button>
-  <button class="tab-btn" data-tab="badges" role="tab">🏅 Badges</button>
+  <button class="tab-btn" data-tab="badges" role="tab">🏅 Médailles</button>
   <button class="tab-btn tab-right" data-tab="apropos" role="tab">ℹ️ À propos</button>
 </div>
 </div><!-- /app-header -->
@@ -416,7 +417,7 @@ body.touch table.sheet td{ height:38px; }
 
 <!-- ========== ONGLET CAHIER ========== -->
 <div class="tab-panel active" id="tab-cahier">
-  <div class="scope-note" id="scopeNote"><div class="scope-text"><b>Comment ça marche :</b> choisis un module dans le sommaire (une fonction ou une famille de fonctions), puis résous les 10 exercices dans l'ordre. Tape ta formule dans la barre de formule : dès les premières lettres d'une fonction, des suggestions apparaissent, avec leur mode d'emploi. Tu peux aussi <b>cliquer ou glisser sur les cellules du tableau</b> pour insérer leurs références, comme dans Excel (après le <code>=</code>, une parenthèse ou un point-virgule). Sur téléphone : touche une cellule, puis fais glisser le <b>rond doré</b> pour étendre la plage, ou touche l'en-tête d'une colonne pour prendre toutes ses données. Valide avec <b>Entrée</b>. Ton résultat est comparé au résultat attendu, y compris quand les valeurs changent : plusieurs écritures peuvent donc être correctes. Chaque exercice réussi rapporte un badge : <b>Or</b> (aucun indice, au plus une erreur), <b>Argent</b> (un indice, au plus trois erreurs), <b>Bronze</b> (le reste). Si tu regardes la solution, l'exercice est validé mais sans badge. Tu peux toujours le refaire pour décrocher mieux.</div><button class="more-toggle" data-action="scope-toggle" aria-expanded="false" aria-controls="scopeNote">Lire la suite ▾</button></div>
+  <div class="scope-note" id="scopeNote"><div class="scope-text"><b>Comment ça marche :</b> choisis un module dans le sommaire (une fonction ou une famille de fonctions), puis résous les 10 exercices dans l'ordre. Tape ta formule dans la barre de formule : dès les premières lettres d'une fonction, des suggestions apparaissent, avec leur mode d'emploi. Tu peux aussi <b>cliquer ou glisser sur les cellules du tableau</b> pour insérer leurs références, comme dans Excel (après le <code>=</code>, une parenthèse ou un point-virgule). Sur téléphone : touche une cellule, puis fais glisser le <b>rond doré</b> pour étendre la plage, ou touche l'en-tête d'une colonne pour prendre toutes ses données. Valide avec <b>Entrée</b>. Ton résultat est comparé au résultat attendu, y compris quand les valeurs changent : plusieurs écritures peuvent donc être correctes. Chaque exercice réussi rapporte une médaille : <b>Or</b> (aucun indice, au plus une erreur), <b>Argent</b> (un indice, au plus trois erreurs), <b>Bronze</b> (le reste). Si tu regardes la solution, l'exercice est validé mais sans médaille. Tu peux toujours le refaire pour décrocher mieux.</div><button class="more-toggle" data-action="scope-toggle" aria-expanded="false" aria-controls="scopeNote">Lire la suite ▾</button></div>
   <div class="layout">
     <nav class="panel toc" id="toc" aria-label="Sommaire des modules"></nav>
     <main id="cahierMain"></main>
@@ -428,7 +429,7 @@ body.touch table.sheet td{ height:38px; }
   <div class="pad" id="learnRoot"></div>
 </div>
 
-<!-- ========== ONGLET BADGES ========== -->
+<!-- ========== ONGLET MÉDAILLES ========== -->
 <div class="tab-panel" id="tab-badges">
   <div class="pad" id="badgesRoot"></div>
 </div>
@@ -1605,7 +1606,7 @@ const FAMILIES_FN = ['Mathématiques', 'Logique', 'Date et heure', 'Recherche', 
    3. EXERCICES
    Chaque module = une fonction (ou une famille proche) et 10 exercices progressifs.
    Champs d'un exercice :
-     t   titre court (nom du badge)          ctx  mise en situation
+     t   titre court (nom de la médaille)          ctx  mise en situation
      g   grille (voir G())                   at   cellule où l'on tape la formule
      q   consigne                            sol  formule de référence (évaluée, jamais comparée en texte)
      tests  jeux de valeurs alternatifs [{c:{B2:10}, m:'message'}] : la formule doit rester juste
@@ -3071,15 +3072,16 @@ MODULES.push({
 /* =========================================================
    4. ÉTAT ET OUTILS
    ========================================================= */
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 const RELEASE_NOTES = [
+  { v: '1.7.0', d: 'oct. 2026', t: "Le mot badge est remplacé par médaille dans toute l'application (onglet Médailles, messages de réussite, trophées)." },
   { v: '1.6.0', d: 'oct. 2026', t: "Encadrés Comment ça marche et Avant de commencer repliés sur 2 lignes (bouton Lire la suite). Sommaire repliable sur téléphone, avec saut direct vers le module choisi." },
   { v: '1.5.0', d: 'oct. 2026', t: "Pointage tactile pour smartphone : un tap insère une cellule, un rond doré (poignée de recopie) s'étend par glisser, un tap sur l'en-tête d'une colonne ou d'une ligne prend toutes ses données, bouton Plage en deux taps, barre de symboles au-dessus du clavier." },
   { v: '1.4.0', d: 'oct. 2026', t: "Les 4 derniers exercices de SOMME, MOYENNE et MIN/MAX utilisent maintenant SOMME.SI.ENS, MOYENNE.SI.ENS, MAX.SI.ENS et MIN.SI.ENS, avec leurs fiches dans Excel Learn. Sommaire élargi. Excel 365 devient Fonctions modernes." },
   { v: '1.3.0', d: 'oct. 2026', t: "Les dates se rangent en deux groupes : basiques (JOUR, MOIS, ANNEE, DATE...) et avancées (jours ouvrés, DATEDIF, MOIS.DECALER...). Nouveaux modules dans Les bases : MOYENNE, MIN et MAX, SOUS.TOTAL et AGREGAT. Le total passe à 110 exercices." },
   { v: '1.2.0', d: 'oct. 2026', t: "Saisie à la souris, comme dans Excel : un clic ou un glisser sur le tableau insère la référence (B2 ou B2:B5) dans la barre de formule, un second clic la remplace, et les cellules citées sont colorées dans le tableau." },
   { v: '1.1.0', d: 'oct. 2026', t: "Excel Learn : menu des fonctions rangées par catégories à gauche, cours détaillé à droite (analogie, syntaxe, arguments, exemple exécuté, exercices du cahier liés, fonctions voisines). Onglet À propos repris de la charte commune des outils Data Unchained, avec l'adresse de contact mise à jour." },
-  { v: '1.0.0', d: 'oct. 2026', t: "Première version : 7 modules et 70 exercices (SOMME, SI et SI.CONDITIONS, ET/OU/NON, SIERREUR, dates et jours ouvrés, RECHERCHEX, FILTRE/TRIER/UNIQUE), saisie de formules avec suggestions de type intellisense, correction par résultat, trois niveaux de badges, trophées, onglet Excel Learn, code de sauvegarde." },
+  { v: '1.0.0', d: 'oct. 2026', t: "Première version : 7 modules et 70 exercices (SOMME, SI et SI.CONDITIONS, ET/OU/NON, SIERREUR, dates et jours ouvrés, RECHERCHEX, FILTRE/TRIER/UNIQUE), saisie de formules avec suggestions de type intellisense, correction par résultat, trois niveaux de médailles, trophées, onglet Excel Learn, code de sauvegarde." },
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -3107,12 +3109,12 @@ MODULES.forEach((m) => {
 });
 const TOTAL = ALL.length;
 
-// État de la session (volontairement non sauvegardé : voir le code de sauvegarde, onglet Badges)
+// État de la session (volontairement non sauvegardé : voir le code de sauvegarde, onglet Médailles)
 const S = {
   mod: MODULES[0].id,
   cur: {},       // exercice courant par module (index)
   ex: {},        // état de chaque exercice : saisie, essais, indices, résultat, message
-  best: {},      // meilleur badge obtenu par exercice (rang)
+  best: {},      // meilleure médaille obtenue par exercice (rang)
   done: {},      // exercice validé au moins une fois
   learnFn: 'SOMME', learnQ: '',
 };
@@ -3283,7 +3285,7 @@ function medalSVG(kind, label) {
   const inner = (kind === 'vu') ? '<path d="M25 38.5l5 5 9-10" fill="none" stroke="' + c[1] + '" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>'
     : (kind === 'none') ? '<circle cx="32" cy="38" r="3" fill="' + c[1] + '"/>'
     : '<polygon points="' + STAR + '" fill="' + c[1] + '"/>';
-  return '<svg viewBox="0 0 64 64" role="img" aria-label="' + esc(label || (kind === 'none' ? 'Badge à gagner' : 'Badge ' + (MEDAL_LABEL[kind] || ''))) + '">' +
+  return '<svg viewBox="0 0 64 64" role="img" aria-label="' + esc(label || (kind === 'none' ? 'Médaille à gagner' : (kind === 'vu' ? '' : 'Médaille ') + (MEDAL_LABEL[kind] || ''))) + '">' +
     '<path d="M19 3h11l7 23H25z" fill="#175B36"/><path d="M45 3H34l-7 23h12z" fill="#1F7A47"/>' +
     '<circle cx="32" cy="38" r="21" fill="' + c[1] + '"/><circle cx="32" cy="38" r="18" fill="' + c[0] + '"/>' +
     '<circle cx="32" cy="38" r="14.5" fill="none" stroke="' + c[1] + '" stroke-width="1" stroke-dasharray="2 2.2"/>' + inner + '</svg>';
@@ -3549,7 +3551,7 @@ function renderToc() {
 }
 function renderScore() {
   $('scorePill').textContent = '🏅 ' + countBadges() + ' / ' + TOTAL;
-  $('scorePill').title = countBadges() + ' badge(s) sur ' + TOTAL + ' exercices · ' + countPoints() + ' point(s)';
+  $('scorePill').title = countBadges() + ' médaille(s) sur ' + TOTAL + ' exercices · ' + countPoints() + ' point(s)';
 }
 function pillsHTML(m) {
   return '<div class="progress-row">' + m.qs.map((q, i) => {
@@ -3588,7 +3590,7 @@ function exerciseHTML(q) {
     (TOUCH ? symbarHTML() : '') + '<div class="isense" id="isense" hidden></div><div class="ftip" id="ftip"></div></div>';
   h += '<div class="ex-actions">' +
     '<button class="ghost" data-action="hint"' + (st.hints >= q.h.length ? ' disabled' : '') + '>💡 Indice (' + st.hints + '/' + q.h.length + ')</button>' +
-    '<button class="ghost" data-action="sol">' + (st.solOpen ? 'Masquer la solution' : 'Voir la solution (sans badge)') + '</button>' +
+    '<button class="ghost" data-action="sol">' + (st.solOpen ? 'Masquer la solution' : 'Voir la solution (sans médaille)') + '</button>' +
     '<button class="ghost" data-action="reset">↺ Recommencer</button></div>';
   if (st.msg) h += '<div class="msg ' + st.msg.type + '" role="status">' + st.msg.html + '</div>';
   for (let i = 0; i < st.hints; i++) h += '<div class="hint-box">💡 Indice ' + (i + 1) + ' : ' + q.h[i] + '</div>';
@@ -3596,16 +3598,16 @@ function exerciseHTML(q) {
   if (st.win) {
     const med = st.win.medal;
     const nxt = q.n < m.qs.length ? '<button class="primary" data-action="next">Exercice suivant →</button>'
-      : (MODULES.indexOf(m) < MODULES.length - 1 ? '<button class="primary" data-action="next-mod">Module suivant →</button>' : '<button class="primary" data-action="to-badges">Voir mes badges 🏅</button>');
-    const titles = { or: 'Badge Or, sans faute !', argent: 'Badge Argent, bien joué !', bronze: 'Badge Bronze, c\'est validé !', vu: 'Validé, avec la solution' };
+      : (MODULES.indexOf(m) < MODULES.length - 1 ? '<button class="primary" data-action="next-mod">Module suivant →</button>' : '<button class="primary" data-action="to-badges">Voir mes médailles 🏅</button>');
+    const titles = { or: 'Médaille d\'Or, sans faute !', argent: 'Médaille d\'Argent, bien joué !', bronze: 'Médaille de Bronze, c\'est validé !', vu: 'Validé, avec la solution' };
     h += '<div class="win" role="status"><div class="win-head">' + medalSVG(med) + '<div><h4 class="win-title" style="margin:0">' + titles[med] + '</h4>' +
-      '<div class="win-sub">' + (med === 'vu' ? 'Pas de badge cette fois : refais l\'exercice sans regarder la solution pour en décrocher un.' : 'Ton résultat est le bon, même quand les valeurs changent.') + '</div></div></div>' +
+      '<div class="win-sub">' + (med === 'vu' ? 'Pas de médaille cette fois : refais l\'exercice sans regarder la solution pour en décrocher une.' : 'Ton résultat est le bon, même quand les valeurs changent.') + '</div></div></div>' +
       (st.win.newTrophies && st.win.newTrophies.length ? '<div class="tip-box">🏆 Nouveau trophée : <b>' + st.win.newTrophies.map(esc).join(', ') + '</b></div>' : '') +
       '<div class="corrige"><span class="pen">Correction :</span> ' + q.e + '</div>' +
       (q.tip ? '<div class="tip-box">💡 ' + q.tip + '</div>' : '') +
       '<div class="links">' + linksHTML(q.lk) + '</div>' +
       '<div class="medal-rule">Barème : Or = aucun indice et au plus une erreur · Argent = un indice et trois erreurs au plus · Bronze = le reste.</div>' +
-      '<div class="win-actions">' + nxt + '<button data-action="reset">↺ Refaire pour un meilleur badge</button></div></div>';
+      '<div class="win-actions">' + nxt + '<button data-action="reset">↺ Refaire pour un meilleure médaille</button></div></div>';
   }
   return h;
 }
@@ -3683,15 +3685,15 @@ const doneCount = () => ALL.filter((q) => S.done[q.id]).length;
 const goldCount = () => ALL.filter((q) => medalOf(q) === 'or').length;
 const famDone = (fam) => MODULES.filter((m) => m.fam === fam).every((m) => modDone(m) === m.qs.length);
 const TROPHIES = [
-  { id: 'first', ico: '🌱', nom: 'Premier badge', desc: 'Obtiens ton premier badge (Or, Argent ou Bronze).', ok: () => countBadges() >= 1 },
+  { id: 'first', ico: '🌱', nom: 'Première médaille', desc: 'Obtiens ta première médaille (Or, Argent ou Bronze).', ok: () => countBadges() >= 1 },
   { id: 'warm', ico: '✏️', nom: 'Échauffement', desc: 'Valide 10 exercices.', ok: () => doneCount() >= 10 },
   { id: 'half', ico: '📈', nom: 'Mi-parcours', desc: 'Valide 35 exercices.', ok: () => doneCount() >= 35 },
   { id: 'all', ico: '🎓', nom: 'Cahier terminé', desc: 'Valide les ' + TOTAL + ' exercices.', ok: () => doneCount() >= TOTAL },
   { id: 'streak', ico: '🔥', nom: 'Série en or', desc: 'Décroche l\'Or sur 5 exercices de suite dans un module.', ok: () => MODULES.some((m) => { let run = 0; return m.qs.some((q) => { run = medalOf(q) === 'or' ? run + 1 : 0; return run >= 5; }); }) },
   { id: 'perfect', ico: '⭐', nom: 'Module parfait', desc: 'Décroche 10 Or dans un même module.', ok: () => MODULES.some((m) => m.qs.every((q) => medalOf(q) === 'or')) },
-  { id: 'auto', ico: '🧠', nom: 'Autonome', desc: 'Obtiens 20 badges Or.', ok: () => goldCount() >= 20 },
+  { id: 'auto', ico: '🧠', nom: 'Autonome', desc: 'Obtiens 20 médailles d\'Or.', ok: () => goldCount() >= 20 },
   { id: 'major', ico: '👑', nom: 'Major de la classe', desc: 'Décroche l\'Or aux ' + TOTAL + ' exercices.', ok: () => goldCount() >= TOTAL },
-  { id: 'bugs', ico: '🔎', nom: 'Chasseur de bugs', desc: 'Répare toutes les formules à corriger (avec un badge).', ok: () => ALL.filter((q) => q.pre).every((q) => (S.best[q.id] || 0) >= RANK.bronze) },
+  { id: 'bugs', ico: '🔎', nom: 'Chasseur de bugs', desc: 'Répare toutes les formules à corriger (avec une médaille).', ok: () => ALL.filter((q) => q.pre).every((q) => (S.best[q.id] || 0) >= RANK.bronze) },
   { id: 'f-bases', ico: 'Σ', nom: 'Maître des totaux', desc: 'Termine la famille « Les bases ».', ok: () => famDone('bases') },
   { id: 'f-logique', ico: '?', nom: 'Esprit logique', desc: 'Termine la famille « Fonctions logiques ».', ok: () => famDone('logique') },
   { id: 'f-dates-b', ico: '31', nom: 'Au fil des jours', desc: 'Termine la famille « Dates basiques ».', ok: () => famDone('dates_b') },
@@ -3762,7 +3764,7 @@ function renderCourse() {
 }
 
 /* =========================================================
-   12. BADGES : bilan, trophées, code de sauvegarde
+   12. MÉDAILLES : bilan, trophées, code de sauvegarde
    ========================================================= */
 function makeCode() { return 'DUCV1-' + btoa(ALL.map((q) => S.best[q.id] || 0).join('')); }
 function loadCode(code) {
@@ -3777,8 +3779,8 @@ function renderBadges() {
   const nb = countBadges(), pts = countPoints(), dn = doneCount(), maxPts = TOTAL * 3, tr = earnedTrophies();
   const cnt = (k) => ALL.filter((q) => medalOf(q) === k).length;
   $('badgesRoot').innerHTML =
-    '<div class="learn-intro">Ton objectif : décrocher le plus de badges possible, et si tu peux, que des <b>Or</b>. Tu peux refaire un exercice autant de fois que tu veux, seul le meilleur badge est gardé.</div>' +
-    '<div class="stat-row"><div class="stat"><div class="big">' + nb + ' / ' + TOTAL + '</div><div class="lab">badges obtenus</div></div>' +
+    '<div class="learn-intro">Ton objectif : décrocher le plus de médailles possible, et si tu peux, que des <b>Or</b>. Tu peux refaire un exercice autant de fois que tu veux, seule la meilleure médaille est gardée.</div>' +
+    '<div class="stat-row"><div class="stat"><div class="big">' + nb + ' / ' + TOTAL + '</div><div class="lab">médailles obtenues</div></div>' +
     '<div class="stat"><div class="big">' + pts + ' / ' + maxPts + '</div><div class="lab">points (Or 3 · Argent 2 · Bronze 1)</div></div>' +
     '<div class="stat"><div class="big">' + dn + ' / ' + TOTAL + '</div><div class="lab">exercices validés</div></div>' +
     '<div class="stat"><div class="big">' + tr.length + ' / ' + TROPHIES.length + '</div><div class="lab">trophées</div></div></div>' +
@@ -3789,7 +3791,7 @@ function renderBadges() {
       return '<div class="fp"><b>' + esc(f.label) + '</b> <span style="float:right">' + d + '/' + qs.length + '</span><div class="bar"><span style="width:' + Math.round(d / qs.length * 100) + '%"></span></div></div>';
     }).join('') + '</div>' +
     '<h2 class="sec">Trophées</h2><div class="trophy-grid">' + TROPHIES.map((t) => '<div class="trophy' + (tr.indexOf(t.id) >= 0 ? ' got' : '') + '"><div class="ti">' + t.ico + '</div><div><b>' + esc(t.nom) + '</b>' + esc(t.desc) + '</div></div>').join('') + '</div>' +
-    '<h2 class="sec">Tous les badges</h2>' + MODULES.map((m) =>
+    '<h2 class="sec">Toutes les médailles</h2>' + MODULES.map((m) =>
       '<div class="mod-badges"><h3><span>' + esc(m.nom) + '</span><span style="color:var(--text-secondary);font-weight:600">' + modDone(m) + '/' + m.qs.length + '</span></h3><div class="badge-row">' +
       m.qs.map((q, i) => { const k = S.done[q.id] ? medalOf(q) : 'none'; return '<button class="badge-item' + (k === 'none' ? ' locked' : '') + '" data-action="goto-ex" data-mod="' + m.id + '" data-i="' + i + '" title="' + esc(q.t) + '">' + medalSVG(k, q.t + (k === 'none' ? ' : à gagner' : ' : ' + MEDAL_LABEL[k])) + (i + 1) + '. ' + esc(q.t) + '</button>'; }).join('') + '</div></div>').join('') +
     '<h2 class="sec">Sauvegarder ma progression</h2><div class="save-box"><p style="margin-top:0">Pour ne rien perdre en fermant la page (ce fichier ne stocke rien dans ton navigateur), copie ce code et garde-le dans un coin. La prochaine fois, colle-le ci-dessous.</p>' +
@@ -3823,7 +3825,7 @@ function dispatch(action, el) {
     case 'learn-fn': S.learnFn = el.dataset.fn; renderLearnMenu(); renderCourse(); break;
     case 'goto-ex': { const m = MODULES.find((x) => x.id === el.dataset.mod), i = +el.dataset.i; S.mod = m.id; if (isUnlocked(m, i)) S.cur[m.id] = i; showTab('cahier'); break; }
     case 'copy-code': { const t = $('saveCode'); t.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) { } try { if (navigator.clipboard) navigator.clipboard.writeText(t.value); ok = true; } catch (e) { } $('saveMsg').innerHTML = '<div class="msg ' + (ok ? 'success' : 'info') + '">' + (ok ? 'Code copié.' : 'Sélectionne le code et copie-le avec Ctrl+C.') + '</div>'; break; }
-    case 'load-code': { const err = loadCode($('loadCode').value); if (err) $('saveMsg').innerHTML = '<div class="msg error">' + esc(err) + '</div>'; else { renderBadges(); renderScore(); $('saveMsg').innerHTML = '<div class="msg success">Progression chargée. Tes badges sont de retour.</div>'; } break; }
+    case 'load-code': { const err = loadCode($('loadCode').value); if (err) $('saveMsg').innerHTML = '<div class="msg error">' + esc(err) + '</div>'; else { renderBadges(); renderScore(); $('saveMsg').innerHTML = '<div class="msg success">Progression chargée. Tes médailles sont de retour.</div>'; } break; }
     default: doAction(action, el);
   }
 }
