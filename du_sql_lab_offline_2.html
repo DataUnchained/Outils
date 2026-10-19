@@ -453,6 +453,31 @@
     background: rgba(240,196,52,0.15);
   }
 
+  /* Raccourcis de symboles SQL : masqués sur grand écran (le clavier suffit),
+     affichés sur smartphone pour éviter les allers-retours de clavier virtuel */
+  .sql-keys {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 0 0;
+  }
+
+  .sql-key {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 5px;
+    padding: 6px 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .sql-key:active { background: var(--surface3); border-color: rgba(240,196,52,0.4); }
+
   /* Toolbar */
   .toolbar {
     display: flex;
@@ -2268,6 +2293,7 @@
       font-size: 13.5px;
     }
 
+    .sql-keys { display: flex; }
   }
 </style>
 </head>
@@ -2681,6 +2707,7 @@ WHERE co.commande_id IS NULL;
         <textarea class="editor" id="questEditor" spellcheck="false" placeholder="Écris ta requête SQL ici…"></textarea>
         <div class="ac-box" id="questAcBox" hidden></div>
       </div>
+      <div class="sql-keys" id="questSqlKeys"></div>
 
       <div class="toolbar">
         <button id="questRunBtn" class="btn-run">▶ Valider ma réponse</button>
@@ -2788,6 +2815,7 @@ WHERE co.commande_id IS NULL;
         <textarea class="editor" spellcheck="false" placeholder="Écris ta requête SQL ici…&#10;Ex : SELECT * FROM clients LIMIT 5;"></textarea>
         <div class="ac-box" hidden></div>
       </div>
+      <div class="sql-keys"></div>
     </div>
 
     <div class="toolbar">
@@ -3621,6 +3649,7 @@ function createWindow(initialSql) {
     rmeta: pane.querySelector('.rmeta'),
     resultsScroll: pane.querySelector('.results-scroll'),
     nameBadge: pane.querySelector('.win-name-badge'),
+    sqlKeys: pane.querySelector('.sql-keys'),
     acItems: [],
     acSel: 0,
     acStart: 0
@@ -3638,10 +3667,41 @@ function createWindow(initialSql) {
   return win;
 }
 
+// ===== RACCOURCIS DE SYMBOLES SQL (version smartphone) =====
+// Sur mobile, basculer de clavier pour taper >, <, %, etc. est pénible :
+// cette rangée de boutons insère le symbole directement dans l'éditeur actif.
+// Masquée sur grand écran (voir .sql-keys en CSS), elle est tout de même
+// rendue pour chaque fenêtre/éditeur, au cas où l'écran serait redimensionné.
+const SQL_KEYS = ['(', ')', ',', ';', '=', '<>', '>', '<', '>=', '<=', '%', '_', '*', "'"];
+
+function renderSqlKeys(win) {
+  if (!win.sqlKeys) return;
+  win.sqlKeys.innerHTML = SQL_KEYS.map(k => `<button type="button" class="sql-key">${esc(k)}</button>`).join('');
+  win.sqlKeys.querySelectorAll('.sql-key').forEach((btn, i) => {
+    // Empêche le bouton de voler le focus (et donc la position du curseur) au textarea
+    btn.addEventListener('mousedown', (e) => e.preventDefault());
+    btn.addEventListener('click', () => insertSqlSnippet(win, SQL_KEYS[i]));
+  });
+}
+
+function insertSqlSnippet(win, snippet) {
+  const editor = win.editor;
+  const start = editor.selectionStart ?? editor.value.length;
+  const end = editor.selectionEnd ?? editor.value.length;
+  editor.value = editor.value.slice(0, start) + snippet + editor.value.slice(end);
+  const pos = start + snippet.length;
+  editor.focus();
+  editor.selectionStart = editor.selectionEnd = pos;
+  updateGutter(win);
+  openAutocomplete(win);
+}
+
 // Câble l'éditeur (gutter, autocomplétion, Ctrl+Entrée, Tab) sur un objet
 // "win" qui expose au minimum {editor, gutter, acBox, acItems, acSel, acStart}.
 // Partagé entre les fenêtres de requête et l'éditeur de l'onglet Quest.
 function attachEditorEvents(win, onRun) {
+  renderSqlKeys(win);
+
   win.editor.addEventListener('input', () => {
     updateGutter(win);
     openAutocomplete(win);
@@ -4345,6 +4405,7 @@ function initQuest() {
     editor: document.getElementById('questEditor'),
     gutter: document.getElementById('questGutter'),
     acBox: document.getElementById('questAcBox'),
+    sqlKeys: document.getElementById('questSqlKeys'),
     acItems: [],
     acSel: 0,
     acStart: 0
