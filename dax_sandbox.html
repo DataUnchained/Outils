@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Data Unchained — Bac à sable DAX
-  Version : 1.6.0
+  Version : 1.7.0
 
   Historique :
     1.0.0 — Version initiale : bac à sable DAX (carte), table Depenses, fonctions de base.
@@ -18,6 +18,14 @@
     1.6.0 — Ajout de l'onglet Cartographie (schéma et aperçu de la table Depenses). Bandeau
             supérieur et onglets figés au défilement, logo Power BI dans le bandeau. Numéro de
             version affiché en pied de page.
+    1.7.0 — Version du 30 octobre (regroupe toutes les évolutions du jour). Onglet « À propos »,
+            neuf nouvelles fonctions DAX (SWITCH, CONCATENATE, UPPER, LOWER, LEN, ISBLANK, YEAR,
+            MONTH, MEDIAN), sélecteur de thème de données (Achats, RH, HSE) dans Bac à sable,
+            Cartographie et DAX Quest. DAX Quest : jauge animée, feu d'artifice, bandeau de
+            progression sticky, phrase de mise en situation, cadres alignés. Bac à sable
+            réorganisé, info-bulle d'usage des fonctions, saisie intelligente active seulement
+            après « nom = ». Passes mobile (graphique d'une couleur, bandeaux repliables,
+            Cartographie en cartes, onglets accrochés).
 -->
 <html lang="fr">
 <head>
@@ -90,6 +98,18 @@
     line-height:1.5;
   }
   .scope-note b{ font-weight:600; }
+  .scope-note-text{
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+    overflow:hidden;
+  }
+  .scope-note.expanded .scope-note-text{
+    display:block; -webkit-line-clamp:unset; overflow:visible;
+  }
+  .scope-note-toggle{
+    display:inline-block; margin-top:4px; background:none; border:none; padding:0;
+    font-size:12px; font-weight:700; color:var(--accent-dark); text-decoration:underline;
+    cursor:pointer;
+  }
 
   /* ---------- Onglets ---------- */
   .tab-bar{
@@ -97,6 +117,7 @@
     background:#fff; border-bottom:1px solid var(--border);
     padding:0 16px;
     overflow-x:auto;
+    scroll-snap-type:x proximity;
   }
   .tab-btn{
     border:none; background:transparent; border-radius:0;
@@ -104,6 +125,7 @@
     color:var(--text-secondary); cursor:pointer;
     border-bottom:3px solid transparent;
     flex-shrink:0; white-space:nowrap;
+    scroll-snap-align:start;
   }
   .tab-btn.active{ color:var(--data-blue); border-bottom-color:var(--accent); }
   .tab-btn:hover:not(.active){ background:#FAF9F8; color:var(--text-primary); }
@@ -111,7 +133,7 @@
   /* ---------- Layout ---------- */
   .layout{
     display:grid;
-    grid-template-columns: 220px 1fr 320px;
+    grid-template-columns: 1fr 320px;
     gap:14px;
     padding:14px;
     align-items:start;
@@ -134,18 +156,47 @@
     padding:10px 12px;
     border-bottom:1px solid var(--border);
   }
+  .panel-title-hint{
+    font-size:11px; font-weight:400; text-transform:none; letter-spacing:0;
+    color:var(--text-secondary); margin-left:6px;
+  }
+
+  /* ---------- Thème de données (au-dessus du bloc de saisie) ---------- */
+  .theme-picker-bar{
+    display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px;
+    padding:8px 14px 0;
+  }
+  .theme-picker-bar .scenario-picker-label{ padding:4px 0; }
+  .theme-picker-bar .scenario-picker{ padding:2px 0 10px; }
+
+  /* ---------- Colonnes à insérer, entre la zone de saisie et les boutons ---------- */
+  .fields-inline-wrap{
+    border-top:1px dashed var(--border);
+    border-bottom:1px dashed var(--border);
+    margin:12px 0;
+    padding:6px 0 2px;
+  }
+  .fields-inline-wrap .table-node{ padding:4px 2px 4px; }
+  .fields-inline-wrap #fieldsList{ padding:0 2px 6px; }
 
   /* ---------- Fields pane ---------- */
   .fields-body{ padding:8px; }
   .table-node{ font-size:13px; font-weight:600; padding:6px 4px; display:flex; align-items:center; gap:6px; }
   .table-node::before{ content:"▾"; font-size:10px; color:var(--text-secondary); }
+  #fieldsList, #measuresList{
+    display:flex; flex-wrap:wrap; gap:6px;
+    padding:4px 4px 2px;
+  }
   .field-item{
-    display:flex; align-items:center; gap:7px;
-    padding:5px 6px 5px 20px;
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 10px 5px 7px;
     font-size:12.5px;
-    border-radius:3px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:#fff;
     cursor:pointer;
     user-select:none;
+    white-space:nowrap;
   }
   .field-item:hover{ background:#F3F2F1; }
   .field-icon{
@@ -197,11 +248,11 @@
     border:1px solid var(--border-strong);
     border-radius:var(--radius);
     box-shadow:0 3px 10px rgba(0,0,0,.14);
-    max-height:200px;
-    overflow-y:auto;
     z-index:30;
+    overflow:hidden;
   }
   .autocomplete-box.show{ display:block; }
+  .ac-list{ max-height:200px; overflow-y:auto; }
   .ac-item{
     display:flex; align-items:center; gap:8px;
     padding:6px 10px;
@@ -221,6 +272,14 @@
   .ac-badge.ac-table{ background:var(--bg-dark); }
   .ac-label{ font-family:var(--mono); }
   .ac-hint{ margin-left:auto; font-family:var(--sans); font-size:10.5px; color:var(--text-secondary); }
+  .ac-tip{
+    display:flex; flex-direction:column; gap:2px;
+    padding:7px 10px;
+    border-top:1px solid var(--border);
+    background:#FAF9F8;
+  }
+  .ac-tip code{ font-family:var(--mono); font-weight:700; color:var(--data-blue); font-size:12px; }
+  .ac-tip span{ font-size:11.5px; color:var(--text-secondary); line-height:1.4; }
 
   .formula-actions{ display:flex; gap:8px; margin-top:8px; }
   button{
@@ -391,6 +450,7 @@
   .chart-bar{
     width:34px; border-radius:3px 3px 0 0;
     min-height:2px; transition:height .2s;
+    background:var(--data-blue);
   }
   .chart-bar.zero{ background:var(--border-strong) !important; }
   .chart-col-label{
@@ -400,6 +460,13 @@
     -webkit-line-clamp:2; -webkit-box-orient:vertical;
   }
   .chart-empty{ font-size:12.5px; color:var(--text-secondary); font-style:italic; padding:20px; text-align:center; }
+  @media (max-width:640px){
+    .chart-bars{ gap:8px; height:170px; }
+    .chart-col{ min-width:36px; }
+    .chart-bar{ width:24px; }
+    .chart-bar-value{ font-size:10px; }
+    .chart-col-label{ font-size:9.5px; max-width:48px; }
+  }
 
   /* ---------- DAX Quest ---------- */
   .quest-layout{
@@ -407,9 +474,30 @@
     grid-template-columns: 260px 1fr;
     gap:14px;
     padding:14px;
-    align-items:start;
+    align-items:stretch;
   }
+  /* Les deux cadres (liste des missions / détail de la mission) s'étirent à la même
+     hauteur, pour un alignement visuel propre plutôt que deux boîtes de tailles
+     différentes. */
+  .quest-layout > .panel{ display:flex; flex-direction:column; }
+  .quest-layout > .panel > .quest-levels{ flex:1; }
   @media (max-width:900px){ .quest-layout{ grid-template-columns:1fr; } }
+
+  /* Titre + score + jauge restent visibles pendant qu'on scrolle la mission ou la
+     liste des 10 missions, pour toujours voir sa progression. Placé hors de la
+     grille .quest-layout (voir le HTML) : un enfant sticky ne reste épinglé que
+     tant que son parent direct est à l'écran, donc il doit couvrir tout l'onglet. */
+  .quest-sticky-top{
+    position:sticky;
+    top:var(--header-h, 0px);
+    z-index:50;
+    background:var(--bg-surface);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+    margin:14px 14px 0;
+    border-radius:var(--radius);
+  }
+  @media (max-width:640px){ .quest-sticky-top{ margin:10px 10px 0; } }
 
   .quest-score{ padding:14px 12px; border-bottom:1px solid var(--border); }
   .quest-score-num{ font-size:24px; font-weight:700; color:var(--accent-dark); line-height:1; }
@@ -417,7 +505,21 @@
   .quest-progress-bar{ height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:10px; }
   .quest-progress-fill{ height:100%; background:linear-gradient(90deg,#20A264,#DDA40D); transition:width .3s; }
 
+  .quest-levels-toggle{ display:none; }
   .quest-levels{ padding:6px; }
+  @media (max-width:640px){
+    .quest-levels-toggle{
+      display:block; width:100%; text-align:left; background:none; border:none;
+      border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+      padding:9px 12px; font-size:12.5px; font-weight:700; color:var(--accent-dark);
+      cursor:pointer;
+    }
+    .quest-levels{
+      max-height:0; overflow:hidden; padding:0 6px;
+      transition:max-height .25s ease;
+    }
+    .quest-levels.open{ max-height:2000px; padding:6px; }
+  }
   .quest-level-item{
     display:flex; align-items:center; gap:9px;
     padding:8px 8px; border-radius:3px; font-size:12.5px;
@@ -477,6 +579,26 @@
   table.schema-table th, table.schema-table td{ border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top; }
   table.schema-table th{ background:#FAF9F8; font-weight:600; }
   table.schema-table td.field-cell{ font-weight:600; white-space:nowrap; }
+  /* Sur petit écran, la table 4 colonnes est illisible même avec un scroll horizontal :
+     on bascule sur une carte par champ, avec le libellé de colonne au-dessus de la valeur. */
+  @media (max-width:700px){
+    table.schema-table thead{ display:none; }
+    table.schema-table, table.schema-table tbody, table.schema-table tr{ display:block; width:100%; }
+    table.schema-table tr{
+      border:1px solid var(--border); border-radius:var(--radius);
+      margin-bottom:10px; padding:4px 10px; background:#fff;
+    }
+    table.schema-table td{
+      display:block; border:none; padding:5px 0; white-space:normal;
+    }
+    table.schema-table td.field-cell{ white-space:normal; }
+    table.schema-table td::before{
+      content:attr(data-label);
+      display:block; font-size:10px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.03em; color:var(--text-secondary); margin-bottom:1px;
+    }
+    table.schema-table td.field-cell::before{ content:none; }
+  }
   .schema-icon{
     width:16px; height:16px; border-radius:2px; display:inline-flex; align-items:center; justify-content:center;
     font-size:9.5px; font-weight:700; color:#fff; flex-shrink:0; vertical-align:middle; margin-right:7px;
@@ -604,7 +726,100 @@
   }
   .learn-func-detail .lf-related-chip:hover{ background:#F3F2F1; }
 
+  /* ---------- Sélecteur de thème de données ---------- */
+  .scenario-picker-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); padding:8px 4px 4px; }
+  .scenario-picker{ display:flex; gap:6px; flex-wrap:wrap; padding:2px 2px 10px; }
+  .scenario-btn{
+    display:flex; align-items:center; gap:6px; padding:6px 11px; border-radius:999px;
+    border:1.5px solid var(--border-strong); background:#fff; font-size:12.5px; font-weight:600;
+    color:var(--text-primary); cursor:pointer;
+  }
+  .scenario-btn:hover:not(.active){ background:#F3F2F1; }
+  .scenario-btn.active{ background:var(--data-blue); border-color:var(--data-blue); color:#fff; }
+
+  /* ---------- Jauge de progression (DAX Quest) ---------- */
+  .quest-score{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .gauge-panel{
+    width:100%; background:#fff; border-top:1px solid var(--border);
+    padding:12px 10px 14px; display:flex; align-items:center; gap:14px;
+  }
+  .gauge-title{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--accent-dark); flex-shrink:0; }
+  .gauge-tube{
+    --pct:0%;
+    position:relative; width:100%; height:16px; border-radius:8px; overflow:hidden;
+    background:#F3F2F1; border:1.5px solid var(--border-strong); flex:1;
+  }
+  .gauge-fill{
+    position:absolute; left:0; top:0; bottom:0; width:var(--pct);
+    background:linear-gradient(90deg, var(--data-blue), var(--brand-yellow));
+    transition:width .9s cubic-bezier(.3,1.2,.4,1);
+  }
+  .gauge-ticks{
+    position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(to right, transparent 0, transparent calc(10% - 1px), rgba(255,255,255,.75) calc(10% - 1px), rgba(255,255,255,.75) 10%);
+  }
+  .gauge-panel.full{ background:#FFF9E6; }
+  .gauge-panel.full .gauge-fill{ background:linear-gradient(90deg, var(--accent-dark), var(--brand-yellow)); }
+  .gauge-count{ font-size:13px; font-weight:700; color:var(--bg-dark); flex-shrink:0; }
+  .gauge-caption{ font-size:11px; line-height:1.3; color:var(--text-secondary); text-align:center; padding:0 10px 2px; }
+  #btnFireworks{ display:none; }
+  #fireworksCanvas{ position:fixed; left:0; top:0; z-index:9999; pointer-events:none; display:none; }
+  #fireworksCanvas.active{ display:block; }
+  @media (prefers-reduced-motion: reduce){ .gauge-fill{ transition:none; } }
+
+  /* ---------- Onglet À propos ---------- */
+  .tab-btn.tab-right{ margin-left:auto; }
+  .about-wrap{ width:min(1600px,94vw); margin:0 auto; padding:16px 0 8px; }
+  .about-grid{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:14px; margin-bottom:14px; }
+  .about-card{ padding:16px 18px; }
+  .about-card h2{ font-size:17px; margin:0 0 2px; color:var(--bg-dark); }
+  .about-card h3{ font-size:12px; text-transform:uppercase; letter-spacing:.03em; color:var(--accent-dark); margin:14px 0 6px; }
+  .about-role{ color:var(--text-secondary); font-size:13px; margin-bottom:10px; }
+  .about-card p{ font-size:13.5px; line-height:1.55; margin:0 0 8px; }
+  .about-card ul{ margin:0; padding-left:18px; font-size:13.5px; line-height:1.6; }
+  .about-links{ display:flex; flex-wrap:wrap; gap:12px; margin-top:6px; }
+  .about-link{
+    display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; border:1px solid var(--border-strong);
+    border-radius:6px; text-decoration:none; color:var(--text-primary); font-weight:600; font-size:13px; min-width:160px;
+  }
+  .about-link:hover{ border-color:var(--data-blue); background:var(--success-bg); }
+  .about-link small{ display:block; font-weight:400; color:var(--text-secondary); font-size:11.5px; }
+  .about-ico{ width:34px; height:34px; flex-shrink:0; }
+  .tag-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tag{ background:#EAF6EF; color:var(--bg-dark); border-radius:12px; padding:3px 10px; font-size:12px; font-weight:600; }
+  .release-list{ list-style:none; margin:0; padding:0; }
+  .release{ display:grid; grid-template-columns:150px 110px minmax(0,1fr); gap:6px 14px; padding:10px 18px; border-top:1px solid var(--border); font-size:13px; line-height:1.5; }
+  .release:first-child{ border-top:none; }
+  .release .rl-ver{ font-weight:700; color:var(--bg-dark); font-family:var(--mono); }
+  .release .rl-date{ color:var(--text-secondary); }
+  .release .rl-new{ background:var(--accent); color:#fff; border-radius:8px; padding:0 6px; font-size:10.5px; margin-left:6px; font-family:var(--sans); }
+  .energy-card{ padding:16px 18px; margin-bottom:14px; }
+  .energy-card h2{ font-size:15px; margin:0 0 4px; color:var(--bg-dark); }
+  .energy-card p{ font-size:13.5px; line-height:1.55; margin:0 0 10px; }
+  .energy-tiles{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:10px 0; }
+  .energy-tile{ background:#FFF9E6; border:1px solid #EEDD9C; border-radius:6px; padding:10px 12px; }
+  .energy-tile b{ display:block; font-size:20px; color:var(--accent-dark); }
+  .energy-tile span{ font-size:12px; color:var(--text-secondary); }
+  .energy-note{ font-size:12px; color:var(--text-secondary); line-height:1.5; margin:0; }
+  @media (max-width:640px){ .energy-tiles{ grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:900px){ .about-grid{ grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:640px){ .release{ grid-template-columns:minmax(0,1fr); gap:2px; } }
+
   footer{ text-align:center; font-size:11.5px; color:var(--text-secondary); padding:18px; }
+
+  /* ---------- Revue mobile : cibles tactiles et débordements ---------- */
+  .formula-actions{ flex-wrap:wrap; }
+  .func-detail .func-actions{ row-gap:8px; }
+  @media (max-width:640px){
+    button{ padding:9px 14px; min-height:38px; }
+    .func-detail button.ghost, button.ghost{ min-height:34px; }
+    .card-value{ font-size:30px; }
+    .topbar{ padding:10px 14px; gap:10px; }
+    .topbar h1{ font-size:15.5px; }
+    .quest-layout, .carto-wrap{ padding:10px; }
+    .gauge-panel{ flex-wrap:wrap; }
+    .gauge-caption{ order:3; width:100%; text-align:left; padding:0; }
+  }
 </style>
 </head>
 <body>
@@ -632,38 +847,37 @@
   <button class="tab-btn" id="tabBtnCarto" data-tab="carto">🗂 Cartographie</button>
   <button class="tab-btn" id="tabBtnLearn" data-tab="learn">📚 DAX Learn</button>
   <button class="tab-btn" id="tabBtnQuest" data-tab="quest">🏆 DAX Quest</button>
+  <button class="tab-btn tab-right" id="tabBtnApropos" data-tab="apropos">ℹ️ À propos</button>
 </div>
 </div>
 
+<canvas id="fireworksCanvas" aria-hidden="true"></canvas>
+
 <div id="tabSandbox" class="tab-panel">
-<div class="scope-note">
-  <b>Comment ça marche :</b> tu écris une formule DAX. En <b>carte</b>, elle est calculée sur toute la table. En <b>graphique</b>, elle est recalculée une fois par catégorie de l'axe choisi, chaque barre filtrant la table sur sa propre catégorie. Fonctions disponibles : SUM, AVERAGE, MIN, MAX, COUNT, COUNTROWS, DISTINCTCOUNT, DIVIDE, IF, AND, OR, NOT, ROUND, ABS, BLANK. La fonction <b>CALCULATE</b> n'est pas encore au programme à ce niveau, on la découvrira plus tard.
+<div class="scope-note" id="scopeNote">
+  <div class="scope-note-text"><b>Comment ça marche :</b> tu écris une formule DAX. En <b>carte</b>, elle est calculée sur toute la table. En <b>graphique</b>, elle est recalculée une fois par catégorie de l'axe choisi, chaque barre filtrant la table sur sa propre catégorie. Fonctions disponibles : SUM, AVERAGE, MEDIAN, MIN, MAX, COUNT, COUNTROWS, DISTINCTCOUNT, DIVIDE, IF, SWITCH, AND, OR, NOT, ISBLANK, ROUND, ABS, CONCATENATE, UPPER, LOWER, LEN, YEAR, MONTH, BLANK. La fonction <b>CALCULATE</b> n'est pas encore au programme à ce niveau, on la découvrira plus tard.</div>
+  <button type="button" class="scope-note-toggle" id="btnScopeNoteToggle">Afficher plus ▾</button>
+</div>
+<div class="theme-picker-bar">
+  <span class="scenario-picker-label">Thème de données</span>
+  <div class="scenario-picker" data-picker="sandbox"></div>
 </div>
 <div class="layout">
 
 
-  <!-- LEFT : fields pane -->
-  <div class="panel">
-    <div class="panel-title">Champs</div>
-    <div class="fields-body">
-      <div class="table-node">🗂 Depenses</div>
-      <div id="fieldsList"></div>
-      <div class="measures-section">
-        <div class="table-node" style="font-size:12px;">📐 Mesures</div>
-        <div id="measuresList"><div class="empty-measures">Aucune mesure enregistrée</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CENTER : formula bar + card -->
+  <!-- CENTER : formula bar (avec colonnes à insérer) + card -->
   <div class="center-col">
     <div class="panel formula-bar">
       <div class="fx-row">
         <span class="fx-icon">fx</span>
         <div class="formula-input-wrap">
-          <textarea id="formulaInput" spellcheck="false" placeholder="NomDeTaMesure = SUM(Depenses[Montant_EUR])">Ma Mesure = SUM(Depenses[Montant_EUR])</textarea>
+          <textarea id="formulaInput" spellcheck="false"></textarea>
           <div class="autocomplete-box" id="autocompleteBox"></div>
         </div>
+      </div>
+      <div class="fields-inline-wrap">
+        <div class="table-node" id="tableNodeLabel">🧮 Variables à utiliser dans la formule</div>
+        <div id="fieldsList"></div>
       </div>
       <div class="formula-actions">
         <button class="primary" id="btnValider">✓ Valider (Entrée)</button>
@@ -695,13 +909,20 @@
           <div class="chart-scroll"><div class="chart-bars" id="chartBars"></div></div>
         </div>
       </div>
-      <div class="preview-toggle" id="previewToggle">▸ Afficher les données de la table Depenses</div>
+      <div class="preview-toggle" id="previewToggle">▸ Afficher les données de la table</div>
       <div class="preview-table-wrap" id="previewWrap"></div>
     </div>
   </div>
 
-  <!-- RIGHT : functions + exercises -->
+  <!-- RIGHT : saved measures + functions -->
   <div class="right-col">
+    <div class="panel">
+      <div class="panel-title">📐 Mesures enregistrées</div>
+      <div class="fields-body">
+        <div id="measuresList"><div class="empty-measures">Aucune mesure enregistrée</div></div>
+      </div>
+    </div>
+
     <div class="panel">
       <div class="panel-title">Fonctions (clic pour l'explication)</div>
       <div class="func-list" id="funcList"></div>
@@ -715,10 +936,12 @@
 
 <div id="tabCarto" class="tab-panel" style="display:none;">
   <div class="carto-wrap">
-    <div class="carto-intro">Avant de croiser les champs, voici la table sur laquelle repose tout l'outil : une liste fictive de dépenses de projets, avec ses 6 champs. Les champs texte (T) servent surtout à filtrer ou à croiser un graphique ; les champs numériques (#) servent surtout à être agrégés dans une formule DAX.</div>
+    <div class="scenario-picker-label">Thème de données</div>
+    <div class="scenario-picker" data-picker="carto" style="margin-bottom:14px;"></div>
+    <div class="carto-intro" id="cartoIntro"></div>
 
     <div class="panel" style="padding:16px; margin-bottom:16px;">
-      <div class="panel-title" style="padding:0 0 12px;border:none;">🗂 Schéma de la table Depenses</div>
+      <div class="panel-title" style="padding:0 0 12px;border:none;" id="cartoSchemaTitle">🗂 Schéma de la table Depenses</div>
       <div id="cartoSchema"></div>
     </div>
 
@@ -758,11 +981,33 @@
 </div>
 
 <div id="tabQuest" class="tab-panel" style="display:none;">
+  <div class="theme-picker-bar">
+    <span class="scenario-picker-label">Thème de données</span>
+    <div class="scenario-picker" data-picker="quest"></div>
+    <span class="panel-title-hint">Changer de thème relance la quête à zéro.</span>
+  </div>
+  <div class="scope-note" id="questScopeNote"><b>Contexte :</b> <span id="questScopeNoteText"></span></div>
+  <!-- Résumé de progression en dehors de la grille 2 colonnes : un enfant sticky ne
+       reste épinglé que tant que SON parent direct est à l'écran. Placé ici, en
+       pleine largeur au-dessus de la grille, il reste visible pendant tout le
+       défilement de l'onglet (liste des missions comme détail de la mission). -->
+  <div class="quest-sticky-top">
+    <div class="panel-title">Progression</div>
+    <div class="quest-score" id="questScore"></div>
+    <aside class="gauge-panel" id="gaugePanel" aria-label="Jauge de progression">
+      <div class="gauge-title">Progression</div>
+      <div class="gauge-tube" id="gaugeTube" role="progressbar" aria-valuemin="0" aria-valuenow="0" aria-valuemax="10">
+        <div class="gauge-fill"></div><div class="gauge-ticks"></div>
+      </div>
+      <div class="gauge-count" id="gaugeCount">0 / 10</div>
+      <div class="gauge-caption" id="gaugeCaption"></div>
+      <button type="button" class="ghost" id="btnFireworks">🎆 Rejouer</button>
+    </aside>
+  </div>
   <div class="quest-layout">
 
     <div class="panel">
-      <div class="panel-title">Progression</div>
-      <div class="quest-score" id="questScore"></div>
+      <button type="button" class="quest-levels-toggle" id="btnToggleQuestLevels">Voir le détail des 10 missions ▾</button>
       <div class="quest-levels" id="questLevels"></div>
       <div style="padding:6px 12px 12px;">
         <button class="ghost" id="btnResetQuest">↺ Recommencer la quête</button>
@@ -774,6 +1019,60 @@
   </div>
 </div>
 
+<div id="tabApropos" class="tab-panel" style="display:none;">
+  <div class="about-wrap">
+    <div class="about-grid">
+      <div class="panel about-card">
+        <h2>Olivier Faure</h2>
+        <div class="about-role">Formateur et concepteur pédagogique indépendant · fondateur de Data Unchained</div>
+        <p>Je forme les équipes à exploiter leurs données et leurs outils du quotidien, avec une idée fixe : <b>apprendre en manipulant</b>. Pas de cours magistral, des exercices concrets, des analogies simples et des outils interactifs comme celui que tu utilises en ce moment.</p>
+        <p>Je réponds aussi à des missions freelance autour de la donnée et d'Excel : développement de fichiers, automatisation, tableaux de bord.</p>
+        <h3>Ce que je propose</h3>
+        <ul>
+          <li><b>Power BI</b> : modélisation, DAX, rapports et tableaux de bord</li>
+          <li><b>Excel</b> : formules avancées, tableaux croisés dynamiques, automatisation</li>
+          <li><b>SQL</b> : interroger et analyser des bases de données, des premiers pas aux requêtes avancées</li>
+          <li><b>Analyse de données</b> : de la donnée brute à la décision</li>
+          <li><b>IA générative et prompt engineering</b> : bien utiliser l'IA au travail</li>
+          <li><b>Outils bureautiques</b> : gagner du temps au quotidien</li>
+          <li><b>Outils pédagogiques interactifs</b> : sur mesure, utilisables hors ligne dans un simple navigateur</li>
+        </ul>
+        <h3>Repères</h3>
+        <div class="tag-row"><span class="tag">Certifié Power BI PL-300 (2025)</span><span class="tag">Titre RNCP niveau 6 Data Analyst (2023)</span><span class="tag">Entreprises et secteur aéronautique</span></div>
+      </div>
+      <div class="panel about-card">
+        <h2>Data Unchained</h2>
+        <div class="about-role">Formation et conseil en données, Excel et IA</div>
+        <p>Data Unchained, c'est l'enseigne sous laquelle je conçois et anime mes formations. Le nom dit l'ambition : libérer la donnée de sa complexité pour que chacun puisse s'en servir sans peur.</p>
+        <h3>Me retrouver</h3>
+        <div class="about-links">
+          <a class="about-link" href="https://www.linkedin.com/in/olivier-faure-35303743" target="_blank" rel="noopener noreferrer"><svg class="about-ico" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="6" fill="#0A66C2"/><text x="17" y="24" font-size="18" font-weight="700" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif">in</text></svg><span>LinkedIn<small>Mon profil professionnel</small></span></a>
+          <a class="about-link" href="https://www.youtube.com/@data-unchained" target="_blank" rel="noopener noreferrer"><svg class="about-ico" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="6" width="32" height="22" rx="7" fill="#E62117"/><path d="M14 12 L23 17 L14 22 Z" fill="#fff"/></svg><span>YouTube<small>La chaîne Data Unchained</small></span></a>
+        </div>
+        <h3>Une version sur mesure pour ton entreprise ?</h3>
+        <p>Cet outil peut être adapté à ton contexte : tes propres données, ton vocabulaire métier, ta charte graphique, d'autres notions à travailler. Si tu veux une version custom pour tes équipes, écris-moi, on en discute.</p>
+        <div class="about-links">
+          <a class="about-link" href="mailto:olivier.faure@dataunchained.fr"><svg class="about-ico" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="6" fill="#175B36"/><rect x="7" y="10" width="20" height="14" rx="2" fill="none" stroke="#fff" stroke-width="1.8"/><path d="M8 12 L17 19 L26 12" fill="none" stroke="#F3D163" stroke-width="1.8" stroke-linejoin="round"/></svg><span>E-mail<small>olivier.faure@dataunchained.fr</small></span></a>
+        </div>
+        <p style="margin-top:12px;font-size:12px;color:var(--text-secondary);">Les liens LinkedIn et YouTube s'ouvrent dans un nouvel onglet et demandent une connexion internet. Le reste de l'outil fonctionne entièrement hors ligne.</p>
+      </div>
+    </div>
+    <div class="panel energy-card">
+      <h2>🔋 Combien d'énergie pour créer cet outil avec l'IA ?</h2>
+      <p>Ce bac à sable a été conçu en échangeant avec une IA (Claude), sur plusieurs dizaines d'allers-retours : écriture du code, tests automatiques, corrections. Chaque échange mobilise des serveurs, donc de l'électricité. Voici un ordre de grandeur, pour garder à l'esprit que l'IA n'est pas « gratuite » côté énergie.</p>
+      <div class="energy-tiles">
+        <div class="energy-tile"><b>≈ 0,2 kWh</b><span>estimation pour toute la session (fourchette : 0,08 à 0,7 kWh)</span></div>
+        <div class="energy-tile"><b>≈ 2,5 h</b><span>de streaming vidéo (fourchette : 1 h à 9 h), sur la base d'environ 0,08 kWh par heure (référence IEA : serveurs, réseau et écran)</span></div>
+      </div>
+      <p class="energy-note">💡 À prendre comme un ordre de grandeur, pas comme une mesure : le fournisseur ne publie pas de consommation précise par échange. Le calcul s'appuie sur environ 0,3 Wh pour une requête texte courte (estimations publiques), multiplié ici par 1 à 3 Wh par appel, car chaque appel relit un gros fichier. L'entraînement du modèle et la fabrication du matériel ne sont pas comptés.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Notes de version · Bac à sable DAX</div>
+      <ul class="release-list" id="releaseList"></ul>
+    </div>
+  </div>
+</div>
+
 <footer>Data Unchained · Bac à sable DAX · <span id="appVersion"></span><br>Application 100% locale : aucune donnée n'est envoyée ni réutilisée, tout se calcule dans ton navigateur.</footer>
 
 <script>
@@ -782,28 +1081,135 @@
    ========================================================= */
 // Numéro de version de l'outil : à incrémenter à chaque évolution notable
 // (voir l'historique en commentaire tout en haut du fichier).
-const APP_VERSION = '1.6.0';
-const TABLE_NAME = "Depenses";
-const table = [
-  {Departement:"Operations",    Projet:"Maintenance Site A",      Montant_EUR:45230, Budget_Projet_EUR:50000, Date:"2025-01-15", Region:"Paris"},
-  {Departement:"HSE",           Projet:"Audit Sécurité Q1",       Montant_EUR:12800, Budget_Projet_EUR:15000, Date:"2025-01-22", Region:"Lyon"},
-  {Departement:"IT",            Projet:"Migration ERP",           Montant_EUR:98750, Budget_Projet_EUR:90000, Date:"2025-02-03", Region:"Paris"},
-  {Departement:"Renouvelables", Projet:"Parc Solaire Sud",        Montant_EUR:210400, Budget_Projet_EUR:250000, Date:"2025-02-11", Region:"Toulouse"},
-  {Departement:"Exploration",   Projet:"Étude Sismique Offshore", Montant_EUR:156300, Budget_Projet_EUR:140000, Date:"2025-02-19", Region:"Lyon"},
-  {Departement:"Operations",    Projet:"Rénovation Ligne 2",      Montant_EUR:38900, Budget_Projet_EUR:45000, Date:"2025-03-02", Region:"Paris"},
-  {Departement:"HSE",           Projet:"Formation Incendie",      Montant_EUR:6200,  Budget_Projet_EUR:8000,  Date:"2025-03-10", Region:"Toulouse"},
-  {Departement:"IT",            Projet:"Cybersécurité Phase 2",   Montant_EUR:54000, Budget_Projet_EUR:60000, Date:"2025-03-18", Region:"Lyon"},
-  {Departement:"Renouvelables", Projet:"Éolien Offshore Nord",    Montant_EUR:312000, Budget_Projet_EUR:300000, Date:"2025-03-27", Region:"Paris"},
-  {Departement:"Exploration",   Projet:"Forage Test Bloc 4",      Montant_EUR:87400, Budget_Projet_EUR:95000, Date:"2026-01-05", Region:"Toulouse"},
-  {Departement:"Operations",    Projet:"Optimisation Réseau",     Montant_EUR:29500, Budget_Projet_EUR:28000, Date:"2026-01-14", Region:"Lyon"},
-  {Departement:"IT",            Projet:"Refonte Intranet",        Montant_EUR:21300, Budget_Projet_EUR:25000, Date:"2026-01-20", Region:"Paris"},
-];
+const APP_VERSION = '1.7.0';
 
-const columnTypes = {
-  Departement:"txt", Projet:"txt", Montant_EUR:"num",
-  Budget_Projet_EUR:"num", Date:"date", Region:"txt"
+// Trois thèmes de données fictives, au choix (sélecteur "Thème" dans Bac à sable et
+// Cartographie). Les rôles (roles) permettent au moteur, aux exemples des fiches et à DAX
+// Quest de rester génériques : "amount"/"amount2" = les deux colonnes numériques à agréger,
+// "cat" = la colonne texte utile pour grouper/filtrer, "id" = la colonne texte presque unique,
+// "date" = la colonne date. vocab fournit les mots utilisés dans les énoncés de DAX Quest.
+const SCENARIOS = {
+  depenses: {
+    id:"depenses", label:"Achats", icon:"🧾", tableName:"Depenses",
+    roles:{ amount:"Montant_EUR", amount2:"Budget_Projet_EUR", cat:"Departement", id:"Projet", date:"Date" },
+    vocab:{ itemPlural:"projets", amountLabel:"montant dépensé", amount2Label:"budget alloué", catLabel:"département", catPlural:"départements" },
+    columnTypes:{ Departement:"txt", Projet:"txt", Montant_EUR:"num", Budget_Projet_EUR:"num", Date:"date", Region:"txt" },
+    fieldDescriptions:{
+      Departement:"Département auquel appartient le projet.",
+      Projet:"Nom du projet concerné par la dépense.",
+      Montant_EUR:"Montant réellement dépensé pour le projet.",
+      Budget_Projet_EUR:"Budget initialement alloué au projet.",
+      Date:"Date d'engagement de la dépense.",
+      Region:"Région administrative du site concerné.",
+    },
+    currencyFields:["Montant_EUR","Budget_Projet_EUR"],
+    intro:"Avant de croiser les champs, voici la table sur laquelle repose tout l'outil : une liste fictive de dépenses de projets, avec ses 6 champs. Les champs texte (T) servent surtout à filtrer ou à croiser un graphique ; les champs numériques (#) servent surtout à être agrégés dans une formule DAX.",
+    questIntro:"Tu viens de rejoindre l'équipe finance. Ta direction veut un premier tableau de bord simple sur les dépenses de projets : à toi de construire les indicateurs, une mesure DAX à la fois.",
+    data:[
+      {Departement:"Operations",    Projet:"Maintenance Site A",      Montant_EUR:45230, Budget_Projet_EUR:50000, Date:"2025-01-15", Region:"Paris"},
+      {Departement:"HSE",           Projet:"Audit Sécurité Q1",       Montant_EUR:12800, Budget_Projet_EUR:15000, Date:"2025-01-22", Region:"Lyon"},
+      {Departement:"IT",            Projet:"Migration ERP",           Montant_EUR:98750, Budget_Projet_EUR:90000, Date:"2025-02-03", Region:"Paris"},
+      {Departement:"Renouvelables", Projet:"Parc Solaire Sud",        Montant_EUR:210400, Budget_Projet_EUR:250000, Date:"2025-02-11", Region:"Toulouse"},
+      {Departement:"Exploration",   Projet:"Étude Sismique Offshore", Montant_EUR:156300, Budget_Projet_EUR:140000, Date:"2025-02-19", Region:"Lyon"},
+      {Departement:"Operations",    Projet:"Rénovation Ligne 2",      Montant_EUR:38900, Budget_Projet_EUR:45000, Date:"2025-03-02", Region:"Paris"},
+      {Departement:"HSE",           Projet:"Formation Incendie",      Montant_EUR:6200,  Budget_Projet_EUR:8000,  Date:"2025-03-10", Region:"Toulouse"},
+      {Departement:"IT",            Projet:"Cybersécurité Phase 2",   Montant_EUR:54000, Budget_Projet_EUR:60000, Date:"2025-03-18", Region:"Lyon"},
+      {Departement:"Renouvelables", Projet:"Éolien Offshore Nord",    Montant_EUR:312000, Budget_Projet_EUR:300000, Date:"2025-03-27", Region:"Paris"},
+      {Departement:"Exploration",   Projet:"Forage Test Bloc 4",      Montant_EUR:87400, Budget_Projet_EUR:95000, Date:"2026-01-05", Region:"Toulouse"},
+      {Departement:"Operations",    Projet:"Optimisation Réseau",     Montant_EUR:29500, Budget_Projet_EUR:28000, Date:"2026-01-14", Region:"Lyon"},
+      {Departement:"IT",            Projet:"Refonte Intranet",        Montant_EUR:21300, Budget_Projet_EUR:25000, Date:"2026-01-20", Region:"Paris"},
+    ],
+  },
+  rh: {
+    id:"rh", label:"RH", icon:"🧑‍💼", tableName:"Salaries",
+    roles:{ amount:"Salaire_Brut_EUR", amount2:"Prime_Annuelle_EUR", cat:"Service", id:"Poste", date:"Date_Embauche" },
+    vocab:{ itemPlural:"salariés", amountLabel:"salaire brut annuel", amount2Label:"prime annuelle", catLabel:"service", catPlural:"services" },
+    columnTypes:{ Service:"txt", Poste:"txt", Salaire_Brut_EUR:"num", Prime_Annuelle_EUR:"num", Date_Embauche:"date", Site:"txt" },
+    fieldDescriptions:{
+      Service:"Service auquel appartient le salarié.",
+      Poste:"Intitulé du poste occupé.",
+      Salaire_Brut_EUR:"Salaire brut annuel du salarié.",
+      Prime_Annuelle_EUR:"Prime annuelle versée au salarié.",
+      Date_Embauche:"Date d'entrée dans l'entreprise.",
+      Site:"Site géographique de rattachement.",
+    },
+    currencyFields:["Salaire_Brut_EUR","Prime_Annuelle_EUR"],
+    intro:"Voici la table du thème RH : une liste fictive de salariés, avec ses 6 champs. Les champs texte (T) servent surtout à filtrer ou à croiser un graphique ; les champs numériques (#) servent surtout à être agrégés dans une formule DAX.",
+    questIntro:"Tu intègres l'équipe RH. Avant le prochain comité de direction, on te demande quelques indicateurs simples sur les salaires et les effectifs par service.",
+    data:[
+      {Service:"Commercial", Poste:"Chargé de clientèle",    Salaire_Brut_EUR:32000, Prime_Annuelle_EUR:2400, Date_Embauche:"2021-03-10", Site:"Lyon"},
+      {Service:"IT",         Poste:"Développeur",            Salaire_Brut_EUR:41000, Prime_Annuelle_EUR:1800, Date_Embauche:"2020-09-01", Site:"Paris"},
+      {Service:"RH",         Poste:"Chargé de recrutement",  Salaire_Brut_EUR:35000, Prime_Annuelle_EUR:1500, Date_Embauche:"2022-01-17", Site:"Paris"},
+      {Service:"Production", Poste:"Technicien de maintenance", Salaire_Brut_EUR:29500, Prime_Annuelle_EUR:1200, Date_Embauche:"2019-06-05", Site:"Toulouse"},
+      {Service:"Commercial", Poste:"Responsable grands comptes", Salaire_Brut_EUR:48000, Prime_Annuelle_EUR:5200, Date_Embauche:"2018-11-20", Site:"Lyon"},
+      {Service:"IT",         Poste:"Administrateur systèmes", Salaire_Brut_EUR:39500, Prime_Annuelle_EUR:2000, Date_Embauche:"2021-07-12", Site:"Lyon"},
+      {Service:"Production", Poste:"Chef d'équipe",          Salaire_Brut_EUR:36000, Prime_Annuelle_EUR:1900, Date_Embauche:"2017-02-28", Site:"Toulouse"},
+      {Service:"RH",         Poste:"Responsable paie",       Salaire_Brut_EUR:38500, Prime_Annuelle_EUR:1700, Date_Embauche:"2020-04-14", Site:"Paris"},
+      {Service:"Commercial", Poste:"Chargé de clientèle",    Salaire_Brut_EUR:31000, Prime_Annuelle_EUR:1600, Date_Embauche:"2023-02-06", Site:"Toulouse"},
+      {Service:"IT",         Poste:"Développeur",            Salaire_Brut_EUR:43500, Prime_Annuelle_EUR:2100, Date_Embauche:"2019-10-21", Site:"Paris"},
+      {Service:"Production", Poste:"Opérateur de production", Salaire_Brut_EUR:26500, Prime_Annuelle_EUR:900,  Date_Embauche:"2022-08-30", Site:"Lyon"},
+      {Service:"RH",         Poste:"Chargé de formation",    Salaire_Brut_EUR:33500, Prime_Annuelle_EUR:1300, Date_Embauche:"2021-12-01", Site:"Toulouse"},
+    ],
+  },
+  hse: {
+    id:"hse", label:"HSE", icon:"🦺", tableName:"Incidents",
+    roles:{ amount:"Cout_EUR", amount2:"Duree_Arret_H", cat:"Site", id:"Type_Incident", date:"Date" },
+    vocab:{ itemPlural:"incidents", amountLabel:"coût de l'incident", amount2Label:"durée d'arrêt (en heures)", catLabel:"site", catPlural:"sites" },
+    columnTypes:{ Site:"txt", Type_Incident:"txt", Cout_EUR:"num", Duree_Arret_H:"num", Date:"date", Gravite:"txt" },
+    fieldDescriptions:{
+      Site:"Site sur lequel l'incident s'est produit.",
+      Type_Incident:"Nature de l'incident déclaré.",
+      Cout_EUR:"Coût estimé de l'incident (soins, réparation, arrêt de production...).",
+      Duree_Arret_H:"Durée d'arrêt de l'activité causée par l'incident, en heures.",
+      Date:"Date de déclaration de l'incident.",
+      Gravite:"Niveau de gravité attribué à l'incident.",
+    },
+    currencyFields:["Cout_EUR"],
+    intro:"Voici la table du thème HSE (Hygiène, Sécurité, Environnement) : une liste fictive d'incidents déclarés, avec ses 6 champs. Les champs texte (T) servent surtout à filtrer ou à croiser un graphique ; les champs numériques (#) servent surtout à être agrégés dans une formule DAX.",
+    questIntro:"Tu rejoins le service HSE. Objectif : construire les premiers indicateurs de suivi des incidents, pour mieux piloter la prévention sur les sites.",
+    data:[
+      {Site:"Lyon",     Type_Incident:"Chute de plain-pied",   Cout_EUR:1200, Duree_Arret_H:4,  Date:"2025-01-18", Gravite:"Mineure"},
+      {Site:"Paris",    Type_Incident:"Presqu'accident",       Cout_EUR:0,    Duree_Arret_H:0,  Date:"2025-02-02", Gravite:"Mineure"},
+      {Site:"Toulouse", Type_Incident:"Coupure outillage",     Cout_EUR:850,  Duree_Arret_H:2,  Date:"2025-02-14", Gravite:"Mineure"},
+      {Site:"Lyon",     Type_Incident:"Fuite produit chimique",Cout_EUR:15400,Duree_Arret_H:36, Date:"2025-03-05", Gravite:"Majeure"},
+      {Site:"Paris",    Type_Incident:"Chute de hauteur",      Cout_EUR:8200, Duree_Arret_H:18, Date:"2025-03-22", Gravite:"Grave"},
+      {Site:"Toulouse", Type_Incident:"Incendie maîtrisé",     Cout_EUR:22000,Duree_Arret_H:48, Date:"2025-04-09", Gravite:"Majeure"},
+      {Site:"Lyon",     Type_Incident:"Presqu'accident",       Cout_EUR:0,    Duree_Arret_H:0,  Date:"2025-05-01", Gravite:"Mineure"},
+      {Site:"Paris",    Type_Incident:"Coupure outillage",     Cout_EUR:600,  Duree_Arret_H:1,  Date:"2025-05-19", Gravite:"Mineure"},
+      {Site:"Toulouse", Type_Incident:"Troubles musculosquelettiques", Cout_EUR:3100, Duree_Arret_H:72, Date:"2025-06-11", Gravite:"Grave"},
+      {Site:"Lyon",     Type_Incident:"Chute de plain-pied",   Cout_EUR:950,  Duree_Arret_H:3,  Date:"2025-07-24", Gravite:"Mineure"},
+      {Site:"Paris",    Type_Incident:"Fuite produit chimique",Cout_EUR:9800, Duree_Arret_H:24, Date:"2026-01-08", Gravite:"Majeure"},
+      {Site:"Toulouse", Type_Incident:"Presqu'accident",       Cout_EUR:0,    Duree_Arret_H:0,  Date:"2026-01-20", Gravite:"Mineure"},
+    ],
+  },
 };
-const columns = Object.keys(columnTypes);
+const DEFAULT_SCENARIO_ID = "depenses";
+let currentScenarioId = DEFAULT_SCENARIO_ID;
+
+// Globaux mutables : repointés vers le thème actif par applyScenario(). Le moteur DAX
+// (section 2), l'autocomplétion, la Cartographie et DAX Quest lisent toujours ces variables,
+// jamais directement SCENARIOS[...].
+let TABLE_NAME = SCENARIOS[DEFAULT_SCENARIO_ID].tableName;
+let table = SCENARIOS[DEFAULT_SCENARIO_ID].data;
+let columnTypes = SCENARIOS[DEFAULT_SCENARIO_ID].columnTypes;
+let columns = Object.keys(columnTypes);
+let activeRoles = SCENARIOS[DEFAULT_SCENARIO_ID].roles;
+let activeVocab = SCENARIOS[DEFAULT_SCENARIO_ID].vocab;
+let FIELD_DESCRIPTIONS = SCENARIOS[DEFAULT_SCENARIO_ID].fieldDescriptions;
+let CARTO_CURRENCY_FIELDS = SCENARIOS[DEFAULT_SCENARIO_ID].currencyFields;
+
+// Remplace les jetons {T}/{A}/{A2}/{C}/{ID}/{D} d'un exemple de fiche fonction par les vrais
+// noms de table/colonnes du thème actif, pour que les exemples restent valides quel que soit
+// le thème choisi.
+function resolveTpl(s){
+  return s
+    .replace(/\{T\}/g, TABLE_NAME)
+    .replace(/\{A2\}/g, activeRoles.amount2)
+    .replace(/\{A\}/g, activeRoles.amount)
+    .replace(/\{C\}/g, activeRoles.cat)
+    .replace(/\{ID\}/g, activeRoles.id)
+    .replace(/\{D\}/g, activeRoles.date);
+}
 
 /* =========================================================
    2. MOTEUR DAX SIMPLIFIÉ (tokenizer + parser + évaluateur)
@@ -905,8 +1311,8 @@ class Parser{
     if(this.isOp('(')){ this.next(); const inner=this.parseComparison(); this.expectOp(')'); return inner; }
     if(t.type==='IDENT'){
       const raw = t.value; const name = raw.toUpperCase(); this.next();
-      if(name==='TRUE') return {type:'Bool', value:true};
-      if(name==='FALSE') return {type:'Bool', value:false};
+      if(name==='TRUE'){ if(this.isOp('(')){ this.next(); this.expectOp(')'); } return {type:'Bool', value:true}; }
+      if(name==='FALSE'){ if(this.isOp('(')){ this.next(); this.expectOp(')'); } return {type:'Bool', value:false}; }
       if(name==='BLANK'){ this.expectOp('('); this.expectOp(')'); return {type:'Blank'}; }
       if(this.isOp('(')){
         this.next();
@@ -945,6 +1351,24 @@ function requireColumnArg(node, fnName){
     throw new Error(`${fnName} attend directement une colonne de table, par exemple ${fnName}([Montant_EUR]).`);
   }
   return node.name;
+}
+
+// Convertit une valeur DAX (nombre, texte, date-texte, booléen, vide) en texte, comme le fait
+// implicitement DAX dans les fonctions de texte.
+function toText(v){
+  if(v === null || v === undefined) return '';
+  if(typeof v === 'boolean') return v ? 'VRAI' : 'FAUX';
+  return String(v);
+}
+
+// Extrait l'année ou le mois d'une date stockée comme texte "AAAA-MM-JJ" (format de la colonne
+// Date de ce bac à sable). Accepte aussi un objet Date JS, pour rester robuste.
+function dateParts(v, fnName){
+  if(v === null || v === undefined) throw new Error(`${fnName} attend une date, pas une valeur vide.`);
+  const s = String(v);
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if(!m) throw new Error(`${fnName} attend une date au format AAAA-MM-JJ, comme dans la colonne [Date]. Reçu : "${s}".`);
+  return { year: parseInt(m[1],10), month: parseInt(m[2],10), day: parseInt(m[3],10) };
 }
 
 function evalNode(node, ctx){
@@ -1026,6 +1450,15 @@ function evalCall(node, ctx){
       if(vals.length===0) return null;
       return vals.every(v=>typeof v==='number') ? Math.max(...vals) : vals.slice().sort().slice(-1)[0];
     }
+    case 'MEDIAN': {
+      const col = requireColumnArg(args[0], 'MEDIAN');
+      const vals = colValues(col, ctx);
+      if(vals.some(v => typeof v !== 'number')) throw new Error(`[${col}] contient du texte : impossible de calculer une médiane.`);
+      if(vals.length===0) return null;
+      const sorted = vals.slice().sort((a,b)=>a-b);
+      const mid = Math.floor(sorted.length/2);
+      return sorted.length % 2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
+    }
     case 'COUNT': {
       const col = requireColumnArg(args[0], 'COUNT');
       return colValues(col, ctx).length;
@@ -1066,6 +1499,24 @@ function evalCall(node, ctx){
       if(args.length !== 1) throw new Error("NOT attend exactement 1 argument.");
       return !evalNode(args[0], ctx);
     }
+    case 'ISBLANK': {
+      if(args.length !== 1) throw new Error("ISBLANK attend exactement 1 argument.");
+      const v = evalNode(args[0], ctx);
+      return v === null || v === undefined;
+    }
+    case 'SWITCH': {
+      if(args.length < 3) throw new Error("SWITCH attend au moins 3 arguments : SWITCH(expression, valeur1, résultat1, [valeur2, résultat2, ...], [résultat par défaut]).");
+      const expr = evalNode(args[0], ctx);
+      let i = 1;
+      while(i + 1 < args.length){
+        const val = evalNode(args[i], ctx);
+        if(expr === val) return evalNode(args[i+1], ctx);
+        i += 2;
+      }
+      // nombre impair d'arguments restants -> le dernier est le résultat par défaut
+      if(i < args.length) return evalNode(args[i], ctx);
+      return null;
+    }
     case 'ROUND': {
       if(args.length !== 2) throw new Error("ROUND attend 2 arguments : ROUND(nombre, nombre de décimales).");
       const v = num(evalNode(args[0], ctx));
@@ -1077,10 +1528,38 @@ function evalCall(node, ctx){
       if(args.length !== 1) throw new Error("ABS attend exactement 1 argument.");
       return Math.abs(num(evalNode(args[0], ctx)));
     }
+    case 'CONCATENATE': {
+      if(args.length !== 2) throw new Error("CONCATENATE attend exactement 2 arguments : CONCATENATE(texte1, texte2).");
+      return toText(evalNode(args[0], ctx)) + toText(evalNode(args[1], ctx));
+    }
+    case 'UPPER': {
+      if(args.length !== 1) throw new Error("UPPER attend exactement 1 argument.");
+      return toText(evalNode(args[0], ctx)).toUpperCase();
+    }
+    case 'LOWER': {
+      if(args.length !== 1) throw new Error("LOWER attend exactement 1 argument.");
+      return toText(evalNode(args[0], ctx)).toLowerCase();
+    }
+    case 'LEN': {
+      if(args.length !== 1) throw new Error("LEN attend exactement 1 argument.");
+      return toText(evalNode(args[0], ctx)).length;
+    }
+    case 'YEAR': {
+      if(args.length !== 1) throw new Error("YEAR attend exactement 1 argument : une date.");
+      const v = evalNode(args[0], ctx);
+      if(v === null) return null;
+      return dateParts(v, 'YEAR').year;
+    }
+    case 'MONTH': {
+      if(args.length !== 1) throw new Error("MONTH attend exactement 1 argument : une date.");
+      const v = evalNode(args[0], ctx);
+      if(v === null) return null;
+      return dateParts(v, 'MONTH').month;
+    }
     case 'CALCULATE':
       throw new Error("CALCULATE n'est pas encore au programme à ce niveau, on la découvrira plus tard 😉");
     default:
-      throw new Error(`La fonction ${name} n'est pas disponible dans ce bac à sable. Fonctions dispo : SUM, AVERAGE, MIN, MAX, COUNT, COUNTROWS, DISTINCTCOUNT, DIVIDE, IF, AND, OR, NOT, ROUND, ABS, BLANK.`);
+      throw new Error(`La fonction ${name} n'est pas disponible dans ce bac à sable. Fonctions dispo : SUM, AVERAGE, MEDIAN, MIN, MAX, COUNT, COUNTROWS, DISTINCTCOUNT, DIVIDE, IF, SWITCH, AND, OR, NOT, ISBLANK, ROUND, ABS, CONCATENATE, UPPER, LOWER, LEN, YEAR, MONTH, BLANK.`);
   }
 }
 
@@ -1148,8 +1627,12 @@ const axisRow = document.getElementById('axisRow');
 const axisSelect = document.getElementById('axisSelect');
 
 let visualType = 'card'; // 'card' | 'chart'
-const axisColumns = columns.filter(c => columnTypes[c] === 'txt');
-axisSelect.innerHTML = axisColumns.map(c => `<option value="${c}">${c}</option>`).join('');
+let axisColumns = [];
+function populateAxisSelect(){
+  axisColumns = columns.filter(c => columnTypes[c] === 'txt');
+  axisSelect.innerHTML = axisColumns.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+populateAxisSelect();
 
 document.getElementById('btnTypeCard').addEventListener('click', () => setVisualType('card'));
 document.getElementById('btnTypeChart').addEventListener('click', () => setVisualType('chart'));
@@ -1210,7 +1693,36 @@ function insertAtCursor(text){
    Fabrique générique : réutilisable pour n'importe quel champ
    (barre de formule du bac à sable, champ de DAX Quest...)
    ========================================================= */
-const FUNCTION_NAMES = ['SUM','AVERAGE','COUNT','COUNTROWS','MIN','MAX','DISTINCTCOUNT','DIVIDE','IF','AND','OR','NOT','ROUND','ABS','BLANK'];
+const FUNCTION_NAMES = ['SUM','AVERAGE','MEDIAN','COUNT','COUNTROWS','MIN','MAX','DISTINCTCOUNT','DIVIDE','IF','SWITCH','AND','OR','NOT','ISBLANK','ROUND','ABS','CONCATENATE','UPPER','LOWER','LEN','YEAR','MONTH','BLANK'];
+
+// Petit résumé syntaxe + description pour l'info-bulle affichée dans l'autocomplétion
+// quand on survole ou sélectionne une fonction (voir createAutocomplete / .ac-tip).
+const FUNC_TOOLTIPS = {
+  SUM:          { sig:"SUM([Colonne])",                  desc:"Additionne une colonne numérique." },
+  AVERAGE:      { sig:"AVERAGE([Colonne])",               desc:"Calcule la moyenne d'une colonne numérique." },
+  MEDIAN:       { sig:"MEDIAN([Colonne])",                desc:"Renvoie la valeur médiane (celle du milieu)." },
+  COUNT:        { sig:"COUNT([Colonne])",                 desc:"Compte les valeurs non vides d'une colonne." },
+  COUNTROWS:    { sig:"COUNTROWS()",                      desc:"Compte le nombre de lignes de la table." },
+  MIN:          { sig:"MIN([Colonne])",                   desc:"Renvoie la plus petite valeur." },
+  MAX:          { sig:"MAX([Colonne])",                   desc:"Renvoie la plus grande valeur." },
+  DISTINCTCOUNT:{ sig:"DISTINCTCOUNT([Colonne])",          desc:"Compte les valeurs différentes, sans les doublons." },
+  DIVIDE:       { sig:"DIVIDE(a, b, [alt])",               desc:"Division sécurisée : évite l'erreur si b = 0." },
+  IF:           { sig:"IF(cond, si_vrai, [si_faux])",      desc:"Renvoie une valeur selon une condition." },
+  SWITCH:       { sig:"SWITCH(expr, val1, res1, ...)",     desc:"Compare une expression à une liste de valeurs." },
+  AND:          { sig:"AND(a, b)",                         desc:"Vrai si les deux conditions sont vraies." },
+  OR:           { sig:"OR(a, b)",                          desc:"Vrai si au moins une condition est vraie." },
+  NOT:          { sig:"NOT(cond)",                         desc:"Inverse une condition (vrai devient faux)." },
+  ISBLANK:      { sig:"ISBLANK(valeur)",                   desc:"Teste si une valeur est vide." },
+  ROUND:        { sig:"ROUND(nombre, décimales)",          desc:"Arrondit un nombre." },
+  ABS:          { sig:"ABS(nombre)",                       desc:"Valeur absolue." },
+  CONCATENATE:  { sig:"CONCATENATE(texte1, texte2)",       desc:"Assemble deux textes en un seul." },
+  UPPER:        { sig:"UPPER(texte)",                      desc:"Met un texte tout en majuscules." },
+  LOWER:        { sig:"LOWER(texte)",                      desc:"Met un texte tout en minuscules." },
+  LEN:          { sig:"LEN(texte)",                        desc:"Compte le nombre de caractères d'un texte." },
+  YEAR:         { sig:"YEAR(date)",                        desc:"Extrait l'année d'une date." },
+  MONTH:        { sig:"MONTH(date)",                       desc:"Extrait le mois d'une date." },
+  BLANK:        { sig:"BLANK()",                           desc:"Représente une valeur vide." },
+};
 
 function computeWordAt(text, pos){
   const insideBrackets = text.lastIndexOf('[', pos-1) > text.lastIndexOf(']', pos-1);
@@ -1233,6 +1745,10 @@ function createAutocomplete(fieldEl, boxEl, getMeasures){
   function update(){
     const pos = fieldEl.selectionStart;
     const text = fieldEl.value;
+    // Aucune proposition tant que le nom de la mesure et le signe = ne sont pas saisis,
+    // et seulement une fois le curseur placé après ce premier =.
+    const eqIdx = text.indexOf('=');
+    if(eqIdx < 1 || text.slice(0, eqIdx).trim() === '' || pos <= eqIdx){ hide(); return; }
     const { start, end, word, insideBrackets } = computeWordAt(text, pos);
     // Hors crochets, un mot vide ne donne rien d'utile à proposer (comme avant).
     // Mais À L'INTÉRIEUR des crochets, même sans rien avoir tapé (juste après le "["),
@@ -1274,17 +1790,31 @@ function createAutocomplete(fieldEl, boxEl, getMeasures){
   function render(){
     if(state.items.length === 0){ boxEl.classList.remove('show'); boxEl.innerHTML=''; return; }
     const badgeChar = t => t==='func' ? 'fx' : t==='measure' ? '▤' : t==='table' ? '⊞' : '▥';
-    boxEl.innerHTML = state.items.map((it,i)=>`
+    const listHtml = state.items.map((it,i)=>`
       <div class="ac-item ${i===state.activeIndex?'active':''}" data-idx="${i}">
         <span class="ac-badge ac-${it.type}">${badgeChar(it.type)}</span>
         <span class="ac-label">${it.label}</span>
         <span class="ac-hint">${it.type==='func' ? 'fonction' : it.type==='measure' ? 'mesure' : it.type==='table' ? 'table' : 'colonne'}</span>
       </div>`).join('');
+    // Petite info-bulle d'usage : affichée pour la fonction actuellement sélectionnée
+    // (au clavier ou à la souris), en pied de liste pour ne pas faire bouger les lignes.
+    const activeItem = state.items[state.activeIndex];
+    const info = activeItem && activeItem.type==='func'
+      ? FUNC_TOOLTIPS[activeItem.insertName.replace('(','')]
+      : null;
+    const tipHtml = info
+      ? `<div class="ac-tip"><code>${info.sig}</code><span>${info.desc}</span></div>`
+      : '';
+    boxEl.innerHTML = `<div class="ac-list">${listHtml}</div>${tipHtml}`;
     boxEl.classList.add('show');
     boxEl.querySelectorAll('.ac-item').forEach(el=>{
       el.addEventListener('mousedown', (e)=>{
         e.preventDefault();
         accept(state.items[+el.dataset.idx]);
+      });
+      el.addEventListener('mouseenter', ()=>{
+        state.activeIndex = +el.dataset.idx;
+        render();
       });
     });
   }
@@ -1401,17 +1931,19 @@ function renderChartInto(barsEl, formula, axisField, measuresStore){
       throw new Error("Le graphique a besoin d'une formule qui renvoie un nombre pour chaque catégorie (ta formule renvoie du texte ou VRAI/FAUX ici). Utilise plutôt la carte pour ce type de résultat.");
     }
     const maxVal = Math.max(1, ...nonBlank.map(v => Math.abs(v)));
-    const barPalette = ['#20A264','#DDA40D','#F3D163','#B95E01'];
-    barsEl.innerHTML = points.map((p,i) => {
+    // Une seule couleur de marque pour toutes les barres : avec beaucoup de catégories
+    // (ex. un axe presque unique par ligne), cycler plusieurs couleurs donnait un effet
+    // "arc-en-ciel" confus. La couleur est posée en CSS (.chart-bar), ici on ne gère que
+    // le cas "valeur nulle" qui reste grisé via la classe .zero.
+    barsEl.innerHTML = points.map((p) => {
       const v = p.value;
       const isZero = v === null || v === undefined || v === 0;
       const heightPct = isZero ? 1 : Math.max(2, Math.round((Math.abs(v) / maxVal) * 100));
       const {text} = formatResult(v);
       const safeCat = String(p.cat).replace(/</g,'&lt;');
-      const color = barPalette[i % barPalette.length];
       return `<div class="chart-col" title="${safeCat} : ${text}">
         <div class="chart-bar-value">${text}</div>
-        <div class="chart-bar ${isZero?'zero':''}" style="height:${heightPct}%; background:${color};"></div>
+        <div class="chart-bar ${isZero?'zero':''}" style="height:${heightPct}%;"></div>
         <div class="chart-col-label">${safeCat}</div>
       </div>`;
     }).join('');
@@ -1451,6 +1983,18 @@ function evaluateChart(formula, label){
 }
 
 document.getElementById('btnValider').addEventListener('click', evaluate);
+
+/* Bandeau "Comment ça marche" : repliable sur 2 lignes, "Afficher plus / moins" */
+(function(){
+  const note = document.getElementById('scopeNote');
+  const btn = document.getElementById('btnScopeNoteToggle');
+  if(note && btn){
+    btn.addEventListener('click', ()=>{
+      const open = note.classList.toggle('expanded');
+      btn.textContent = open ? 'Afficher moins ▴' : 'Afficher plus ▾';
+    });
+  }
+})();
 
 const autocompleteBox = document.getElementById('autocompleteBox');
 const sandboxAC = createAutocomplete(formulaInput, autocompleteBox, () => savedMeasures);
@@ -1502,7 +2046,7 @@ function renderPreview(){
 previewToggle.addEventListener('click', ()=>{
   previewOpen = !previewOpen;
   previewWrap.classList.toggle('open', previewOpen);
-  previewToggle.textContent = (previewOpen ? '▾ ' : '▸ ') + 'Afficher les données de la table Depenses';
+  previewToggle.textContent = (previewOpen ? '▾ ' : '▸ ') + 'Afficher les données de la table ' + TABLE_NAME;
 });
 
 /* =========================================================
@@ -1512,7 +2056,7 @@ const funcGroups = [
   { label:"Agrégations simples", items:[
     { n:"SUM([Colonne])", d:"Additionne une colonne numérique.",
       long:"SUM fait exactement ce que tu ferais avec une calculatrice et une pile de tickets de caisse : elle additionne chaque valeur, une par une, jusqu'au total. Elle ne fonctionne que sur des colonnes de nombres.",
-      example:"SUM(Depenses[Montant_EUR])",
+      example:"SUM({T}[{A}])",
       tip:"Sur une colonne de texte comme Departement, DAX refusera : il n'y a rien à additionner.",
       excel:"Équivalent à SOMME() en Excel, par exemple SOMME(A2:A100). La différence : en DAX, tu donnes une colonne entière, pas une plage de cellules.",
       useCase:"utile pour un total simple : chiffre d'affaires total, quantité totale vendue, effectif total d'une équipe.",
@@ -1520,7 +2064,7 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/sum-function-dax" },
     { n:"AVERAGE([Colonne])", d:"Calcule la moyenne d'une colonne numérique.",
       long:"AVERAGE calcule la moyenne, comme quand tu partages une note de restaurant entre convives : elle additionne tout, puis divise par le nombre de lignes.",
-      example:"AVERAGE(Depenses[Montant_EUR])",
+      example:"AVERAGE({T}[{A}])",
       tip:"Les lignes vides ne comptent pas : la moyenne ne porte que sur les valeurs réellement renseignées.",
       excel:"Équivalent à MOYENNE() en Excel. Même logique : la somme divisée par le nombre de valeurs renseignées.",
       useCase:"utile pour un panier moyen, une note moyenne, un délai moyen de traitement.",
@@ -1528,7 +2072,7 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/average-function-dax" },
     { n:"COUNT([Colonne])", d:"Compte les valeurs non vides d'une colonne.",
       long:"COUNT compte les cases remplies d'une colonne, un peu comme compter le nombre de tickets dans une pile sans regarder ce qu'il y a dessus.",
-      example:"COUNT(Depenses[Montant_EUR])",
+      example:"COUNT({T}[{A}])",
       tip:"Pour compter toutes les lignes peu importe leur contenu, utilise plutôt COUNTROWS.",
       excel:"Proche de NB() en Excel, qui compte les cellules contenant un nombre dans une plage donnée.",
       useCase:"utile pour savoir combien de lignes ont une valeur renseignée dans une colonne précise, par exemple combien de commandes ont un montant facturé.",
@@ -1536,7 +2080,7 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/count-function-dax" },
     { n:"COUNTROWS()", d:"Compte le nombre de lignes de la table.",
       long:"COUNTROWS compte le nombre de lignes d'une table, comme compter le nombre de dossiers dans un classeur sans les ouvrir.",
-      example:"COUNTROWS(Depenses)",
+      example:"COUNTROWS({T})",
       tip:"Contrairement à COUNT, elle ne regarde pas une colonne en particulier : elle compte les lignes, point final.",
       excel:"Pas d'équivalent direct en Excel classique : on s'approcherait avec LIGNES() sur un tableau structuré, ou NBVAL() sur une colonne clé toujours renseignée.",
       useCase:"utile pour un indicateur du type « nombre de commandes » ou « nombre de clients actifs », peu importe le contenu des colonnes.",
@@ -1544,7 +2088,7 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/countrows-function-dax" },
     { n:"DISTINCTCOUNT([Colonne])", d:"Compte les valeurs différentes d'une colonne, sans les doublons.",
       long:"DISTINCTCOUNT compte le nombre de valeurs différentes, sans les doublons. Un peu comme compter le nombre de départements représentés dans une liste de projets, même si un même département revient plusieurs fois.",
-      example:"DISTINCTCOUNT(Depenses[Departement])",
+      example:"DISTINCTCOUNT({T}[{C}])",
       tip:"Une valeur vide compte comme une valeur à part entière dans le décompte.",
       excel:"Pas d'équivalent direct dans une formule Excel classique : le plus proche est l'option « Nombre de valeurs distinctes » d'un tableau croisé dynamique connecté au modèle de données.",
       useCase:"utile pour savoir combien de clients différents, ou combien de départements représentés, sans compter les doublons.",
@@ -1552,17 +2096,25 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/distinctcount-function-dax" },
     { n:"MIN([Colonne]) / MAX([Colonne])", d:"Renvoie la plus petite / grande valeur.",
       long:"MIN et MAX cherchent la plus petite ou la plus grande valeur, comme parcourir tous les prix d'un rayon pour trouver le moins cher ou le plus cher.",
-      example:"MAX(Depenses[Montant_EUR])",
+      example:"MAX({T}[{A}])",
       tip:"Sur une colonne de texte, MIN et MAX comparent par ordre alphabétique.",
       excel:"Équivalent à MIN() et MAX() en Excel, avec exactement le même comportement.",
       useCase:"utile pour repérer un record : la commande la plus chère, la date la plus ancienne, le délai le plus court.",
       related:["SUM","AVERAGE"],
       learn:"https://learn.microsoft.com/fr-fr/dax/max-function-dax" },
+    { n:"MEDIAN([Colonne])", d:"Renvoie la valeur médiane (celle du milieu) d'une colonne numérique.",
+      long:"MEDIAN cherche la valeur du milieu, une fois toutes les valeurs triées. Contrairement à AVERAGE, elle n'est pas tirée vers le haut par quelques très grosses valeurs : c'est l'ami des données avec des extrêmes.",
+      example:"MEDIAN({T}[{A}])",
+      tip:"Avec un nombre pair de valeurs, MEDIAN renvoie la moyenne des deux valeurs du milieu.",
+      excel:"Équivalent à MEDIANE() en Excel, avec le même fonctionnement.",
+      useCase:"utile quand quelques valeurs extrêmes faussent la moyenne, par exemple un salaire médian plutôt qu'un salaire moyen.",
+      related:["AVERAGE","MIN"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/median-function-dax" },
   ]},
   { label:"Ratios & logique", items:[
     { n:"DIVIDE(a, b, [alt])", d:"Division sécurisée : évite l'erreur si b = 0.",
       long:"DIVIDE fait une division, mais avec un filet de sécurité : si le dénominateur est à zéro (ce qui ferait planter une division classique), elle renvoie une valeur de secours au lieu d'une erreur.",
-      example:"DIVIDE(SUM(Depenses[Montant_EUR]), SUM(Depenses[Budget_Projet_EUR]))",
+      example:"DIVIDE(SUM({T}[{A}]), SUM({T}[{A2}]))",
       tip:"Préfère toujours DIVIDE à l'opérateur / dans une mesure, pour ne jamais avoir de rapport qui casse ton visuel.",
       excel:"Remplace l'opérateur / d'Excel, mais avec la sécurité intégrée. En Excel, il faudrait écrire SIERREUR(A1/B1;0) pour obtenir le même filet de sécurité.",
       useCase:"utile pour tout ratio ou pourcentage : taux de conversion, part de budget consommée, marge en pourcentage.",
@@ -1570,7 +2122,7 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/divide-function-dax" },
     { n:"IF(cond, si_vrai, [si_faux])", d:"Renvoie une valeur selon une condition.",
       long:"IF pose une question et choisit une réponse selon le résultat, comme un panneau qui indique tout droit si le feu est vert, ou stop si le feu est rouge.",
-      example:'IF(SUM(Depenses[Montant_EUR]) > 100000, "Beaucoup", "Peu")',
+      example:'IF(SUM({T}[{A}]) > 100000, "Beaucoup", "Peu")',
       tip:"La condition doit pouvoir être vraie ou fausse, comme une comparaison avec >, < ou =.",
       excel:"Équivalent à SI() en Excel, avec exactement la même logique et le même ordre d'arguments.",
       useCase:"utile pour classer un résultat en catégories : statut budgétaire, seuil d'alerte, segmentation simple d'un indicateur.",
@@ -1578,7 +2130,7 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/if-function-dax" },
     { n:"AND(a,b) / OR(a,b)", d:"Combine deux conditions.",
       long:"AND et OR combinent deux conditions. AND exige que les deux soient vraies en même temps, comme il faut la clé ET le code pour ouvrir un coffre. OR se contente qu'une seule le soit, comme payer par carte OU en espèces.",
-      example:"AND(SUM(Depenses[Montant_EUR]) > 50000, COUNTROWS(Depenses) > 5)",
+      example:"AND(SUM({T}[{A}]) > 50000, COUNTROWS({T}) > 5)",
       tip:null,
       excel:"Équivalent à ET() et OU() en Excel. Différence à noter : en DAX, tu peux aussi écrire && et || comme raccourcis dans certains contextes.",
       useCase:"utile pour combiner plusieurs critères dans un IF, par exemple « budget dépassé ET délai dépassé » avant de déclencher une alerte.",
@@ -1586,17 +2138,69 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/and-function-dax" },
     { n:"NOT(cond)", d:"Inverse une condition (vrai devient faux).",
       long:"NOT inverse une condition : ce qui était vrai devient faux, et inversement. Comme appuyer sur l'interrupteur pour éteindre une lumière allumée.",
-      example:"NOT(COUNTROWS(Depenses) = 0)",
+      example:"NOT(COUNTROWS({T}) = 0)",
       tip:null,
       excel:"Équivalent à NON() en Excel.",
       useCase:"utile pour inverser une condition existante plutôt que de la réécrire à l'envers, par exemple pour repérer ce qui n'est pas encore livré.",
       related:["IF","AND"],
       learn:"https://learn.microsoft.com/fr-fr/dax/not-function-dax" },
+    { n:"SWITCH(expr, val1, res1, ...)", d:"Compare une expression à une liste de valeurs et renvoie le résultat associé.",
+      long:"SWITCH, c'est un IF qui n'en finit pas mais en version rangée : au lieu d'imbriquer plusieurs IF les uns dans les autres, tu listes les cas possibles un par un, comme un standardiste qui redirige l'appel selon le numéro composé.",
+      example:'SWITCH(TRUE(), SUM({T}[{A}]) > 100000, "Beaucoup", SUM({T}[{A}]) > 50000, "Moyen", "Peu")',
+      tip:"L'astuce classique : mettre TRUE() en première expression pour enchaîner des comparaisons différentes, exactement comme ici.",
+      excel:"Pas d'équivalent direct en Excel classique (hors Excel 365 qui a sa propre fonction SWITCH) : on imbriquerait plusieurs SI().",
+      useCase:"utile pour remplacer plusieurs IF imbriqués, par exemple classer un montant en « Faible / Moyen / Élevé » selon des seuils.",
+      related:["IF","AND"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/switch-function-dax" },
+    { n:"ISBLANK(valeur)", d:"Teste si une valeur est vide.",
+      long:"ISBLANK répond juste à une question : cette valeur est-elle vide, ou non ? Comme vérifier si une case du formulaire a été remplie avant de continuer.",
+      example:"ISBLANK(BLANK())",
+      tip:"0 (zéro) n'est pas vide : seul BLANK() (ou une colonne réellement sans valeur) renvoie VRAI.",
+      excel:"Équivalent à ESTVIDE() en Excel, avec la même logique.",
+      useCase:"utile pour sécuriser une division ou un calcul avant qu'une donnée n'existe encore, souvent combiné à IF.",
+      related:["IF","BLANK"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/isblank-function-dax" },
+  ]},
+  { label:"Texte", items:[
+    { n:"CONCATENATE(texte1, texte2)", d:"Assemble deux textes en un seul.",
+      long:"CONCATENATE colle deux morceaux de texte l'un après l'autre, comme assembler un prénom et un nom pour afficher une identité complète.",
+      example:'CONCATENATE("Dépenses ", "2025")',
+      tip:"En DAX, l'opérateur & fait la même chose et accepte autant de morceaux que tu veux : \"Dépenses \" & \"2025\".",
+      excel:"Équivalent à CONCATENER() en Excel. Même limite : seulement deux arguments, contrairement à l'opérateur &.",
+      useCase:"utile pour construire un libellé composite, comme un nom complet ou une référence formée de plusieurs champs.",
+      related:["UPPER","LEN"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/concatenate-function-dax" },
+    { n:"UPPER(texte) / LOWER(texte)", d:"Met un texte tout en majuscules, ou tout en minuscules.",
+      long:"UPPER et LOWER changent la casse d'un texte, comme appuyer sur la touche Verrouillage majuscules avant ou après avoir tapé.",
+      example:'UPPER("paris")',
+      tip:null,
+      excel:"Équivalent à MAJUSCULE() et MINUSCULE() en Excel.",
+      useCase:"utile pour uniformiser un texte avant de le comparer ou de l'afficher, par exemple harmoniser la casse d'un nom de ville saisi à la main.",
+      related:["CONCATENATE","LEN"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/upper-function-dax" },
+    { n:"LEN(texte)", d:"Compte le nombre de caractères d'un texte.",
+      long:"LEN compte les lettres, chiffres et espaces d'un texte, comme compter le nombre de cases d'une grille de mots fléchés.",
+      example:'LEN("Data Unchained")',
+      tip:"Les espaces comptent comme des caractères à part entière.",
+      excel:"Équivalent à NBCAR() en Excel.",
+      useCase:"utile pour repérer un texte trop court ou trop long, par exemple contrôler la longueur d'un code produit.",
+      related:["UPPER","CONCATENATE"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/len-function-dax" },
+  ]},
+  { label:"Dates", items:[
+    { n:"YEAR(date) / MONTH(date)", d:"Extrait l'année ou le mois d'une date.",
+      long:"YEAR et MONTH découpent une date pour n'en garder qu'un morceau, comme lire seulement l'année ou le mois inscrit sur un ticket de caisse, sans le jour.",
+      example:"YEAR(MAX({T}[{D}]))",
+      tip:"Dans ce bac à sable, applique YEAR ou MONTH sur le résultat d'une agrégation de date comme MIN ou MAX, pas directement sur la colonne : DAX a besoin d'une seule date à la fois, pas de toute la colonne.",
+      excel:"Équivalent à ANNEE() et MOIS() en Excel, avec le même fonctionnement.",
+      useCase:"utile pour regrouper ou filtrer des montants par année ou par mois, par exemple comparer deux exercices.",
+      related:["MAX","MIN"],
+      learn:"https://learn.microsoft.com/fr-fr/dax/year-function-dax" },
   ]},
   { label:"Autres", items:[
     { n:"ROUND(nombre, décimales)", d:"Arrondit un nombre.",
       long:"ROUND arrondit un nombre au nombre de décimales souhaité, comme arrondir un prix à l'euro près à la caisse.",
-      example:"ROUND(AVERAGE(Depenses[Montant_EUR]), 0)",
+      example:"ROUND(AVERAGE({T}[{A}]), 0)",
       tip:"Un nombre de décimales négatif arrondit à la dizaine, à la centaine ou au millier, pratique pour lisser un graphique.",
       excel:"Équivalent à ARRONDI() en Excel, avec le même fonctionnement pour les décimales négatives (ARRONDI(A1;-2) arrondit à la centaine).",
       useCase:"utile pour lisser un indicateur affiché dans un visuel, ou arrondir un prix à l'euro près avant de l'afficher.",
@@ -1604,7 +2208,7 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/round-function-dax" },
     { n:"ABS(nombre)", d:"Valeur absolue.",
       long:"ABS transforme un nombre négatif en positif, sans toucher aux nombres déjà positifs. Comme mesurer un écart : peu importe si tu es au-dessus ou en dessous, tu veux juste savoir de combien.",
-      example:"ABS(SUM(Depenses[Montant_EUR]) - SUM(Depenses[Budget_Projet_EUR]))",
+      example:"ABS(SUM({T}[{A}]) - SUM({T}[{A2}]))",
       tip:null,
       excel:"Équivalent à ABS() en Excel.",
       useCase:"utile pour mesurer un écart peu importe son sens, comme un écart budgétaire ou une variation d'un mois sur l'autre.",
@@ -1612,7 +2216,7 @@ const funcGroups = [
       learn:"https://learn.microsoft.com/fr-fr/dax/abs-function-dax" },
     { n:"BLANK()", d:"Représente une valeur vide.",
       long:"BLANK représente une case vide, ni zéro ni texte : littéralement rien. Utile pour dire à DAX de ne rien afficher plutôt que d'afficher 0.",
-      example:"IF(COUNTROWS(Depenses) = 0, BLANK(), SUM(Depenses[Montant_EUR]))",
+      example:"IF(COUNTROWS({T}) = 0, BLANK(), SUM({T}[{A}]))",
       tip:null,
       excel:"Pas d'équivalent direct : en Excel, on afficherait une chaîne vide \"\" ou on masquerait la valeur par une mise en forme conditionnelle.",
       useCase:"utile pour éviter d'afficher un 0 trompeur quand une donnée n'existe pas encore, plutôt que de forcer une valeur artificielle.",
@@ -1636,7 +2240,7 @@ function renderFuncListInto(containerEl, keyPrefix, withInsertInto){
         <div class="func-name">${it.n}</div>
         <div class="func-desc">${it.d}</div>
       </div>
-      <div class="func-detail" id="${key}" data-example="${it.example.replace(/"/g,'&quot;')}">
+      <div class="func-detail" id="${key}" data-example="${resolveTpl(it.example).replace(/"/g,'&quot;')}">
         <p class="func-long">${it.long}</p>
         <div class="func-example-row">
           <span class="ex-formula"></span><span class="arrow">→</span><span class="ex-result">…</span>
@@ -1693,37 +2297,48 @@ renderFuncListInto(funcList, 'f', formulaInput);
 /* =========================================================
    6. ONGLETS (Bac à sable / Cartographie / DAX Learn / DAX Quest)
    ========================================================= */
+
+// Hauteur réelle du bandeau figé (logo + onglets), posée en variable CSS pour que
+// les blocs sticky internes (ex. jauge de progression de DAX Quest) se calent juste
+// en dessous, quel que soit le nombre de lignes du sous-titre selon la largeur d'écran.
+function syncHeaderHeight(){
+  const header = document.querySelector('.app-header');
+  if(header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+}
+window.addEventListener('resize', syncHeaderHeight);
+window.addEventListener('load', syncHeaderHeight);
+syncHeaderHeight();
+
 const tabSandbox = document.getElementById('tabSandbox');
 const tabCarto = document.getElementById('tabCarto');
 const tabLearn = document.getElementById('tabLearn');
 const tabQuest = document.getElementById('tabQuest');
+const tabApropos = document.getElementById('tabApropos');
 document.getElementById('tabBtnSandbox').addEventListener('click', ()=> switchTab('sandbox'));
 document.getElementById('tabBtnCarto').addEventListener('click', ()=> switchTab('carto'));
 document.getElementById('tabBtnLearn').addEventListener('click', ()=> switchTab('learn'));
 document.getElementById('tabBtnQuest').addEventListener('click', ()=> switchTab('quest'));
+document.getElementById('tabBtnApropos').addEventListener('click', ()=> switchTab('apropos'));
 function switchTab(tab){
   document.getElementById('tabBtnSandbox').classList.toggle('active', tab==='sandbox');
   document.getElementById('tabBtnCarto').classList.toggle('active', tab==='carto');
   document.getElementById('tabBtnLearn').classList.toggle('active', tab==='learn');
   document.getElementById('tabBtnQuest').classList.toggle('active', tab==='quest');
+  document.getElementById('tabBtnApropos').classList.toggle('active', tab==='apropos');
   tabSandbox.style.display = tab==='sandbox' ? '' : 'none';
   tabCarto.style.display = tab==='carto' ? '' : 'none';
   tabLearn.style.display = tab==='learn' ? '' : 'none';
   tabQuest.style.display = tab==='quest' ? '' : 'none';
+  tabApropos.style.display = tab==='apropos' ? '' : 'none';
+  // Ramène l'onglet actif entièrement visible dans la barre (évite qu'un onglet
+  // voisin reste coupé à mi-mot quand la barre défile horizontalement sur mobile).
+  const activeBtn = document.querySelector('.tab-btn.active');
+  if(activeBtn) activeBtn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'nearest'});
 }
 
 /* =========================================================
-   6bis. CARTOGRAPHIE — schéma et aperçu de la table Depenses
+   6bis. CARTOGRAPHIE — schéma et aperçu de la table active
    ========================================================= */
-const FIELD_DESCRIPTIONS = {
-  Departement:       "Département auquel appartient le projet.",
-  Projet:            "Nom du projet concerné par la dépense.",
-  Montant_EUR:       "Montant réellement dépensé pour le projet.",
-  Budget_Projet_EUR: "Budget initialement alloué au projet.",
-  Date:              "Date d'engagement de la dépense.",
-  Region:            "Région administrative du site concerné.",
-};
-const CARTO_CURRENCY_FIELDS = ['Montant_EUR','Budget_Projet_EUR'];
 
 function fieldDomainLabel(key){
   const type = columnTypes[key];
@@ -1757,10 +2372,10 @@ function renderCartoSchema(){
       const icon = type==='num' ? {c:'num', s:'Σ'} : type==='date' ? {c:'date', s:'📅'} : {c:'txt', s:'Abc'};
       const typeLabel = type==='num' ? 'Numérique' : type==='date' ? 'Date' : 'Texte';
       return `<tr>
-        <td class="field-cell"><span class="schema-icon ${icon.c}">${icon.s}</span>${key}</td>
-        <td>${typeLabel}</td>
-        <td>${FIELD_DESCRIPTIONS[key] || ''}</td>
-        <td>${fieldDomainLabel(key)}</td>
+        <td class="field-cell" data-label="Champ"><span class="schema-icon ${icon.c}">${icon.s}</span>${key}</td>
+        <td data-label="Type">${typeLabel}</td>
+        <td data-label="Description">${FIELD_DESCRIPTIONS[key] || ''}</td>
+        <td data-label="Valeurs / plage">${fieldDomainLabel(key)}</td>
       </tr>`;
     }).join('')}</tbody>
   </table></div>`;
@@ -1768,65 +2383,72 @@ function renderCartoSchema(){
 
 function renderCartoPreview(){
   const el = document.getElementById('cartoPreview');
-  el.innerHTML = previewTableHTML() +
+  el.innerHTML = `<div style="overflow-x:auto;">${previewTableHTML()}</div>` +
     `<div style="font-size:11.5px;color:var(--text-secondary);font-style:italic;margin-top:8px;">Table complète : ${table.length} lignes. Consultable aussi depuis le bac à sable, bouton « Afficher les données ».</div>`;
 }
 
 /* =========================================================
    7. DAX QUEST — jeu de progression avec points
    ========================================================= */
-const QUEST_LEVELS = [
-  { title:"Le total des dépenses",
-    prompt:"Ta première mission : calcule le montant total dépensé sur tous les projets (colonne Montant_EUR).",
-    ref:"SUM(Depenses[Montant_EUR])",
-    hint:"Pense à la fonction qui additionne une colonne entière, comme une pile de tickets de caisse.",
-    points:100 },
-  { title:"Combien de projets ?",
-    prompt:"Calcule le nombre de projets enregistrés dans la table, peu importe leur contenu.",
-    ref:"COUNTROWS(Depenses)",
-    hint:"Il ne s'agit pas de compter une colonne en particulier, mais les lignes de la table.",
-    points:100 },
-  { title:"Le budget total",
-    prompt:"Calcule le budget total alloué à l'ensemble des projets (colonne Budget_Projet_EUR).",
-    ref:"SUM(Depenses[Budget_Projet_EUR])",
-    hint:"Même principe que ta toute première mission, mais sur une autre colonne.",
-    points:100 },
-  { title:"La dépense moyenne",
-    prompt:"Calcule le montant moyen dépensé par projet.",
-    ref:"AVERAGE(Depenses[Montant_EUR])",
-    hint:"La fonction qui calcule une moyenne s'écrit presque comme SUM.",
-    points:120 },
-  { title:"Le projet le plus coûteux",
-    prompt:"Trouve le montant du projet le plus cher de la table.",
-    ref:"MAX(Depenses[Montant_EUR])",
-    hint:"Cherche la fonction qui renvoie la plus grande valeur d'une colonne.",
-    points:120 },
-  { title:"Combien de départements ?",
-    prompt:"Calcule le nombre de départements différents impliqués dans ces projets, sans compter les doublons.",
-    ref:"DISTINCTCOUNT(Depenses[Departement])",
-    hint:"Il te faut une fonction qui compte les valeurs différentes d'une colonne.",
-    points:130 },
-  { title:"Le taux de consommation",
-    prompt:"Calcule le pourcentage du budget total consommé (montant total dépensé divisé par budget total, multiplié par 100). Protège-toi d'une éventuelle division par zéro.",
-    ref:"DIVIDE(SUM(Depenses[Montant_EUR]), SUM(Depenses[Budget_Projet_EUR])) * 100",
-    hint:"Utilise DIVIDE plutôt que l'opérateur /, puis multiplie le résultat par 100.",
-    points:150 },
-  { title:"Dépassement ou pas ?",
-    prompt:'Affiche le texte "Depassement" si le total dépensé dépasse le budget total, sinon affiche "Sous controle".',
-    ref:'IF(SUM(Depenses[Montant_EUR]) > SUM(Depenses[Budget_Projet_EUR]), "Depassement", "Sous controle")',
-    hint:'IF(condition, valeur_si_vrai, valeur_si_faux). Les textes s\'écrivent entre guillemets droits.',
-    points:150 },
-  { title:"L'écart, toujours positif",
-    prompt:"Calcule l'écart entre le total dépensé et le budget total, mais le résultat doit toujours être positif, même si le budget dépasse la dépense.",
-    ref:"ABS(SUM(Depenses[Montant_EUR]) - SUM(Depenses[Budget_Projet_EUR]))",
-    hint:"Calcule d'abord la différence, puis rends-la positive avec la bonne fonction.",
-    points:150 },
-  { title:"Un indicateur propre",
-    prompt:"Arrondis le montant moyen dépensé par projet à la centaine d'euros la plus proche.",
-    ref:"ROUND(AVERAGE(Depenses[Montant_EUR]), -2)",
-    hint:"ROUND(nombre, décimales). Un nombre de décimales négatif arrondit à la dizaine, la centaine, le millier...",
-    points:180 },
-];
+// Les 10 missions sont construites à partir du thème actif (roles + vocab), pour que DAX
+// Quest reste jouable quel que soit le thème choisi dans le sélecteur.
+function buildQuestLevels(scn){
+  const T = scn.tableName, A = scn.roles.amount, A2 = scn.roles.amount2, C = scn.roles.cat;
+  const v = scn.vocab;
+  return [
+    { title:`Le total de ${v.amountLabel}`,
+      prompt:`Ta première mission : calcule le total de ${v.amountLabel} sur tous les ${v.itemPlural} de la table.`,
+      ref:`SUM(${T}[${A}])`,
+      hint:"Pense à la fonction qui additionne une colonne entière, comme une pile de tickets de caisse.",
+      points:100 },
+    { title:`Combien de ${v.itemPlural} ?`,
+      prompt:`Calcule le nombre de ${v.itemPlural} enregistrés dans la table, peu importe leur contenu.`,
+      ref:`COUNTROWS(${T})`,
+      hint:"Il ne s'agit pas de compter une colonne en particulier, mais les lignes de la table.",
+      points:100 },
+    { title:`Le total de ${v.amount2Label}`,
+      prompt:`Calcule le total de ${v.amount2Label} sur l'ensemble des ${v.itemPlural}.`,
+      ref:`SUM(${T}[${A2}])`,
+      hint:"Même principe que ta toute première mission, mais sur une autre colonne.",
+      points:100 },
+    { title:`La moyenne de ${v.amountLabel}`,
+      prompt:`Calcule la moyenne de ${v.amountLabel}, tous ${v.itemPlural} confondus.`,
+      ref:`AVERAGE(${T}[${A}])`,
+      hint:"La fonction qui calcule une moyenne s'écrit presque comme SUM.",
+      points:120 },
+    { title:"Le maximum",
+      prompt:`Trouve la plus grande valeur de ${v.amountLabel} dans la table.`,
+      ref:`MAX(${T}[${A}])`,
+      hint:"Cherche la fonction qui renvoie la plus grande valeur d'une colonne.",
+      points:120 },
+    { title:`Combien de ${v.catPlural} ?`,
+      prompt:`Calcule le nombre de ${v.catPlural} différents, sans compter les doublons.`,
+      ref:`DISTINCTCOUNT(${T}[${C}])`,
+      hint:"Il te faut une fonction qui compte les valeurs différentes d'une colonne.",
+      points:130 },
+    { title:"Le ratio",
+      prompt:`Calcule le ratio entre le total de ${v.amountLabel} et le total de ${v.amount2Label}, multiplié par 100 (comme un pourcentage). Protège-toi d'une éventuelle division par zéro.`,
+      ref:`DIVIDE(SUM(${T}[${A}]), SUM(${T}[${A2}])) * 100`,
+      hint:"Utilise DIVIDE plutôt que l'opérateur /, puis multiplie le résultat par 100.",
+      points:150 },
+    { title:"Comparaison",
+      prompt:`Affiche le texte "Superieur" si le total de ${v.amountLabel} dépasse le total de ${v.amount2Label}, sinon affiche "Inferieur".`,
+      ref:`IF(SUM(${T}[${A}]) > SUM(${T}[${A2}]), "Superieur", "Inferieur")`,
+      hint:'IF(condition, valeur_si_vrai, valeur_si_faux). Les textes s\'écrivent entre guillemets droits.',
+      points:150 },
+    { title:"L'écart, toujours positif",
+      prompt:`Calcule l'écart entre le total de ${v.amountLabel} et le total de ${v.amount2Label}, mais le résultat doit toujours être positif, quel que soit le sens de l'écart.`,
+      ref:`ABS(SUM(${T}[${A}]) - SUM(${T}[${A2}]))`,
+      hint:"Calcule d'abord la différence, puis rends-la positive avec la bonne fonction.",
+      points:150 },
+    { title:"Un indicateur propre",
+      prompt:`Arrondis la moyenne de ${v.amountLabel} à la centaine la plus proche.`,
+      ref:`ROUND(AVERAGE(${T}[${A}]), -2)`,
+      hint:"ROUND(nombre, décimales). Un nombre de décimales négatif arrondit à la dizaine, la centaine, le millier...",
+      points:180 },
+  ];
+}
+let QUEST_LEVELS = buildQuestLevels(SCENARIOS[DEFAULT_SCENARIO_ID]);
 
 const questScoreEl = document.getElementById('questScore');
 const questLevelsEl = document.getElementById('questLevels');
@@ -1862,6 +2484,7 @@ function renderQuestScore(){
     <div class="quest-score-label">Niveau ${Math.min(doneCount+1, QUEST_LEVELS.length)} / ${QUEST_LEVELS.length}${doneCount===QUEST_LEVELS.length ? ' · terminée !' : ''}</div>
     <div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${pct}%;"></div></div>
   `;
+  renderGauge();
 }
 
 function renderQuestLevels(){
@@ -1917,7 +2540,7 @@ function renderQuestMain(){
     <div class="axis-hint" style="margin-bottom:8px;">💡 Comme dans Power BI : nomme ta mesure comme tu veux, puis <code>=</code>, puis ta formule. Seul ce qui suit le <code>=</code> est jugé.</div>
     <div class="quest-input-row">
       <div class="quest-input-wrap">
-        <input type="text" id="questInput" spellcheck="false" placeholder="NomDeTaMesure = SUM(Depenses[Montant_EUR])" value="${(st.done ? st.lastInput : '').replace(/"/g,'&quot;')}">
+        <input type="text" id="questInput" spellcheck="false" placeholder="NomDeTaMesure = SUM(${TABLE_NAME}[${activeRoles.amount}])" value="${(st.done ? st.lastInput : '').replace(/"/g,'&quot;')}">
         <div class="autocomplete-box" id="qAutocompleteBox"></div>
       </div>
       <button class="primary" id="btnQuestValidate">✓ Valider</button>
@@ -1951,7 +2574,7 @@ function renderQuestMain(){
         <div class="chart-scroll"><div class="chart-bars" id="qChartBars"></div></div>
       </div>
     </div>
-    <div class="preview-toggle" id="qPreviewToggle">▸ Afficher les données de la table Depenses</div>
+    <div class="preview-toggle" id="qPreviewToggle">▸ Afficher les données de la table</div>
     <div class="preview-table-wrap" id="qPreviewWrap"></div>
   `;
 
@@ -2021,7 +2644,7 @@ function renderQuestMain(){
     qPreviewOpen = !qPreviewOpen;
     if(qPreviewOpen && !qPreviewWrap.innerHTML) qPreviewWrap.innerHTML = previewTableHTML();
     qPreviewWrap.classList.toggle('open', qPreviewOpen);
-    qPreviewToggle.textContent = (qPreviewOpen ? '▾ ' : '▸ ') + 'Afficher les données de la table Depenses';
+    qPreviewToggle.textContent = (qPreviewOpen ? '▾ ' : '▸ ') + 'Afficher les données de la table ' + TABLE_NAME;
   });
 
   if(st.done){ renderQuestVisual(); }
@@ -2060,7 +2683,7 @@ function renderQuestMain(){
       renderQuestLevels();
       setTimeout(()=>{
         const { doneCount:dc } = questTotals();
-        if(dc === QUEST_LEVELS.length){ renderQuestMain(); }
+        if(dc === QUEST_LEVELS.length){ renderQuestMain(); launchFireworks(); }
         else if(i < QUEST_LEVELS.length-1){ questState.current = i+1; renderQuestMain(); }
         else { renderQuestMain(); }
       }, 900);
@@ -2099,6 +2722,17 @@ function resetQuest(){
   renderQuestLevels();
   renderQuestMain();
 }
+
+(function(){
+  const toggle = document.getElementById('btnToggleQuestLevels');
+  const levels = document.getElementById('questLevels');
+  if(toggle && levels){
+    toggle.addEventListener('click', ()=>{
+      const open = levels.classList.toggle('open');
+      toggle.textContent = open ? 'Masquer le détail des missions ▴' : 'Voir le détail des 10 missions ▾';
+    });
+  }
+})();
 
 document.getElementById('btnResetQuest').addEventListener('click', ()=>{
   if(confirm("Recommencer la quête depuis le début ? Ta progression actuelle sera perdue.")){
@@ -2176,9 +2810,10 @@ function renderLearnFuncNav(){
 
 function renderLearnFuncDetail(){
   const it = funcGroups[learnSelected.gi].items[learnSelected.ii];
+  const example = resolveTpl(it.example);
   let resultText = '…', isErr = false;
   try{
-    const r = runFormula(it.example, {});
+    const r = runFormula(example, {});
     resultText = formatResult(r).text;
   } catch(e){
     resultText = 'erreur';
@@ -2199,7 +2834,7 @@ function renderLearnFuncDetail(){
     <div class="lf-desc">${it.d}</div>
     <p class="lf-long">${it.long}</p>
     <div class="lf-example-row">
-      <span>${it.example}</span><span class="lf-arrow">→</span><span class="lf-result ${isErr?'err':''}">${resultText}</span>
+      <span>${example}</span><span class="lf-arrow">→</span><span class="lf-result ${isErr?'err':''}">${resultText}</span>
     </div>
     ${it.tip ? `<div class="lf-tip">💡 ${it.tip}</div>` : ''}
     ${it.excel ? `<div class="lf-section-label">Équivalent Excel</div><div class="lf-excel">${it.excel}</div>` : ''}
@@ -2225,8 +2860,190 @@ renderLearnFuncNav();
 renderLearnFuncDetail();
 
 /* =========================================================
-   10. INITIALISATION
+   11. GAMIFICATION QUEST — jauge de progression et feu d'artifice
    ========================================================= */
+function renderGauge(){
+  const total = QUEST_LEVELS.length;
+  const { doneCount:n } = questTotals();
+  const panel = document.getElementById('gaugePanel');
+  const tube = document.getElementById('gaugeTube');
+  tube.style.setProperty('--pct', (n/total*100)+'%');
+  tube.setAttribute('aria-valuenow', n);
+  tube.setAttribute('aria-valuemax', total);
+  document.getElementById('gaugeCount').textContent = n+' / '+total;
+  panel.classList.toggle('full', n===total);
+  document.getElementById('btnFireworks').style.display = (n===total) ? '' : 'none';
+  let msg;
+  if(n===0) msg = "À toi de jouer !";
+  else if(n===total) msg = "Jauge pleine, bravo !";
+  else if(total-n===1) msg = "Plus qu'une mission !";
+  else if(n<total/2) msg = "C'est parti, continue !";
+  else msg = "Plus que "+(total-n)+" missions";
+  document.getElementById('gaugeCaption').textContent = msg;
+}
+
+// Feu d'artifice (canvas maison, sans dépendance) déclenché au 10/10 de DAX Quest.
+let fireworksRunning = false;
+function launchFireworks(){
+  const canvas = document.getElementById('fireworksCanvas');
+  if(!canvas || fireworksRunning) return;
+  // Respect des préférences d'accessibilité : pas d'animation si l'utilisateur les a désactivées.
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  fireworksRunning = true;
+  const dpr = window.devicePixelRatio || 1;
+  const W = window.innerWidth, H = window.innerHeight;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  canvas.classList.add('active');
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const COLORS = ['#DDA40D','#F3D163','#1D8A57','#B95E01','#FFFFFF','#3F8F6B'];
+  const TOTAL_BURSTS = 7;
+  const particles = [];
+  let bursts = 0, nextBurst = 0;
+  const t0 = performance.now();
+
+  function burst(x, y){
+    const base = COLORS[Math.floor(Math.random()*COLORS.length)];
+    for(let k=0;k<46;k++){
+      const angle = Math.random()*Math.PI*2;
+      const speed = 1.2 + Math.random()*4.6;
+      particles.push({
+        x, y, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+        life:1, decay:0.010 + Math.random()*0.012,
+        size:1.6 + Math.random()*1.8,
+        color: Math.random()<0.25 ? COLORS[Math.floor(Math.random()*COLORS.length)] : base,
+      });
+    }
+  }
+  function frame(now){
+    const elapsed = now - t0;
+    if(bursts < TOTAL_BURSTS && elapsed >= nextBurst){
+      burst(W*(0.15+Math.random()*0.7), H*(0.12+Math.random()*0.38));
+      bursts++;
+      nextBurst += 330 + Math.random()*260;
+    }
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.045; p.vx *= 0.985; p.vy *= 0.985;
+      p.life -= p.decay;
+      if(p.life<=0){ particles.splice(i,1); continue; }
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if(bursts >= TOTAL_BURSTS && particles.length===0){
+      ctx.clearRect(0, 0, W, H);
+      canvas.classList.remove('active');
+      fireworksRunning = false;
+      return;
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+document.getElementById('btnFireworks').addEventListener('click', launchFireworks);
+
+/* =========================================================
+   12. À PROPOS — notes de version (de la plus récente à la plus ancienne)
+   ========================================================= */
+const RELEASE_NOTES = [
+  { v:'1.7.0', d:'30 oct. 2026', t:"Grosse évolution du 30 octobre. Nouvel onglet « À propos ». Neuf fonctions DAX supplémentaires (SWITCH, CONCATENATE, UPPER, LOWER, LEN, ISBLANK, YEAR, MONTH, MEDIAN). Sélecteur de thème de données (Achats, RH, HSE) dans le Bac à sable, la Cartographie et DAX Quest. DAX Quest : jauge de progression animée, feu d'artifice à 10/10, bandeau de progression toujours visible, phrase de mise en situation adaptée au thème, cadres alignés. Bac à sable réorganisé (thème sous « Comment ça marche », variables à utiliser dans la formule entre la saisie et les boutons, mesures enregistrées au-dessus des fonctions). Info-bulle d'usage des fonctions et saisie intelligente qui ne propose rien avant le nom de la mesure et le signe =. Passes mobile : graphique à barres d'une seule couleur, bandeau « Comment ça marche » repliable, liste des missions repliable, Cartographie en cartes empilées, onglets qui s'accrochent." },
+  { v:'1.6.0', d:'oct. 2026', t:"Ajout de l'onglet Cartographie (schéma et aperçu de la table Depenses). Bandeau supérieur et onglets figés au défilement, logo Power BI dans le bandeau. Numéro de version en pied de page." },
+  { v:'1.5.0', d:'oct. 2026', t:"Fiches fonctions enrichies (cas d'usage en tête, équivalence Excel, fonctions connexes cliquables) et mise en avant du lien Microsoft Learn (carte avec logo)." },
+  { v:'1.4.0', d:'oct. 2026', t:"Ajout de l'onglet DAX Learn (règles d'écriture, astuces, fiches fonctions en maître-détail) et extension de la saisie intelligente à DAX Quest." },
+  { v:'1.3.0', d:'oct. 2026', t:"Ajout de l'onglet DAX Quest : jeu à progression avec points, indices, solutions, alimentant une carte ou un graphique avec la formule du joueur." },
+  { v:'1.2.0', d:'oct. 2026', t:"Charte graphique Data Unchained (logo, palette extraite du logo) et ajout de la saisie intelligente (autocomplétion insensible à la casse) dans la barre de formule." },
+  { v:'1.1.0', d:'oct. 2026', t:"Ajout du graphique à barres avec choix d'axe (chaque barre filtre la table sur sa catégorie), et premiers petits exercices dans le panneau Fonctions." },
+  { v:'1.0.0', d:'oct. 2026', t:"Version initiale : bac à sable DAX (carte), table Depenses, fonctions de base." },
+];
+document.getElementById('releaseList').innerHTML = RELEASE_NOTES.map((r,i)=>
+  `<li class="release"><span class="rl-ver">v${r.v}${i===0?'<span class="rl-new">actuelle</span>':''}</span><span class="rl-date">${r.d}</span><span>${r.t}</span></li>`
+).join('');
+
+/* =========================================================
+   14. THÈMES DE DONNÉES — sélecteur et application d'un scénario
+   ========================================================= */
+// Bascule l'outil entier (moteur, Cartographie, fiches fonctions, DAX Quest) sur un autre
+// thème de données fictives. Sélecteur global et partagé par tous les onglets (volontairement
+// simple : pas d'état indépendant par onglet à ce stade).
+function applyScenario(id){
+  const scn = SCENARIOS[id];
+  if(!scn) return;
+  currentScenarioId = id;
+  TABLE_NAME = scn.tableName;
+  table = scn.data;
+  columnTypes = scn.columnTypes;
+  columns = Object.keys(columnTypes);
+  activeRoles = scn.roles;
+  activeVocab = scn.vocab;
+  FIELD_DESCRIPTIONS = scn.fieldDescriptions;
+  CARTO_CURRENCY_FIELDS = scn.currencyFields;
+
+  // Les mesures enregistrées référencent les colonnes de l'ancien thème : on les vide.
+  Object.keys(savedMeasures).forEach(k => delete savedMeasures[k]);
+
+  // Textes d'interface qui mentionnent le nom de la table ou son contenu.
+  // (tableNodeLabel reste volontairement générique : "Variables à utiliser dans la formule",
+  // quel que soit le thème, pour ne pas exposer le nom technique de la table dans le bac à sable.)
+  document.getElementById('cartoSchemaTitle').textContent = '🗂 Schéma de la table ' + TABLE_NAME;
+  document.getElementById('cartoIntro').textContent = scn.intro;
+  document.getElementById('questScopeNoteText').textContent = scn.questIntro;
+
+  populateAxisSelect();
+  formulaInput.value = 'Ma Mesure = SUM(' + TABLE_NAME + '[' + activeRoles.amount + '])';
+  formulaInput.classList.remove('state-error','state-success');
+  msgBox.classList.remove('show');
+  setVisualType('card');
+
+  QUEST_LEVELS = buildQuestLevels(scn);
+  questState = freshQuestState();
+
+  renderScenarioPickers();
+  renderFields();
+  renderMeasures();
+  renderPreview();
+  evaluate();
+  renderCartoSchema();
+  renderCartoPreview();
+  renderFuncListInto(funcList, 'f', formulaInput);
+  renderLearnFuncNav();
+  renderLearnFuncDetail();
+  renderQuestScore();
+  renderQuestLevels();
+  renderQuestMain();
+}
+
+// Construit les boutons du sélecteur de thème dans chaque emplacement prévu (Bac à sable et
+// Cartographie), et les tient synchronisés entre eux. Les listeners sont attachés une seule
+// fois par bouton créé ici, jamais ré-attachés ailleurs.
+function renderScenarioPickers(){
+  const html = Object.values(SCENARIOS).map(scn =>
+    `<button type="button" class="scenario-btn ${scn.id===currentScenarioId?'active':''}" data-scn="${scn.id}">${scn.icon} ${scn.label}</button>`
+  ).join('');
+  document.querySelectorAll('.scenario-picker').forEach(el=>{
+    el.innerHTML = html;
+    el.querySelectorAll('.scenario-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        if(btn.dataset.scn !== currentScenarioId) applyScenario(btn.dataset.scn);
+      });
+    });
+  });
+}
+
+/* =========================================================
+   15. INITIALISATION
+   ========================================================= */
+renderScenarioPickers();
+formulaInput.value = 'Ma Mesure = SUM(' + TABLE_NAME + '[' + activeRoles.amount + '])';
+document.getElementById('cartoIntro').textContent = SCENARIOS[DEFAULT_SCENARIO_ID].intro;
+document.getElementById('questScopeNoteText').textContent = SCENARIOS[DEFAULT_SCENARIO_ID].questIntro;
 renderFields();
 renderMeasures();
 renderPreview();
