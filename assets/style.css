@@ -264,4 +264,12 @@ img{max-width:100%}
 #toolPreview .tp-foot svg{flex-shrink:0;color:var(--bc,#1F7A47)}
 #toolPreview::before{content:"";position:absolute;top:var(--ty,50%);width:20px;height:20px;background:var(--bc,#1F7A47);transform:translateY(-50%) rotate(45deg);border-radius:3px;left:-9px}
 #toolPreview.left::before{left:auto;right:-9px}
+.lm{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.lm-track{display:flex;width:max-content;animation:lm-scroll 60s linear infinite}
+.lm:hover .lm-track{animation-play-state:paused}
+.lm-grp{display:flex;align-items:center;flex-shrink:0}
+.lm-grp img{height:2.6rem;width:auto;max-width:11rem;object-fit:contain;margin:0 2rem;filter:grayscale(1);opacity:.7;transition:filter .2s,opacity .2s}
+.lm-grp img:hover{filter:none;opacity:1}
+@keyframes lm-scroll{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.lm{overflow-x:auto}.lm-track{animation:none}.lm-dup{display:none}}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}
