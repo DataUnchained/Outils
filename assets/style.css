@@ -290,4 +290,13 @@ img{max-width:100%}
 .portrait{width:clamp(220px,21vw,340px)}
 }
 .cat{scroll-margin-top:calc(var(--mh) + 4.5rem)}
+.portrait{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.portrait svg{transform-origin:50% 50%}
+.portrait svg.spin{animation:portrait-spin 1.4s cubic-bezier(.55,0,.25,1)}
+@keyframes portrait-spin{to{transform:rotate(360deg)}}
+main.slide-in-left{animation:slide-l .28s ease-out}
+main.slide-in-right{animation:slide-r .28s ease-out}
+@keyframes slide-l{from{opacity:.2;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes slide-r{from{opacity:.2;transform:translateX(-40px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.portrait svg.spin{animation:none}main.slide-in-left,main.slide-in-right{animation:none}}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}

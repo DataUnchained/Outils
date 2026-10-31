@@ -35,3 +35,60 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
   document.addEventListener('focusout',hide);
   window.addEventListener('scroll',hide,{passive:true});
 })();
+
+/* 3. Photo cliquable : les arcs aux couleurs du logo font un tour complet autour du portrait */
+(function(){
+  var fig=document.querySelector('.portrait');
+  if(!fig)return;
+  var svg=fig.querySelector('svg'),busy=false;
+  fig.setAttribute('role','button');fig.setAttribute('tabindex','0');
+  fig.setAttribute('aria-label','Faire tourner les arcs autour de la photo');
+  function spin(){
+    if(busy)return;
+    if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    busy=true;svg.classList.add('spin');
+    svg.addEventListener('animationend',function done(e){
+      if(e.animationName!=='portrait-spin')return;
+      svg.classList.remove('spin');busy=false;svg.removeEventListener('animationend',done);
+    });
+  }
+  fig.addEventListener('click',spin);
+  fig.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();spin()}});
+})();
+
+/* 4. Smartphone : un balayage horizontal change de page (ordre des onglets) */
+(function(){
+  var order=['index.html','prestations.html','references.html','outils.html','a-propos.html'];
+  var file=location.pathname.split('/').pop()||'index.html';
+  var i=order.indexOf(file);
+  if(i<0)return;
+  var main=document.querySelector('main');
+  try{
+    var d=sessionStorage.getItem('du-swipe');
+    if(d&&main){main.classList.add('slide-in-'+d);sessionStorage.removeItem('du-swipe')}
+  }catch(e){}
+  var x0=0,y0=0,t0=0,ok=false;
+  function blocked(el){
+    // On ignore les zones qui défilent ou se manipulent en horizontal
+    while(el&&el!==document.body){
+      if(el.tagName==='IFRAME'||el.tagName==='INPUT'||el.tagName==='TEXTAREA')return true;
+      if(el.classList&&(el.classList.contains('tabbar')||el.classList.contains('lm')||el.classList.contains('ticker')))return true;
+      if(el.scrollWidth>el.clientWidth+4){var o=getComputedStyle(el).overflowX;if(o==='auto'||o==='scroll')return true}
+      el=el.parentElement;
+    }
+    return false;
+  }
+  document.addEventListener('touchstart',function(e){
+    if(e.touches.length!==1){ok=false;return}
+    var t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now();ok=!blocked(e.target);
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!ok)return;ok=false;
+    var t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+    if(Date.now()-t0>700||Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.8)return;
+    var next=dx<0?i+1:i-1;
+    if(next<0||next>=order.length)return;
+    try{sessionStorage.setItem('du-swipe',dx<0?'left':'right')}catch(err){}
+    location.href=order[next];
+  },{passive:true});
+})();
