@@ -283,4 +283,11 @@ img{max-width:100%}
 .presta .tile{width:3.4rem;height:3.4rem;border-radius:14px}
 .presta ul{margin-top:1.2rem;gap:.6rem 2rem}
 @media (max-width:760px){.presta{padding:1.4rem 1.3rem}}
+@media (min-width:1001px){
+.hero{grid-template-columns:minmax(0,1fr) auto;padding:clamp(1.5rem,3vw,3rem) 0 clamp(1.5rem,2.5vw,2.5rem)}
+.hero h1{font-size:clamp(2.6rem,4.6vw,4.8rem)}
+.hero p.lead{max-width:none;margin:1.1rem 0 1.6rem}
+.portrait{width:clamp(220px,21vw,340px)}
+}
+.cat{scroll-margin-top:calc(var(--mh) + 4.5rem)}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}
