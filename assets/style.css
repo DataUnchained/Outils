@@ -272,4 +272,11 @@ img{max-width:100%}
 .lm-grp img:hover{filter:none;opacity:1}
 @keyframes lm-scroll{to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.lm{overflow-x:auto}.lm-track{animation:none}.lm-dup{display:none}}
+.cat+.cat{margin-top:3.2rem}
+.cat-head h2{font-size:clamp(1.7rem,2.6vw,2.4rem)}
+.cat-head p{color:var(--muted);margin:.5rem 0 1rem;max-width:44em}
+.cat-head p b{color:var(--ink)}
+.levels{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.lvl{font-weight:700;font-size:.9rem;padding:.3rem .9rem;border-radius:999px;background:var(--mint);color:var(--green-900);border:1px solid #BFE0CD}
+.cat+.cat .cat-head{border-top:2px solid var(--gold);padding-top:2rem}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}
