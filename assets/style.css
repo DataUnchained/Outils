@@ -254,4 +254,5 @@ img{max-width:100%}
 .prose h2{font-size:1.5rem;margin:2rem 0 .6rem}
 .prose p,.prose li{color:var(--ink)}
 .prose ul{padding-left:1.2rem}
+.wall{gap:0;background:var(--white)}.wall .cell{border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2)}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}
