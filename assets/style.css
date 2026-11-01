@@ -326,4 +326,9 @@ main.slide-in-right{animation:slide-r .28s ease-out}
 .note-chiffrage{background:#FFF8E1;border:1px solid #F0DDA0;border-left:6px solid var(--gold);border-radius:14px;padding:1rem 1.3rem;margin:0 0 1.6rem;color:#4D3D00;font-size:1.05rem}
 .creds ul{grid-template-columns:repeat(4,1fr)}
 @media (max-width:1000px){.creds ul{grid-template-columns:1fr}}
+.fab{position:fixed;right:max(1rem,env(safe-area-inset-right));bottom:max(1rem,env(safe-area-inset-bottom));z-index:90;display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.25rem;border-radius:999px;background:var(--gold);color:#2B2100;font-weight:800;font-size:.98rem;text-decoration:none;box-shadow:0 14px 30px -10px rgba(14,65,38,.6),0 0 0 3px rgba(255,255,255,.7);opacity:0;transform:translateY(20px);pointer-events:none;transition:opacity .3s,transform .3s,background .15s}
+.fab.show{opacity:1;transform:none;pointer-events:auto}
+.fab:hover{background:var(--gold-d);color:#fff}
+@media (max-width:760px){.fab{font-size:.9rem;padding:.75rem 1.05rem}}
+@media (prefers-reduced-motion:reduce){.fab{transition:none}}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}

@@ -105,3 +105,22 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
   tr.addEventListener('keydown',function(e){if(e.key==='ArrowRight')nx.click();if(e.key==='ArrowLeft')pv.click()});
   window.addEventListener('resize',upd);upd();
 })();
+
+/* 6. Bouton flottant « Un besoin ? » : apparaît après un instant, se range près du bloc de contact et du pied de page */
+(function(){
+  var fab=document.getElementById('fab');
+  if(!fab)return;
+  var hideZones=[document.querySelector('.closing'),document.querySelector('.footer')].filter(Boolean);
+  var inZone=0;
+  function upd(){fab.classList.toggle('show',ready&&inZone<=0)}
+  var ready=false;
+  setTimeout(function(){ready=true;upd()},1500);
+  if('IntersectionObserver' in window){
+    var seen={};
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){seen[e.target.className]=e.isIntersecting});
+      inZone=Object.keys(seen).filter(function(k){return seen[k]}).length;upd();
+    });
+    hideZones.forEach(function(z){io.observe(z)});
+  }
+})();
