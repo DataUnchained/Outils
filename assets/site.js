@@ -112,7 +112,7 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
   if(!fab)return;
   var dlg=document.getElementById('contactDlg'),form=document.getElementById('contactForm');
   var status=document.getElementById('dlgStatus'),send=document.getElementById('dlgSend');
-  var ENDPOINT='https://formsubmit.co/ajax/olivier.faure@dataunchained.fr';
+  var ENDPOINT='https://formsubmit.co/ajax/data.unchained@outlook.fr';
   // apparition du bouton, masqué près du bloc de contact et du pied de page
   var zones=[document.querySelector('.closing'),document.querySelector('.footer')].filter(Boolean),inZone=0,ready=false;
   function upd(){fab.classList.toggle('show',ready&&inZone<=0)}
@@ -150,13 +150,14 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
     fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
       .then(function(x){
-        if(!x.ok||String(x.j.success)==='false'){console.warn('FormSubmit',x.j);var m=String(x.j&&x.j.message||'');if(/activat/i.test(m)){status.className='dlg-status ok';status.textContent='Presque : un e-mail d’activation vient d’être envoyé au propriétaire du site. Une fois confirmé, les messages arriveront.';return}throw new Error('send')}
+        if(!x.ok||String(x.j.success)==='false'){console.warn('FormSubmit',x.j);var m=String(x.j&&x.j.message||'');if(/activat/i.test(m)){status.className='dlg-status ok';status.textContent='Presque : un e-mail d’activation vient d’être envoyé au propriétaire du site. Une fois confirmé, les messages arriveront.';return}throw new Error(m||('HTTP '+(x.ok?'ok':'erreur')))}
         status.className='dlg-status ok';status.textContent='Message envoyé. Merci, je vous réponds rapidement.';form.reset();
       })
-      .catch(function(){
+      .catch(function(err){
+        console.error('Envoi du formulaire :',err);
         var body=encodeURIComponent((payload.message||'')+'\n\n'+(payload.name||''));
         status.className='dlg-status err';
-        status.innerHTML='L’envoi a échoué. Vous pouvez m’écrire directement : <a href="mailto:olivier.faure@dataunchained.fr?subject=Contact%20depuis%20le%20site&body='+body+'">olivier.faure@dataunchained.fr</a>';
+        var det=String(err&&err.message||err).replace(/[<>&]/g,'');status.innerHTML='L’envoi a échoué. Vous pouvez m’écrire directement : <a href="mailto:olivier.faure@dataunchained.fr?subject=Contact%20depuis%20le%20site&body='+body+'">olivier.faure@dataunchained.fr</a><br><small>Détail technique : '+det+'</small>';
       })
       .then(function(){send.disabled=false});
   });
