@@ -92,3 +92,16 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
     location.href=order[next];
   },{passive:true});
 })();
+
+/* 5. Avis : défilement par boutons (le glissement au doigt marche aussi) */
+(function(){
+  var tr=document.getElementById('avis'),pv=document.getElementById('avisPrev'),nx=document.getElementById('avisNext');
+  if(!tr||!pv||!nx)return;
+  function step(){var c=tr.querySelector('.quote');return c?c.getBoundingClientRect().width+parseFloat(getComputedStyle(tr).columnGap||0):tr.clientWidth}
+  function upd(){pv.disabled=tr.scrollLeft<4;nx.disabled=tr.scrollLeft+tr.clientWidth>=tr.scrollWidth-4}
+  pv.addEventListener('click',function(){tr.scrollBy({left:-step(),behavior:'smooth'})});
+  nx.addEventListener('click',function(){tr.scrollBy({left:step(),behavior:'smooth'})});
+  tr.addEventListener('scroll',upd,{passive:true});
+  tr.addEventListener('keydown',function(e){if(e.key==='ArrowRight')nx.click();if(e.key==='ArrowLeft')pv.click()});
+  window.addEventListener('resize',upd);upd();
+})();
