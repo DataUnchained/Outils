@@ -71,7 +71,7 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
   function blocked(el){
     // On ignore les zones qui défilent ou se manipulent en horizontal
     while(el&&el!==document.body){
-      if(el.tagName==='IFRAME'||el.tagName==='INPUT'||el.tagName==='TEXTAREA')return true;
+      if(el.tagName==='IFRAME'||el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='DIALOG')return true;
       if(el.classList&&(el.classList.contains('tabbar')||el.classList.contains('lm')||el.classList.contains('ticker')))return true;
       if(el.scrollWidth>el.clientWidth+4){var o=getComputedStyle(el).overflowX;if(o==='auto'||o==='scroll')return true}
       el=el.parentElement;
@@ -106,21 +106,59 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
   window.addEventListener('resize',upd);upd();
 })();
 
-/* 6. Bouton flottant « Un besoin ? » : apparaît après un instant, se range près du bloc de contact et du pied de page */
+/* 6. Bouton flottant « Un besoin ? » + formulaire de contact en fenêtre */
 (function(){
   var fab=document.getElementById('fab');
   if(!fab)return;
-  var hideZones=[document.querySelector('.closing'),document.querySelector('.footer')].filter(Boolean);
-  var inZone=0;
+  var dlg=document.getElementById('contactDlg'),form=document.getElementById('contactForm');
+  var status=document.getElementById('dlgStatus'),send=document.getElementById('dlgSend');
+  var ENDPOINT='https://formsubmit.co/ajax/olivier.faure@dataunchained.fr';
+  // apparition du bouton, masqué près du bloc de contact et du pied de page
+  var zones=[document.querySelector('.closing'),document.querySelector('.footer')].filter(Boolean),inZone=0,ready=false;
   function upd(){fab.classList.toggle('show',ready&&inZone<=0)}
-  var ready=false;
   setTimeout(function(){ready=true;upd()},1500);
   if('IntersectionObserver' in window){
-    var seen={};
-    var io=new IntersectionObserver(function(es){
+    var seen={},io=new IntersectionObserver(function(es){
       es.forEach(function(e){seen[e.target.className]=e.isIntersecting});
       inZone=Object.keys(seen).filter(function(k){return seen[k]}).length;upd();
     });
-    hideZones.forEach(function(z){io.observe(z)});
+    zones.forEach(function(z){io.observe(z)});
   }
+  // ouverture / fermeture de la fenêtre
+  function open(){
+    status.className='dlg-status';status.textContent='';
+    if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');
+    var f=form.querySelector('input[name=name]');if(f)f.focus();
+  }
+  function close(){if(dlg.close)dlg.close();else dlg.removeAttribute('open')}
+  fab.addEventListener('click',open);
+  document.getElementById('dlgClose').addEventListener('click',close);
+  dlg.addEventListener('click',function(e){if(e.target===dlg)close()});
+  // envoi
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var bad=false;
+    form.querySelectorAll('[required]').forEach(function(el){
+      var ko=el.type==='checkbox'?!el.checked:!el.value.trim()||(el.type==='email'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(el.value));
+      el.classList.toggle('invalid',ko);if(ko)bad=true;
+    });
+    if(bad){status.className='dlg-status err';status.textContent='Merci de compléter les champs en rouge et de cocher la case.';return}
+    var d=new FormData(form);
+    if(d.get('_honey'))return; // robot : on ignore
+    var payload={name:d.get('name'),email:d.get('email'),message:d.get('message'),_subject:'Message depuis le site Data Unchained',_template:'table',_captcha:'false'};
+    send.disabled=true;status.className='dlg-status';status.textContent='Envoi en cours…';
+    fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
+      .then(function(x){
+        if(!x.ok||String(x.j.success)==='false')throw new Error('send');
+        status.className='dlg-status ok';status.textContent='Message envoyé. Merci, je vous réponds rapidement.';form.reset();
+      })
+      .catch(function(){
+        var body=encodeURIComponent((payload.message||'')+'\n\n'+(payload.name||''));
+        status.className='dlg-status err';
+        status.innerHTML='L’envoi a échoué. Vous pouvez m’écrire directement : <a href="mailto:olivier.faure@dataunchained.fr?subject=Contact%20depuis%20le%20site&body='+body+'">olivier.faure@dataunchained.fr</a>';
+      })
+      .then(function(){send.disabled=false});
+  });
+  form.addEventListener('input',function(e){e.target.classList.remove('invalid');if(status.classList.contains('err')){status.className='dlg-status';status.textContent=''}});
 })();

@@ -331,4 +331,29 @@ main.slide-in-right{animation:slide-r .28s ease-out}
 .fab:hover{background:var(--gold-d);color:#fff}
 @media (max-width:760px){.fab{font-size:.9rem;padding:.75rem 1.05rem}}
 @media (prefers-reduced-motion:reduce){.fab{transition:none}}
+.fab{border:0;cursor:pointer;font-family:var(--body)}
+.dlg{border:0;border-radius:22px;padding:0;width:min(560px,94vw);max-height:92vh;box-shadow:0 30px 70px -20px rgba(0,0,0,.6);background:var(--white);color:var(--ink);overflow:hidden}
+.dlg::backdrop{background:rgba(14,40,26,.55);backdrop-filter:blur(2px)}
+.dlg[open]{animation:dlg-in .25s ease-out}
+@keyframes dlg-in{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:var(--green-900);color:#fff;padding:1.1rem 1.5rem}
+.dlg-head h2{color:#fff;font-size:1.4rem}
+.dlg-x{width:2.4rem;height:2.4rem;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-size:1.6rem;line-height:1;cursor:pointer}
+.dlg-x:hover{background:rgba(255,255,255,.15)}
+.dlg-body{padding:1.4rem 1.5rem 1.6rem;display:grid;gap:1rem;overflow:auto;max-height:calc(92vh - 4.5rem)}
+.dlg-intro{color:var(--muted);font-size:.95rem}
+.dlg-body label{display:grid;gap:.35rem;font-weight:700;font-size:.92rem}
+.dlg-body input[type=text],.dlg-body input[type=email],.dlg-body textarea{font:inherit;font-weight:400;padding:.7rem .9rem;border:1.5px solid var(--line-2);border-radius:12px;background:#FBFAF9;color:var(--ink);width:100%}
+.dlg-body textarea{resize:vertical;min-height:7rem}
+.dlg-body input:focus,.dlg-body textarea:focus{outline:3px solid var(--gold);outline-offset:1px;border-color:var(--gold-d)}
+.dlg-body .invalid{border-color:#A80000;background:#FDF3F3}
+.dlg-check{display:flex!important;gap:.7rem;align-items:flex-start;font-weight:400!important;font-size:.85rem!important;color:var(--muted)}
+.dlg-check input{margin-top:.25rem;width:1.1rem;height:1.1rem;flex-shrink:0}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.dlg-status{min-height:1.2rem;font-size:.92rem;font-weight:600}
+.dlg-status.ok{color:var(--data);background:var(--mint);padding:.7rem 1rem;border-radius:10px}
+.dlg-status.err{color:#A80000;background:#FDF3F3;padding:.7rem 1rem;border-radius:10px}
+.dlg-body .btn{justify-self:start}
+.dlg-body .btn:disabled{opacity:.6;cursor:wait}
+@media (prefers-reduced-motion:reduce){.dlg[open]{animation:none}}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}
