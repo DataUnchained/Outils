@@ -322,4 +322,8 @@ main.slide-in-right{animation:slide-r .28s ease-out}
 .hero .btn-row{flex-wrap:nowrap;gap:.5rem}
 .hero .btn-row .btn{flex:1 1 0;justify-content:center;text-align:center;padding:.8rem .6rem;font-size:.86rem;line-height:1.2}
 }
+.presta li.wide{grid-column:1/-1}
+.note-chiffrage{background:#FFF8E1;border:1px solid #F0DDA0;border-left:6px solid var(--gold);border-radius:14px;padding:1rem 1.3rem;margin:0 0 1.6rem;color:#4D3D00;font-size:1.05rem}
+.creds ul{grid-template-columns:repeat(4,1fr)}
+@media (max-width:1000px){.creds ul{grid-template-columns:1fr}}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}
