@@ -318,4 +318,8 @@ main.slide-in-right{animation:slide-r .28s ease-out}
 .wall .cell div{height:2.4rem}
 .wall span{font-size:.7rem;text-align:center}
 }
+@media (max-width:760px){
+.hero .btn-row{flex-wrap:nowrap;gap:.5rem}
+.hero .btn-row .btn{flex:1 1 0;justify-content:center;text-align:center;padding:.8rem .6rem;font-size:.86rem;line-height:1.2}
+}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}
