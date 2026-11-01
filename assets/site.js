@@ -150,7 +150,7 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
     fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})})
       .then(function(x){
-        if(!x.ok||String(x.j.success)==='false')throw new Error('send');
+        if(!x.ok||String(x.j.success)==='false'){console.warn('FormSubmit',x.j);var m=String(x.j&&x.j.message||'');if(/activat/i.test(m)){status.className='dlg-status ok';status.textContent='Presque : un e-mail d’activation vient d’être envoyé au propriétaire du site. Une fois confirmé, les messages arriveront.';return}throw new Error('send')}
         status.className='dlg-status ok';status.textContent='Message envoyé. Merci, je vous réponds rapidement.';form.reset();
       })
       .catch(function(){
