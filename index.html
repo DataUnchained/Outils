@@ -84,7 +84,20 @@
 <section class="wrap section">
   <div class="closing"><div><h2>Parlons de votre projet.</h2><p>Formation, outil sur mesure ou mission data : je vous réponds rapidement.</p></div><a class="btn dark" href="a-propos.html">Me contacter</a></div>
 </section>
-<a class="fab" id="fab" href="a-propos.html"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg><span>Un besoin ? Contactez-moi</span></a></main>
+<button type="button" class="fab" id="fab" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg><span>Un besoin ? Contactez-moi</span></button>
+<dialog class="dlg" id="contactDlg" aria-labelledby="dlgTitle">
+  <div class="dlg-head"><h2 id="dlgTitle">Un besoin ? Écrivez-moi</h2><button type="button" class="dlg-x" id="dlgClose" aria-label="Fermer">×</button></div>
+  <form id="contactForm" class="dlg-body" novalidate>
+    <p class="dlg-intro">Décrivez votre projet en quelques lignes, je vous réponds rapidement. Vous préférez appeler ? <a href="tel:+33769221866">07 69 22 18 66</a></p>
+    <label>Votre nom<input name="name" type="text" autocomplete="name" required></label>
+    <label>Votre e-mail<input name="email" type="email" autocomplete="email" required></label>
+    <label>Votre message<textarea name="message" rows="5" required></textarea></label>
+    <input type="text" name="_honey" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
+    <label class="dlg-check"><input type="checkbox" name="consent" required><span>J’accepte que ces informations servent uniquement à me répondre (<a href="mentions-legales.html">en savoir plus</a>).</span></label>
+    <p class="dlg-status" id="dlgStatus" role="status" aria-live="polite"></p>
+    <button type="submit" class="btn primary" id="dlgSend">Envoyer le message</button>
+  </form>
+</dialog></main>
 <footer class="footer"><div class="wrap">
   <div class="f-brand"><img class="logo-img" alt="" src="assets/img/logo.png"><div><b>Data Unchained</b>Olivier Faure, formateur et développeur d’outils modernes.</div></div>
   <div><h4>Le site</h4><ul><li><a href="index.html">Accueil</a></li><li><a href="prestations.html">Prestations</a></li><li><a href="references.html">Références</a></li><li><a href="outils.html">Outils pédagogiques gratuits</a></li><li><a href="a-propos.html">À propos</a></li></ul></div>
