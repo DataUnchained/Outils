@@ -181,3 +181,14 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
   tr.addEventListener('keydown',function(e){if(e.key==='ArrowRight')go(idx()+1);if(e.key==='ArrowLeft')go(idx()-1)});
   window.addEventListener('resize',upd);window.addEventListener('load',upd);tr.querySelectorAll('img').forEach(function(m){m.addEventListener('load',upd)});upd();
 })();
+
+/* 8. Mini-carrousels de supports (diapositive Formations) */
+(function(){
+  document.querySelectorAll('[data-mc]').forEach(function(mc){
+    var imgs=mc.querySelectorAll('.mc-img'),ths=mc.querySelectorAll('.mc-th'),cap=mc.querySelector('.mc-cap'),cur=0;
+    function show(i){cur=(i+imgs.length)%imgs.length;imgs.forEach(function(m,k){m.classList.toggle('on',k===cur)});ths.forEach(function(t,k){t.classList.toggle('on',k===cur)});if(cap)cap.textContent=imgs[cur].getAttribute('data-cap')}
+    mc.querySelector('.mc-prev').addEventListener('click',function(){show(cur-1)});
+    mc.querySelector('.mc-next').addEventListener('click',function(){show(cur+1)});
+    ths.forEach(function(t,k){t.addEventListener('click',function(){show(k)})});
+  });
+})();
