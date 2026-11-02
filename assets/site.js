@@ -58,7 +58,7 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
 
 /* 4. Smartphone : un balayage horizontal change de page (ordre des onglets) */
 (function(){
-  var order=['index.html','prestations.html','references.html','outils.html','a-propos.html'];
+  var order=['index.html','prestations.html','experiences.html','references.html','outils.html','a-propos.html'];
   var file=location.pathname.split('/').pop()||'index.html';
   var i=order.indexOf(file);
   if(i<0)return;
@@ -162,4 +162,21 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
       .then(function(){send.disabled=false});
   });
   form.addEventListener('input',function(e){e.target.classList.remove('invalid');if(status.classList.contains('err')){status.className='dlg-status';status.textContent=''}});
+})();
+
+/* 7. Diaporama de réalisations (page Expériences) */
+(function(){
+  var tr=document.getElementById('gal'),pv=document.getElementById('galPrev'),nx=document.getElementById('galNext'),dots=document.querySelectorAll('.gal-dot');
+  if(!tr||!pv||!nx)return;
+  var slides=tr.querySelectorAll('.slide');
+  function idx(){return Math.round(tr.scrollLeft/(tr.clientWidth||1))}
+  function go(i){i=Math.max(0,Math.min(slides.length-1,i));tr.scrollTo({left:i*tr.clientWidth,behavior:'smooth'})}
+  function upd(){var i=idx();pv.disabled=i<=0;nx.disabled=i>=slides.length-1;dots.forEach(function(d,k){d.classList.toggle('on',k===i)});
+    if(slides.length<2){document.getElementById('galDots').style.display='none';pv.style.display='none';nx.style.display='none'}}
+  pv.addEventListener('click',function(){go(idx()-1)});
+  nx.addEventListener('click',function(){go(idx()+1)});
+  dots.forEach(function(d,k){d.addEventListener('click',function(){go(k)})});
+  tr.addEventListener('scroll',upd,{passive:true});
+  tr.addEventListener('keydown',function(e){if(e.key==='ArrowRight')go(idx()+1);if(e.key==='ArrowLeft')go(idx()-1)});
+  window.addEventListener('resize',upd);upd();
 })();
