@@ -357,6 +357,7 @@ main.slide-in-right{animation:slide-r .28s ease-out}
 .dlg-body .btn:disabled{opacity:.6;cursor:wait}
 @media (prefers-reduced-motion:reduce){.dlg[open]{animation:none}}
 .sec-t{font-size:clamp(1.5rem,2.4vw,2.1rem);margin-bottom:1.2rem}
+.sec-t .per{font-family:var(--body);font-weight:500;font-size:.6em;color:var(--muted);letter-spacing:0;white-space:nowrap}
 .dash{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);grid-template-areas:"bars donut" "bars kpi";gap:1.4rem}
 .panel{background:var(--white);border:1px solid var(--line);border-radius:22px;padding:1.6rem 1.8rem}
 .panel h3{font-size:1.15rem;margin-bottom:1.1rem}
