@@ -493,6 +493,21 @@
   /* Pied de page (style site) */
   .app-footer{ margin-top:clamp(3rem,6vw,5rem); background:var(--navy-dark); color:var(--on-dark-3); border-top:1px solid rgba(255,255,255,.15); font-size:.78rem; padding:1rem 14px .3rem; }
   .credit{ background:var(--navy-dark); color:var(--on-dark-3); opacity:1; font-size:.72rem; padding:0 max(4vw,16px) .8rem; }
+
+  /* Smartphone : bandeau masqué pendant l'examen, chrono discret */
+  .mini-timer{ display:none; }
+  @media (max-width:760px){
+    body.is-running:not(.hdr-open) .topbar{ display:none; }
+    body.is-running .mini-timer{ display:inline-flex; }
+    .mini-timer{ position:fixed; right:max(12px,env(safe-area-inset-right)); bottom:max(12px,env(safe-area-inset-bottom)); z-index:400; align-items:center; gap:.45rem; padding:.45rem .55rem .45rem .85rem; border-radius:999px; border:2px solid var(--accent); background:var(--navy-dark); color:var(--on-dark); font-family:var(--sans); font-weight:700; font-size:.85rem; box-shadow:0 10px 24px -10px rgba(14,65,38,.6); cursor:pointer; opacity:.92; }
+    .mini-timer .mt-digits{ font-family:var(--display); font-size:1.05rem; font-variant-numeric:tabular-nums; }
+    .mini-timer .mt-chev{ display:inline-flex; width:1.5rem; height:1.5rem; border-radius:50%; align-items:center; justify-content:center; background:rgba(255,255,255,.14); transition:transform .2s; }
+    body.hdr-open .mini-timer .mt-chev{ transform:rotate(180deg); }
+    .mini-timer.warn{ border-color:var(--warn); background:var(--warn-dark); }
+    .mini-timer.danger{ border-color:var(--danger-bright); background:var(--danger-dark); animation:pulse 1s infinite; }
+    body.is-running .toasts{ bottom:70px; }
+    body.is-running .credit{ padding-bottom:72px; }
+  }
 </style>
 </head>
 <body>
@@ -1900,6 +1915,27 @@ $('appVersion').textContent = 'v' + APP_VERSION + ' · version démo';
   } else {
     showScreen('welcome');
   }
+})();
+</script>
+<button type="button" class="mini-timer" id="miniTimer" aria-label="Afficher ou masquer le bandeau" aria-expanded="false"><span aria-hidden="true">⏱</span><span class="mt-digits" id="miniDigits">60:00</span><span class="mt-chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span></button>
+<script>
+/* Smartphone : chrono discret et bandeau repliable (affichage uniquement) */
+(function(){
+  var timer=document.getElementById('timer'), digits=document.getElementById('timerDigits'),
+      mini=document.getElementById('miniTimer'), md=document.getElementById('miniDigits');
+  function sync(){
+    document.body.classList.toggle('is-running', timer.classList.contains('show'));
+    md.textContent=digits.textContent;
+    mini.classList.toggle('warn', timer.classList.contains('warn'));
+    mini.classList.toggle('danger', timer.classList.contains('danger'));
+  }
+  new MutationObserver(sync).observe(timer,{attributes:true,attributeFilter:['class']});
+  new MutationObserver(sync).observe(digits,{childList:true,characterData:true,subtree:true});
+  mini.addEventListener('click',function(){
+    var open=document.body.classList.toggle('hdr-open');
+    mini.setAttribute('aria-expanded',open?'true':'false');
+  });
+  sync();
 })();
 </script>
 </body>
