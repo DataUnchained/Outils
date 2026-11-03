@@ -84,6 +84,19 @@
     </div>
   </section>
   <section class="section"><div class="closing"><div><h2>Un besoin précis ?</h2><p>Décrivez-moi votre contexte, je vous propose une intervention adaptée.</p></div><a class="btn dark" href="a-propos.html">Me contacter</a></div></section>
+<script>
+/* Mini-carrousels de supports (Formations et Power BI) : script propre à cette page */
+(function(){
+  document.querySelectorAll('[data-mc]').forEach(function(mc){
+    if(mc.getAttribute('data-bound'))return;mc.setAttribute('data-bound','1');
+    var imgs=mc.querySelectorAll('.mc-img'),ths=mc.querySelectorAll('.mc-th'),cap=mc.querySelector('.mc-cap'),cur=0;
+    function show(i){cur=(i+imgs.length)%imgs.length;imgs.forEach(function(m,k){m.classList.toggle('on',k===cur)});ths.forEach(function(t,k){t.classList.toggle('on',k===cur)});if(cap)cap.textContent=imgs[cur].getAttribute('data-cap')}
+    mc.querySelector('.mc-prev').addEventListener('click',function(){show(cur-1)});
+    mc.querySelector('.mc-next').addEventListener('click',function(){show(cur+1)});
+    ths.forEach(function(t,k){t.addEventListener('click',function(){show(k)})});
+  });
+})();
+</script>
 </div></main>
 <footer class="footer"><div class="wrap">
   <div class="f-brand"><img class="logo-img" alt="" src="assets/img/logo.png"><div><b>Data Unchained</b>Olivier Faure, formateur et développeur d’outils modernes.</div></div>
