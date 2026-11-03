@@ -181,3 +181,4 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
   tr.addEventListener('keydown',function(e){if(e.key==='ArrowRight')go(idx()+1);if(e.key==='ArrowLeft')go(idx()-1)});
   window.addEventListener('resize',upd);window.addEventListener('load',upd);tr.querySelectorAll('img').forEach(function(m){m.addEventListener('load',upd)});upd();
 })();
+
