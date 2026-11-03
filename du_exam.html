@@ -1751,7 +1751,7 @@ function buildPdf(){
 function pdfFileName(){
   const clean = t => t.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9-]+/g,'_').replace(/^_|_$/g,'');
   const d = new Date(state.startTs);
-  return `Examen_Excel_Pigier_${anonId()}_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}.pdf`;
+  return `Examen_Excel_DU_${anonId()}_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}.pdf`;
 }
 function downloadPdf(ev){
   try{
