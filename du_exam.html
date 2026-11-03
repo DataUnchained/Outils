@@ -433,7 +433,7 @@
 
   /* Examen */
   .exam-layout{ grid-template-columns:270px 1fr; gap:1.4rem; }
-  @media (max-width:900px){ .exam-layout{ grid-template-columns:1fr; } }
+  @media (max-width:900px){ .exam-layout{ grid-template-columns:1fr; } .exam-layout .q-card{ order:-1; } }
   .nav-panel{ top:104px; }
   .nav-title{ font-family:var(--display); font-size:1.1rem; font-weight:700; text-transform:none; letter-spacing:-.01em; color:var(--navy-dark); }
   .nav-part{ font-size:.78rem; font-weight:700; color:var(--navy-light); }
@@ -1753,15 +1753,37 @@ function pdfFileName(){
   const d = new Date(state.startTs);
   return `Examen_Excel_Pigier_${anonId()}_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}.pdf`;
 }
-function downloadPdf(){
+function downloadPdf(ev){
   try{
     const bytes = buildPdf();
     const blob = new Blob([bytes], { type:'application/pdf' });
+    // Smartphone : sur un clic, on passe par le partage natif (Enregistrer, Drive, mail…), plus fiable que le téléchargement
+    const fromClick = !!(ev && ev.isTrusted);
+    const isTouch = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+    if(fromClick && isTouch && typeof File === 'function' && navigator.canShare){
+      const file = new File([blob], pdfFileName(), { type:'application/pdf' });
+      if(navigator.canShare({ files:[file] })){
+        navigator.share({ files:[file], title:pdfFileName(), text:`Fiche de synthèse de l'examen Excel, à envoyer à ${MAIL_TO}` })
+          .then(()=>toast('📄 Fiche PDF partagée : ' + pdfFileName()))
+          .catch(err=>{ if(err && err.name!=='AbortError') saveBlob(blob, isTouch); });
+        return;
+      }
+    }
+    saveBlob(blob, isTouch && fromClick);
+  }catch(err){
+    console.error(err);
+    toast('Impossible de générer le PDF sur ce navigateur. Préviens ton formateur.', 'danger');
+  }
+}
+function saveBlob(blob, openFallback){
+  try{
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = pdfFileName();
     document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 20000);
+    // Smartphone sans partage natif : on ouvre aussi la fiche dans un onglet pour pouvoir l'enregistrer
+    if(openFallback) window.open(url, '_blank');
+    setTimeout(()=>URL.revokeObjectURL(url), 120000);
     toast('📄 Fiche PDF téléchargée : ' + pdfFileName());
   }catch(err){
     console.error(err);
@@ -1881,6 +1903,7 @@ $('btnCloseDrawer').addEventListener('click', closeDrawer);
 $('drawerBack').addEventListener('click', closeDrawer);
 $('btnFs').addEventListener('click', requestFs);
 $('btnPdf').addEventListener('click', downloadPdf);
+if(window.matchMedia && window.matchMedia('(pointer:coarse)').matches) $('btnPdf').textContent = '📄 Enregistrer ou partager ma fiche PDF';
 $('btnMail').addEventListener('click', ()=>{ window.location.href = mailtoHref(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDrawer(); });
 
