@@ -508,6 +508,13 @@
     body.is-running .toasts{ bottom:70px; }
     body.is-running .credit{ padding-bottom:72px; }
   }
+
+  /* Lien vers les autres outils (masqué pendant l'examen pour ne pas provoquer de sortie) */
+  .tools-link{ font-size:.82rem; color:var(--on-dark-2); line-height:1.35; max-width:30rem; text-align:right; }
+  .tools-link a{ display:inline-flex; align-items:center; gap:.25rem; color:var(--accent-light); font-weight:800; text-decoration:underline; text-underline-offset:3px; white-space:nowrap; }
+  .tools-link a:hover{ color:var(--on-dark); }
+  body.is-running .tools-link{ display:none; }
+  @media (max-width:760px){ .topbar-right{ margin-left:0; width:100%; justify-content:space-between; } .tools-link{ text-align:left; flex:1; } }
 </style>
 </head>
 <body>
@@ -522,6 +529,7 @@
       <span class="sub">Cas Cycles Azur · 20 questions · 1 heure</span>
     </div>
     <div class="topbar-right">
+      <div class="tools-link">Envie de retrouver d’autres outils pédagogiques gratuits ? <a href="https://dataunchained.fr/outils.html" target="_blank" rel="noopener">Consultez ma page <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a></div>
       <span class="demo-pill" id="demoPill">Démo</span>
       <span class="integrity-chip" id="integrityChip">🛡 Intégrité : OK</span>
       <button class="hdr-btn" id="btnDossier" type="button">📁 Dossier du cas</button>
