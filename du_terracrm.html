@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TerraCRM · TerraCafé Pro</title>
+<style>
+:root{--bg:#f5f3ef;--panel:#fff;--ink:#2b2420;--mut:#7a6f66;--line:#e6e0d8;--brand:#6b3f22;--brand2:#a8693b;--acc:#2f7d6d;--warn:#b5502f;--chip:#f1ebe3;--sel:#fbf6ef}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+aside{background:#2b2420;color:#efe7dd;padding:18px 0;position:sticky;top:0;height:100vh;overflow:auto}
+.logo{padding:0 20px 18px;font-weight:700;font-size:18px;letter-spacing:.3px}
+.logo small{display:block;font-weight:400;font-size:12px;color:#bfae9c}
+nav a{display:flex;gap:10px;align-items:center;padding:9px 20px;color:#e3d8cb;text-decoration:none;border-left:3px solid transparent}
+nav a:hover{background:#3a312b}
+nav a.on{background:#3a312b;border-left-color:var(--brand2);color:#fff}
+nav .sep{height:1px;background:#463b33;margin:10px 20px}
+.user{padding:16px 20px;font-size:12px;color:#bfae9c}
+main{padding:22px 28px;min-width:0}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 18px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+input,select,button{font:inherit}
+input[type=search],select{padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff}
+input[type=search]{min-width:240px}
+button{padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:#fff;cursor:pointer}
+button.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+button.pri:hover{background:#5a341c}
+button:disabled{opacity:.5;cursor:default}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.tw{overflow:auto;max-height:calc(100vh - 210px)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:#faf8f5;font-weight:600;cursor:pointer;user-select:none;z-index:1}
+th .a{color:var(--mut);font-size:11px}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--sel)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.empty{color:#c0b5aa;font-style:italic}
+.pager{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;color:var(--mut);font-size:13px}
+.tag{display:inline-block;padding:1px 8px;border-radius:20px;background:var(--chip);font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{padding:14px 16px}
+.kpi .l{color:var(--mut);font-size:12px}
+.kpi .v{font-size:24px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.box{padding:14px 16px}
+.box h3{margin:0 0 10px;font-size:14px}
+.hb{display:grid;grid-template-columns:150px 1fr 60px;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
+.hb .t{height:12px;background:var(--brand2);border-radius:3px}
+.hb .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--mut)}
+.hb .lab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.note{font-size:12px;color:var(--mut);margin-top:10px}
+.kanban{display:grid;grid-template-columns:repeat(7,minmax(190px,1fr));gap:10px;overflow:auto;padding-bottom:10px}
+.col{background:#ece6de;border-radius:10px;padding:8px;min-height:200px}
+.col h4{margin:2px 4px 8px;font-size:13px;display:flex;justify-content:space-between}
+.col h4 span{color:var(--mut);font-weight:400}
+.col.weird{background:#f6e2d9}
+.dc{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:7px;font-size:12.5px;cursor:pointer}
+.dc:hover{border-color:var(--brand2)}
+.dc b{display:block;margin-bottom:3px}
+.dc .m{display:flex;justify-content:space-between;color:var(--mut)}
+.drawer{position:fixed;top:0;right:0;width:min(520px,100%);height:100vh;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.15);transform:translateX(105%);transition:.2s;z-index:10;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.dh{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+.dh h2{margin:0;font-size:17px}
+.db{padding:14px 20px;overflow:auto}
+dl{display:grid;grid-template-columns:160px 1fr;gap:5px 10px;margin:0 0 16px;font-size:13px}
+dt{color:var(--mut)}
+dd{margin:0;word-break:break-word}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(--chip);padding:1px 5px;border-radius:4px}
+.rel h4{margin:14px 0 6px;font-size:13px}
+.rel table td,.rel table th{padding:5px 7px}
+.rel tbody tr{cursor:default}
+.exp{display:grid;grid-template-columns:330px 1fr;gap:16px}.exp>div{min-width:0}
+.exp .box label{display:block;margin:6px 0}
+.cols{columns:2;font-size:13px}
+.cols label{margin:2px 0!important}
+.preview{font-family:ui-monospace,Consolas,monospace;font-size:12px;white-space:pre;overflow:auto;max-height:360px;background:#faf8f5;border:1px solid var(--line);border-radius:8px;padding:10px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2b2420;color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:.25s;pointer-events:none;z-index:20;max-width:90%}
+.toast.show{opacity:1}
+.help{max-width:900px}
+.help h2{font-size:17px;margin:22px 0 8px}
+.help table{background:#fff}
+.help td{white-space:normal}
+.muted{color:var(--mut)}
+button.danger{color:var(--warn);border-color:#e7c3b5}
+.imp{display:grid;grid-template-columns:340px 1fr;gap:16px}.imp>div{min-width:0}
+.imp .box label{display:block;margin:6px 0}
+.drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;cursor:pointer;background:#faf8f5}
+.drop.over,.drop:hover{border-color:var(--brand2);background:var(--sel)}
+textarea{width:100%;font:12px ui-monospace,Consolas,monospace;border:1px solid var(--line);border-radius:7px;padding:8px}
+.ok{background:#eaf4f1;border-color:#bfdcd4;padding:10px 14px}
+.box.err{background:#fbeee9;border-color:#ecc5b7}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.chip{background:var(--chip);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--mut)}
+.chip b{display:block;font-size:18px;color:var(--ink)}
+.chip.e b{color:var(--warn)}.chip.w b{color:#b0841b}
+.lv{font-size:11px;padding:1px 7px;border-radius:10px}.lv.err{background:#f6d8cc;color:#8c3418}.lv.warn{background:#f6ecc9;color:#7a5a07}
+.qt{font-size:12.5px}.qt td,.qt th{padding:4px 8px}.qt tbody tr{cursor:default}
+.qh{margin:12px 0 4px;font-size:13px}
+.steps{padding-left:18px;line-height:1.8}
+.warnbox{background:#fdf6e3;border:1px solid #efdfae;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:30}
+.modal.open{display:flex}.modal>div{background:#fff;border-radius:12px;padding:20px;max-width:420px}
+@media (max-width:900px){.imp{grid-template-columns:1fr}}
+@media (max-width:900px){.app{grid-template-columns:1fr}aside{position:static;height:auto}.grid2,.exp{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="logo">☕ TerraCRM<small>TerraCafé Pro · Aix-en-Provence</small></div>
+    <nav id="nav">
+      <a href="#accueil" data-v="accueil">📊 Tableau de bord</a>
+      <a href="#contacts" data-v="contacts">👤 Contacts</a>
+      <a href="#entreprises" data-v="entreprises">🏢 Entreprises</a>
+      <a href="#opportunites" data-v="opportunites">💼 Opportunités</a>
+      <a href="#pipeline" data-v="pipeline">🧭 Pipeline</a>
+      <a href="#activites" data-v="activites">📞 Activités</a>
+      <div class="sep"></div>
+      <a href="#exports" data-v="exports">⬇️ Exports</a>
+      <a href="#import" data-v="import">⬆️ Import</a>
+      <a href="#aide" data-v="aide">❓ Lisez-moi</a>
+    </nav>
+    <div class="user">Connecté : compte Formation<br>Base au 29/10/2026<br><br>Données 100 % fictives, usage pédagogique.</div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div class="drawer" id="drawer"><div class="dh"><div><div class="muted" id="dk"></div><h2 id="dt"></h2></div><button onclick="closeDrawer()">✕</button></div><div class="db" id="dbody"></div></div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div><p></p><div class="bar" style="justify-content:flex-end;margin:0"><button class="no">Annuler</button><button class="pri yes">Confirmer</button></div></div></div>
+
+<script>
+// TerraCRM : générateur déterministe de données fictives TerraCafé Pro
+// Aucune donnée réelle : noms inventés, domaines .example, numéros de téléphone réservés à la fiction (ARCEP).
+function generateTerraData() {
+  let s = 20261030;
+  const rnd = () => { s |= 0; s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+  const pick = a => a[Math.floor(rnd() * a.length)];
+  const chance = p => rnd() < p;
+  const wpick = items => { let tot = items.reduce((x, y) => x + y[1], 0), r = rnd() * tot; for (const [v, w] of items) { if ((r -= w) < 0) return v; } return items[items.length - 1][0]; };
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+  const hash = str => { let h = 0; for (const ch of str) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); };
+
+  // ---------- Dates ----------
+  const DAY = 86400000;
+  const d = (y, m, dd) => Date.UTC(y, m - 1, dd);
+  const add = (t, n) => t + n * DAY;
+  const p2 = n => String(n).padStart(2, '0');
+  const parts = t => { const x = new Date(t); return [x.getUTCFullYear(), x.getUTCMonth() + 1, x.getUTCDate()]; };
+  const F = {
+    fr: t => { const [y, m, dd] = parts(t); return `${p2(dd)}/${p2(m)}/${y}`; },
+    iso: t => { const [y, m, dd] = parts(t); return `${y}-${p2(m)}-${p2(dd)}`; },
+    fr2: t => { const [y, m, dd] = parts(t); return `${p2(dd)}/${p2(m)}/${String(y).slice(2)}`; },
+    dash: t => { const [y, m, dd] = parts(t); return `${p2(dd)}-${p2(m)}-${y}`; },
+    us: t => { const [y, m, dd] = parts(t); return `${p2(m)}/${p2(dd)}/${y}`; },
+  };
+  const TODAY = d(2026, 10, 30);
+  const rdate = (a, b) => add(a, ri(0, Math.round((b - a) / DAY)));
+  const month = t => parts(t)[1];
+
+  // ---------- Référentiels ----------
+  const OWNERS = [
+    { code: 'JMA', nom: 'Julie Martin', deps: ['13', '84', '04', '05'], v: ['J. Martin', 'JMA', 'julie martin', 'Julie MARTIN'] },
+    { code: 'KBE', nom: 'Karim Benali', deps: ['83', '06'], v: ['K. Benali', 'KBE', 'karim benali', 'Karim BENALI'] },
+    { code: 'SLA', nom: 'Sophie Laurent', deps: ['34', '30'], v: ['S. Laurent', 'SLA', 'sophie laurent', 'Sophie LAURENT'] },
+    { code: 'TRO', nom: 'Thomas Roux', deps: ['69', '38'], v: ['T. Roux', 'TRO', 'thomas roux', 'Thomas ROUX'] },
+  ];
+  const ownerOfDep = dep => OWNERS.find(o => o.deps.includes(dep));
+  const ownerLabel = (o, pVar, pEmpty) => chance(pEmpty) ? '' : chance(pVar) ? pick(o.v) : o.nom;
+
+  const CITIES = {
+    '13': [['Marseille', '13008'], ['Marseille', '13002'], ['Aix-en-Provence', '13100'], ['Aix-en-Provence', '13290'], ['Aubagne', '13400'], ['Salon-de-Provence', '13300'], ['Martigues', '13500'], ['Vitrolles', '13127']],
+    '84': [['Avignon', '84000'], ['Carpentras', '84200'], ['Orange', '84100'], ['Cavaillon', '84300']],
+    '04': [['Manosque', '04100'], ['Digne-les-Bains', '04000']],
+    '05': [['Gap', '05000'], ['Briançon', '05100']],
+    '83': [['Toulon', '83000'], ['Fréjus', '83600'], ['Hyères', '83400'], ['Draguignan', '83300']],
+    '06': [['Nice', '06000'], ['Nice', '06200'], ['Cannes', '06400'], ['Antibes', '06600'], ['Valbonne', '06560']],
+    '34': [['Montpellier', '34000'], ['Montpellier', '34070'], ['Béziers', '34500'], ['Sète', '34200']],
+    '30': [['Nîmes', '30000'], ['Alès', '30100']],
+    '69': [['Lyon', '69003'], ['Lyon', '69007'], ['Villeurbanne', '69100'], ['Vénissieux', '69200']],
+    '38': [['Grenoble', '38000'], ['Vienne', '38200'], ['Bourgoin-Jallieu', '38300']],
+  };
+  const DEP_W = [['13', 30], ['84', 8], ['04', 3], ['05', 2], ['83', 10], ['06', 12], ['34', 10], ['30', 5], ['69', 14], ['38', 6]];
+
+  const CORES = ['Méridien', 'Calanque', 'Olivia', 'Lavande', 'Garrigue', 'Mistral', 'Rhône', 'Vauban', 'Cévennes', 'Alpilles', 'Ventoux', 'Phocée', 'Massalia', 'Durance', 'Estérel', 'Lubéron', 'Camargue', 'Belledonne', 'Vercors', 'Chartreuse', 'Fourvière', 'Lez', 'Aigoual', 'Verdon', 'Sainte-Victoire', 'Mercantour', 'Azur', 'Cigale', 'Restanque', 'Bastide', 'Tramontane', 'Pignon', 'Sextius', 'Canebière', 'Saint-Loup', 'Écrins', 'Dentelles', 'Caronte', 'Arlésienne', 'Port-Cros'];
+  const SUFFIX = [['Conseil', 'Conseil & services aux entreprises'], ['Ingénierie', 'Industrie & ingénierie'], ['Logistique', 'Transport & logistique'], ['Immobilier', 'Immobilier'], ['Expertise', 'Expertise comptable & juridique'], ['Digital', 'Numérique & IT'], ['Santé', 'Santé & médico-social'], ['Industries', 'Industrie & ingénierie'], ['Services', 'Conseil & services aux entreprises'], ['Avocats', 'Expertise comptable & juridique'], ['Architectes', 'BTP & architecture'], ['Assurances', 'Banque & assurance'], ['Formation', 'Enseignement & formation'], ['Transport', 'Transport & logistique'], ['Énergies', 'Énergie & environnement'], ['Bâtiment', 'BTP & architecture'], ['Software', 'Numérique & IT'], ['Patrimoine', 'Banque & assurance']];
+  const PREFIX = ['', '', '', 'Groupe ', 'Cabinet ', 'Atelier ', 'Clinique ', 'Agence '];
+  const TRANCHES = ['1-9', '10-49', '50-249', '250+'];
+  const TRANCHE_W = [[0, 15], [1, 45], [2, 30], [3, 10]];
+
+  const PF = ['Camille', 'Laura', 'Émilie', 'Sarah', 'Claire', 'Manon', 'Pauline', 'Aurélie', 'Nathalie', 'Sandrine', 'Céline', 'Marion', 'Inès', 'Léa', 'Chloé', 'Élodie', 'Valérie', 'Isabelle', 'Audrey', 'Mélanie', 'Anaïs', 'Nadia', 'Sonia', 'Agnès', 'Hélène', 'Florence', 'Karine'];
+  const PM = ['Nicolas', 'Julien', 'Mathieu', 'Romain', 'Sébastien', 'Antoine', 'Maxime', 'Guillaume', 'Pierre', 'Laurent', 'Frédéric', 'David', 'Mehdi', 'Yann', 'Stéphane', 'Benoît', 'Vincent', 'Damien', 'Arnaud', 'Cédric', 'Jérôme', 'Hugo', 'Lucas', 'Xavier', 'Rachid', 'Franck'];
+  const NOMS = ['Bernard', 'Dubois', 'Moreau', 'Lefebvre', 'Garcia', 'Roussel', 'Fontaine', 'Chevalier', 'Girard', 'Bonnet', 'Mercier', 'Blanc', 'Guérin', 'Muller', 'Henry', 'André', 'Morel', 'Fournier', 'Lambert', 'Rousseau', 'Masson', 'Marchand', 'Duval', 'Denis', 'Dumont', 'Picard', 'Lemoine', 'Brun', 'Gauthier', 'Perrin', 'Robin', 'Clément', 'Morin', 'Hamidi', 'Mansouri', 'Rossi', 'Ferrari', 'Nguyen', 'Da Silva', 'Pereira', 'Barbier', 'Giraud', 'Aubert', 'Roche', 'Colin', 'Renaud', 'Leclerc', 'Vidal', 'Baron', 'Lacroix', 'Fabre', 'Carpentier', 'Bertin', 'Gilles', 'Ferrand', 'Albertini', 'Santoni', 'Benhamou', 'Chabert', 'Teyssier'];
+  const POSTES = [['Office Manager', 18], ['Responsable RH', 12], ['DRH', 6], ['Assistante de direction', 12], ['Directeur général', 8], ['Responsable services généraux', 12], ['Gérant', 8], ['Responsable achats', 10], ['Chargée de communication', 4], ['Directeur administratif et financier', 6], ['Responsable QVT', 4]];
+
+  const OFFERS = {
+    'TCP-B10': { lib: 'Pack Bureau 10', lo: 2400, hi: 4800 },
+    'TCP-B50': { lib: 'Pack Bureau 50', lo: 6000, hi: 12000 },
+    'TCP-FGP': { lib: 'Fontaine à grains Premium', lo: 9000, hi: 18000 },
+    'TCP-MNT': { lib: 'Contrat maintenance', lo: 900, hi: 2400 },
+    'TCP-CAP': { lib: 'Capsules réassort annuel', lo: 1200, hi: 6000 },
+    'TCP-EVT': { lib: 'Pack Événementiel', lo: 1500, hi: 5000 },
+  };
+
+  const SRC_VARIANTS = {
+    'Recherche organique': ['SEO', 'Organique', 'recherche organique', 'Google (naturel)'],
+    'Accès direct': ['Direct', 'Acces direct', 'accès direct'],
+    'Google Ads': ['Google ads', 'google ads', 'Adwords', 'SEA'],
+    'LinkedIn Ads': ['Linkedin Ads', 'LinkedIn ads', 'LKD Ads', 'Linkedin'],
+    'LinkedIn organique': ['Linkedin organique', 'LinkedIn', 'Réseaux sociaux'],
+    'Emailing': ['E-mailing', 'Newsletter', 'emailing', 'Emailing '],
+    'Site référent': ['Site referent', 'Referral', 'Annuaire'],
+    'Salon': ['salon', 'Salon ', 'Événement', 'Salon pro'],
+    'Recommandation': ['Recommendation', 'Bouche à oreille', 'Parrainage', 'recommandation'],
+    'Prospection sortante': ['Prospection', 'Phoning', 'Cold call', 'prospection sortante'],
+  };
+  const srcLabel = (src, p) => (src && chance(p)) ? pick(SRC_VARIANTS[src]) : src;
+
+  const slug = str => str.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/&/g, 'et').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const phone = () => {
+    const mob = chance(0.6);
+    const digits = (mob ? '063998' : '046571') + p2(ri(0, 99)) + p2(ri(0, 99));
+    const f = wpick([['sp', 70], ['raw', 12], ['intl', 10], ['dot', 8]]);
+    const g = digits.match(/../g);
+    if (f === 'sp') return g.join(' ');
+    if (f === 'raw') return digits;
+    if (f === 'dot') return g.join('.');
+    return '+33 ' + digits.slice(1, 2) + ' ' + digits.slice(2).match(/../g).join(' ');
+  };
+
+  // ---------- Entreprises ----------
+  const entreprises = [];
+  const used = new Set();
+  for (let i = 1; i <= 130; i++) {
+    let name, sect;
+    do {
+      const [suf, sec] = pick(SUFFIX);
+      const pre = pick(PREFIX);
+      name = pre + pick(CORES) + ' ' + suf;
+      if (pre === 'Clinique ') { name = 'Clinique ' + pick(CORES); }
+      sect = pre === 'Clinique ' ? 'Santé & médico-social' : pre === 'Cabinet ' && sec.startsWith('Industrie') ? 'Conseil & services aux entreprises' : sec;
+    } while (used.has(name));
+    used.add(name);
+    const dep = wpick(DEP_W);
+    const [ville, cp] = pick(CITIES[dep]);
+    const o = ownerOfDep(dep);
+    const tr = wpick(TRANCHE_W);
+    entreprises.push({
+      _i: i, _tr: tr, _dep: dep, _owner: o, _name: name,
+      id_entreprise: 'ENT-' + String(i).padStart(4, '0'),
+      raison_sociale: name,
+      secteur: sect,
+      tranche_effectif: TRANCHES[tr],
+      code_postal: cp,
+      ville: chance(0.06) ? pick([ville.toUpperCase(), ville.replace(/-/g, ' '), ville.toLowerCase()]) : ville,
+      departement: dep,
+      proprietaire: ownerLabel(o, 0.05, 0.02),
+      statut_compte: 'Prospect',
+      date_creation: '',
+    });
+  }
+
+  // ---------- Contacts ----------
+  const contactsCore = [];
+  const compOrder = [];
+  entreprises.forEach(e => compOrder.push(e));
+  for (let k = 0; k < 110; k++) compOrder.push(pick(entreprises));
+  shuffle(compOrder);
+
+  const SALON_MRS = { camp: 'Salon_Bureaux_Expo_Marseille', a: d(2026, 3, 17), b: d(2026, 3, 24) };
+  const SALON_LYS = { camp: 'Salon_RH_Sud_Lyon', a: d(2026, 6, 10), b: d(2026, 6, 16) };
+  const usedNames = new Set();
+
+  compOrder.forEach((e, idx) => {
+    const legacy = chance(0.12);
+    let t = legacy ? rdate(d(2025, 3, 1), d(2025, 12, 31)) : rdate(d(2026, 1, 2), d(2026, 10, 28));
+    let src, camp = '';
+    if (legacy) {
+      src = wpick([['Recherche organique', 25], ['Accès direct', 10], ['Recommandation', 25], ['Prospection sortante', 30], ['Emailing', 10]]);
+      if (src === 'Emailing') camp = 'NL_mensuelle';
+    } else {
+      src = wpick([['Recherche organique', 16], ['Accès direct', 8], ['Google Ads', 14], ['LinkedIn Ads', 12], ['LinkedIn organique', 7], ['Emailing', 9], ['Site référent', 5], ['Salon', 8], ['Recommandation', 9], ['Prospection sortante', 12]]);
+      if (src === 'Google Ads') camp = chance(0.65) ? 'SEA_machines_bureau' : 'SEA_capsules_pro';
+      if (src === 'Emailing') camp = chance(0.6) ? 'NL_mensuelle' : 'Relance_devis';
+      if (src === 'Salon') { const S = ['69', '38'].includes(e._dep) ? SALON_LYS : SALON_MRS; t = rdate(S.a, S.b); camp = S.camp; }
+      if (src === 'LinkedIn Ads') {
+        if (t > d(2026, 9, 30)) t = rdate(d(2026, 7, 1), d(2026, 9, 30));
+        const m = month(t);
+        camp = m <= 3 ? 'LI_DecideursRH_T1' : m <= 6 ? 'LI_OfficeManagers_T2' : 'LI_Rentree_T3';
+      }
+    }
+    let fem = chance(0.55), prenom, nom;
+    do { prenom = pick(fem ? PF : PM); nom = pick(NOMS); } while (usedNames.has(prenom + nom));
+    usedNames.add(prenom + nom);
+    const dom = slug(e._name) + '.example';
+    const pf = slug(prenom), nf = slug(nom).replace(/-/g, '');
+    let email = wpick([[`${pf}.${nf}`, 60], [`${pf[0]}${nf}`, 25], [`${pf[0]}.${nf}`, 15]]) + '@' + dom;
+    let dateStr;
+    if (legacy) dateStr = wpick([[F.iso, 40], [F.fr2, 30], [F.dash, 30]])(t);
+    else if (src === 'LinkedIn Ads' && chance(0.5)) dateStr = F.us(t);
+    else dateStr = F.fr(t);
+    contactsCore.push({
+      _t: t, _e: e, _src: src, _legacy: legacy,
+      id_contact: '', civilite: fem ? 'Mme' : 'M.', prenom, nom,
+      email, telephone: phone(), poste: wpick(POSTES).replace(/^Assistante/, fem ? 'Assistante' : 'Assistant').replace(/^Chargée/, fem ? 'Chargée' : 'Chargé'),
+      id_entreprise: e.id_entreprise,
+      entreprise: e._name,
+      source: src, campagne: camp,
+      date_creation: dateStr,
+      proprietaire: '',
+      cycle_de_vie: '',
+      optin_newsletter: chance(0.55) ? 'Oui' : 'Non',
+    });
+  });
+  contactsCore.sort((a, b) => a._t - b._t);
+  contactsCore.forEach((c, i) => { c.id_contact = 'CT-' + String(10001 + i); });
+
+  // ---------- Opportunités ----------
+  const pool = shuffle(contactsCore.filter(c => true).slice());
+  const dealContacts = pool.slice(0, 190);
+  for (let k = 0; k < 21; k++) dealContacts.push({ ...pick(dealContacts.slice(0, 190)), _second: true });
+  const oppsCore = [];
+  dealContacts.forEach(c0 => {
+    const c = contactsCore.find(x => x.id_contact === c0.id_contact);
+    const second = !!c0._second;
+    let t = Math.max(c._t, d(2026, 1, 5)) + ri(0, 25) * DAY;
+    if (second) t = add(t, ri(30, 120));
+    if (t > d(2026, 10, 27)) t = d(2026, 10, 27) - ri(0, 20) * DAY;
+    let ref;
+    if (second) ref = wpick([['TCP-MNT', 45], ['TCP-CAP', 40], ['TCP-EVT', 15]]);
+    else if (c.campagne === 'SEA_capsules_pro') ref = wpick([['TCP-CAP', 60], ['TCP-B10', 40]]);
+    else if (c._src === 'Salon') ref = wpick([['TCP-B50', 30], ['TCP-FGP', 30], ['TCP-B10', 25], ['TCP-EVT', 15]]);
+    else ref = wpick([['TCP-B10', 25], ['TCP-B50', 15], ['TCP-FGP', 10], ['TCP-MNT', 20], ['TCP-CAP', 20], ['TCP-EVT', 10]]);
+    const O = OFFERS[ref];
+    const tt = Math.min(1, (c._e._tr + rnd()) / 4);
+    const amount = Math.round((O.lo + tt * (O.hi - O.lo)) / 100) * 100;
+    const age = (TODAY - t) / DAY;
+    let stage;
+    if (age > 100) stage = wpick([['Gagné', 40], ['Perdu', 38], ['Négociation', 10], ['Proposition', 12]]);
+    else if (age > 45) stage = wpick([['Gagné', 26], ['Perdu', 24], ['Négociation', 20], ['Proposition', 20], ['Qualification', 10]]);
+    else stage = wpick([['Gagné', 6], ['Perdu', 8], ['Proposition', 26], ['Qualification', 30], ['Découverte', 30]]);
+    let close;
+    if (stage === 'Gagné' || stage === 'Perdu') close = Math.min(add(t, ri(12, 80)), d(2026, 10, 29));
+    else { close = add(t, ri(30, 120)); if (close < TODAY && chance(0.5)) close = rdate(d(2026, 11, 3), d(2027, 1, 29)); }
+    oppsCore.push({ _t: t, _c: c, _ref: ref, _amount: amount, _stage: stage, _close: close, _second: second });
+  });
+  oppsCore.sort((a, b) => a._t - b._t);
+
+  // Calage du CA signé sur 397 600 € HT (cohérence fil rouge)
+  const TARGET = 397600;
+  const won = oppsCore.filter(o => o._stage === 'Gagné');
+  const sum0 = won.reduce((a, o) => a + o._amount, 0);
+  // Répartition de l'écart au prorata de la marge disponible dans la fourchette de chaque offre
+  let diff = TARGET - sum0;
+  const room = o => diff > 0 ? OFFERS[o._ref].hi - o._amount : o._amount - OFFERS[o._ref].lo;
+  const totRoom = won.reduce((a, o) => a + room(o), 0);
+  const sign = Math.sign(diff), abs = Math.abs(diff);
+  won.forEach(o => { const step = Math.floor(abs * room(o) / totRoom / 100) * 100; o._amount += sign * step; });
+  let rest = TARGET - won.reduce((a, o) => a + o._amount, 0);
+  for (const o of won.slice().sort((a, b) => room(b) - room(a))) {
+    if (!rest) break;
+    const step = Math.sign(rest) * Math.min(Math.abs(rest), Math.max(0, OFFERS[o._ref].hi - o._amount) * (rest > 0) + Math.max(0, o._amount - OFFERS[o._ref].lo) * (rest < 0));
+    o._amount += step; rest -= step;
+  }
+
+  const PROBA = { 'Découverte': 10, 'Qualification': 25, 'Proposition': 50, 'Négociation': 75, 'Gagné': 100, 'Perdu': 0 };
+  const MOTIFS = [['Prix trop élevé', 30], ['Concurrent retenu', 25], ['Pas de budget', 15], ['Projet reporté', 15], ['Pas de réponse', 10], ['', 5]];
+  const opportunites = oppsCore.map((o, i) => {
+    const c = o._c, e = c._e;
+    let etape = o._stage;
+    if (etape === 'Gagné' && chance(0.08)) etape = pick(['gagné', 'Gagne', 'Closed Won']);
+    else if (etape === 'Perdu' && chance(0.08)) etape = pick(['perdu', 'Perdu ', 'Closed Lost']);
+    else if (etape === 'Négociation' && chance(0.12)) etape = 'Negociation';
+    return {
+      _o: o,
+      id_opportunite: 'OPP-26-' + String(i + 1).padStart(4, '0'),
+      nom_opportunite: e._name + ' - ' + OFFERS[o._ref].lib,
+      id_entreprise: e.id_entreprise,
+      entreprise: chance(0.06) ? pick([e._name.toUpperCase(), e._name + ' SAS', e._name.toLowerCase()]) : e._name,
+      id_contact: c.id_contact,
+      ref_offre: o._ref,
+      montant_ht: o._amount,
+      etape,
+      probabilite: PROBA[o._stage],
+      date_creation: chance(0.05) ? F.iso(o._t) : F.fr(o._t),
+      date_cloture: chance(0.05) ? F.iso(o._close) : F.fr(o._close),
+      proprietaire: ownerLabel(e._owner, 0.07, 0.02),
+      source: srcLabel(c._src, 0.06),
+      campagne: (c.campagne && hash(c.id_contact + o._ref) % 20 !== 0) ? c.campagne : '',
+      motif_perte: o._stage === 'Perdu' ? wpick(MOTIFS) : '',
+    };
+  });
+  // Défauts volontaires sur les opportunités
+  const idxOf = pred => opportunites.map((x, i) => pred(x) ? i : -1).filter(i => i >= 0);
+  const wonIdx = shuffle(idxOf(x => x._o._stage === 'Gagné'));
+  const openIdx = shuffle(idxOf(x => !['Gagné', 'Perdu'].includes(x._o._stage)));
+  const fmtEur = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
+  wonIdx.slice(0, 2).forEach(i => { opportunites[i].montant_ht = fmtEur(opportunites[i].montant_ht); });
+  openIdx.slice(0, 3).forEach(i => { opportunites[i].montant_ht = fmtEur(opportunites[i].montant_ht); });
+  openIdx.slice(3, 6).forEach(i => { opportunites[i].montant_ht = ''; });
+  // 2 dates de clôture antérieures à la création (saisie erronée)
+  openIdx.slice(6, 8).forEach(i => { const o = opportunites[i]._o; opportunites[i].date_cloture = F.fr(add(o._t, -ri(20, 60))); });
+  // 4 doublons (double saisie), dont 2 gagnés
+  const dupSrc = [wonIdx[3], wonIdx[4], openIdx[9], openIdx[10]];
+  let nextId = opportunites.length + 1;
+  dupSrc.forEach(i => {
+    const copy = { ...opportunites[i], id_opportunite: 'OPP-26-' + String(nextId++).padStart(4, '0') };
+    opportunites.push(copy);
+  });
+
+  // Statuts dérivés
+  const wonByEnt = new Set(oppsCore.filter(o => o._stage === 'Gagné').map(o => o._c._e.id_entreprise));
+  entreprises.forEach(e => {
+    if (wonByEnt.has(e.id_entreprise)) e.statut_compte = 'Client';
+    const first = contactsCore.filter(c => c._e === e).map(c => c._t).sort((a, b) => a - b)[0];
+    e._t = first;
+    e.date_creation = F.fr(first);
+  });
+  contactsCore.forEach(c => {
+    const os = oppsCore.filter(o => o._c === c);
+    if (os.some(o => o._stage === 'Gagné')) c.cycle_de_vie = 'Client';
+    else if (os.some(o => o._stage !== 'Perdu')) c.cycle_de_vie = 'Opportunité';
+    else if (os.length) c.cycle_de_vie = 'SQL';
+    else c.cycle_de_vie = wpick([['Lead', 55], ['MQL', 30], ['SQL', 15]]);
+    c.proprietaire = ownerLabel(c._e._owner, 0.07, 0.02);
+    c.source = srcLabel(c._src, 0.07);
+    if (chance(0.03)) c.source = '';
+    if (chance(0.03)) c.email = '';
+    else if (chance(0.03)) c.email = c.email.toUpperCase();
+    if (chance(0.04)) c.telephone = '';
+    if (chance(0.02)) c.optin_newsletter = '';
+    if (chance(0.06)) c.entreprise = pick([c._e._name.toUpperCase(), c._e._name + ' SAS', c._e._name.toLowerCase()]);
+  });
+
+  // Source / support au format GA4 (renseigné automatiquement par le formulaire du site via les paramètres utm ; suivi en place depuis janvier 2026)
+  const SS = { 'Recherche organique': id => hash(id) % 8 === 0 ? 'bing / organic' : 'google / organic', 'Accès direct': () => '(direct) / (none)', 'Google Ads': () => 'google / cpc', 'LinkedIn Ads': () => 'linkedin / cpc', 'LinkedIn organique': () => 'linkedin.com / referral', 'Emailing': () => 'brevo / email', 'Site référent': () => 'annuaire-pro-b2b.fr / referral' };
+  contactsCore.forEach(c => { c.source_support = (!c._legacy && SS[c._src]) ? SS[c._src](c.id_contact) : ''; });
+
+  const contacts = contactsCore.slice();
+  // 7 doublons de contacts (formulaire rempli deux fois, import salon, etc.)
+  const dupC = shuffle(contactsCore.filter(c => c.email).slice()).slice(0, 7);
+  let nextC = 10001 + contactsCore.length;
+  dupC.forEach((c, j) => {
+    const copy = { ...c, id_contact: 'CT-' + (nextC++) };
+    if (j % 3 === 0) copy.email = c.email.toUpperCase();
+    if (j % 3 === 1) copy.email = c.email + ' ';
+    copy.telephone = phone();
+    copy.cycle_de_vie = 'Lead';
+    copy.date_creation = F.fr(add(c._t, ri(3, 40)));
+    if (j % 2 === 0) copy.prenom = c.prenom.toUpperCase();
+    contacts.push(copy);
+  });
+
+  // ---------- Activités ----------
+  const activites = [];
+  const ACT_RES = {
+    'Appel': [['Joint', 45], ['Messagerie', 35], ['RDV fixé', 20]],
+    'Email': [['Envoyé', 70], ['Réponse reçue', 30]],
+    'RDV': [['Réalisé', 80], ['Annulé', 20]],
+    'Démo': [['Réalisée', 85], ['Reportée', 15]],
+    'Relance devis': [['Sans réponse', 50], ['Réponse reçue', 50]],
+  };
+  const OBJ = { 'Appel': 'Appel de qualification', 'Email': 'Envoi documentation', 'RDV': 'Rendez-vous sur site', 'Démo': 'Démonstration machine', 'Relance devis': 'Relance proposition commerciale' };
+  const pushAct = (t, type, c, oppId) => {
+    const res = wpick(ACT_RES[type]);
+    activites.push({
+      _t: t, id_activite: '', date: F.fr(t), type, objet: OBJ[type],
+      id_contact: c.id_contact, id_opportunite: oppId || '',
+      proprietaire: c._e._owner.code,
+      resultat: res,
+      duree_min: type === 'Appel' ? ri(3, 25) : type === 'RDV' ? ri(30, 90) : type === 'Démo' ? ri(45, 120) : '',
+    });
+  };
+  opportunites.slice(0, oppsCore.length).forEach(op => {
+    const o = op._o, c = o._c;
+    const end = ['Gagné', 'Perdu'].includes(o._stage) ? o._close : Math.min(TODAY - DAY, o._t + ri(5, 200) * DAY);
+    const n = ri(1, 6);
+    const seq = ['Appel', 'Email', 'RDV', 'Démo', 'Relance devis', 'Appel', 'Relance devis'];
+    for (let j = 0; j < n; j++) {
+      const t = o._t + Math.round((end - o._t) * (j / n)) + ri(0, 2) * DAY;
+      pushAct(Math.min(t, TODAY - DAY), seq[j], c, op.id_opportunite);
+    }
+  });
+  contactsCore.forEach(c => {
+    if (oppsCore.some(o => o._c === c)) return;
+    const n = ri(0, 2);
+    for (let j = 0; j < n; j++) pushAct(Math.min(add(c._t, ri(1, 60)), TODAY - DAY), chance(0.6) ? 'Appel' : 'Email', c, '');
+  });
+  activites.sort((a, b) => a._t - b._t);
+  activites.forEach((a, i) => { a.id_activite = 'ACT-' + String(i + 1).padStart(5, '0'); });
+
+  const clean = arr => arr.map(r => { const o = {}; for (const k in r) if (k[0] !== '_') o[k] = r[k]; return o; });
+  return {
+    entreprises: clean(entreprises),
+    contacts: clean(contacts),
+    opportunites: clean(opportunites),
+    activites: clean(activites),
+    owners: OWNERS.map(o => ({ code: o.code, nom: o.nom, departements: o.deps.join(', ') })),
+    offres: Object.entries(OFFERS).map(([k, v]) => ({ ref_offre: k, libelle: v.lib, min: v.lo, max: v.hi })),
+  };
+}
+
+
+</script>
+<script>
+const D = generateTerraData();
+const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmtN = n => n.toLocaleString('fr-FR');
+const fmtE = n => n.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €';
+
+const OBJ = {
+  contacts: { label: 'Contacts', get rows() { return D.contacts; }, key: 'id_contact', title: r => `${r.prenom} ${r.nom}`, filters: ['proprietaire', 'source', 'cycle_de_vie'],
+    cols: [['id_contact', 'ID'], ['civilite', 'Civ.'], ['prenom', 'Prénom'], ['nom', 'Nom'], ['email', 'E-mail'], ['telephone', 'Téléphone'], ['poste', 'Poste'], ['id_entreprise', 'ID entreprise'], ['entreprise', 'Entreprise'], ['source', 'Source'], ['campagne', 'Campagne'], ['source_support', 'Source / support'], ['date_creation', 'Créé le'], ['proprietaire', 'Propriétaire'], ['cycle_de_vie', 'Cycle de vie'], ['optin_newsletter', 'Opt-in NL']] },
+  entreprises: { label: 'Entreprises', get rows() { return D.entreprises; }, key: 'id_entreprise', title: r => r.raison_sociale, filters: ['proprietaire', 'secteur', 'tranche_effectif', 'departement', 'statut_compte'],
+    cols: [['id_entreprise', 'ID'], ['raison_sociale', 'Raison sociale'], ['secteur', 'Secteur'], ['tranche_effectif', 'Effectif'], ['code_postal', 'CP'], ['ville', 'Ville'], ['departement', 'Dép.'], ['proprietaire', 'Propriétaire'], ['statut_compte', 'Statut'], ['date_creation', 'Créée le']] },
+  opportunites: { label: 'Opportunités', get rows() { return D.opportunites; }, key: 'id_opportunite', title: r => r.nom_opportunite, filters: ['proprietaire', 'etape', 'source', 'ref_offre'],
+    cols: [['id_opportunite', 'ID'], ['nom_opportunite', 'Opportunité'], ['id_entreprise', 'ID entreprise'], ['entreprise', 'Entreprise'], ['id_contact', 'ID contact'], ['ref_offre', 'Offre'], ['montant_ht', 'Montant HT', 1], ['etape', 'Étape'], ['probabilite', 'Proba %', 1], ['date_creation', 'Créée le'], ['date_cloture', 'Clôture'], ['proprietaire', 'Propriétaire'], ['source', 'Source'], ['campagne', 'Campagne'], ['motif_perte', 'Motif de perte']] },
+  activites: { label: 'Activités', get rows() { return D.activites; }, key: 'id_activite', title: r => `${r.type} · ${r.date}`, filters: ['type', 'proprietaire', 'resultat'],
+    cols: [['id_activite', 'ID'], ['date', 'Date'], ['type', 'Type'], ['objet', 'Objet'], ['id_contact', 'ID contact'], ['id_opportunite', 'ID opportunité'], ['proprietaire', 'Propriétaire'], ['resultat', 'Résultat'], ['duree_min', 'Durée (min)', 1]] },
+};
+const ST = {}; Object.keys(OBJ).forEach(k => ST[k] = { q: '', f: {}, sort: null, dir: 1, page: 0 });
+const PAGE = 50;
+
+function filtered(k) {
+  const o = OBJ[k], s = ST[k], q = s.q.trim().toLowerCase();
+  let rows = o.rows.filter(r => {
+    for (const f in s.f) if (s.f[f] !== '__all' && String(r[f] ?? '') !== s.f[f]) return false;
+    if (!q) return true;
+    return o.cols.some(([c]) => String(r[c] ?? '').toLowerCase().includes(q));
+  });
+  if (s.sort) {
+    const c = s.sort;
+    rows = rows.slice().sort((a, b) => {
+      const x = a[c], y = b[c];
+      if (typeof x === 'number' && typeof y === 'number') return (x - y) * s.dir;
+      return String(x ?? '').localeCompare(String(y ?? ''), 'fr', { numeric: true }) * s.dir;
+    });
+  }
+  return rows;
+}
+const uniq = (rows, f) => [...new Set(rows.map(r => String(r[f] ?? '')))].sort((a, b) => a.localeCompare(b, 'fr'));
+const cell = (v, num) => v === '' || v == null ? '<span class="empty">(vide)</span>' : num && typeof v === 'number' ? fmtN(v) : esc(v);
+
+function viewList(k) {
+  const o = OBJ[k], s = ST[k];
+  const rows = filtered(k), n = rows.length, pages = Math.max(1, Math.ceil(n / PAGE));
+  if (s.page >= pages) s.page = pages - 1;
+  const slice = rows.slice(s.page * PAGE, s.page * PAGE + PAGE);
+  const fl = { proprietaire: 'Propriétaire', source: 'Source', cycle_de_vie: 'Cycle de vie', secteur: 'Secteur', tranche_effectif: 'Effectif', departement: 'Département', statut_compte: 'Statut', etape: 'Étape', ref_offre: 'Offre', type: 'Type', resultat: 'Résultat' };
+  return `<h1>${o.label}</h1><p class="sub">${fmtN(o.rows.length)} enregistrements dans la base</p>
+  <div class="bar"><input type="search" id="q" placeholder="Rechercher…" value="${esc(s.q)}">
+  ${o.filters.map(f => `<select data-f="${f}"><option value="__all">${fl[f]} : tous</option>${uniq(o.rows, f).map(v => `<option value="${esc(v)}" ${s.f[f] === v ? 'selected' : ''}>${v === '' ? '(vide)' : esc(v)}</option>`).join('')}</select>`).join('')}
+  <button id="reset">Réinitialiser</button><span style="flex:1"></span><button class="pri" onclick="goExport('${k}')">⬇️ Exporter cette vue</button></div>
+  <div class="card"><div class="tw"><table><thead><tr>${o.cols.map(([c, l]) => `<th data-c="${c}">${l} <span class="a">${s.sort === c ? (s.dir > 0 ? '▲' : '▼') : ''}</span></th>`).join('')}</tr></thead>
+  <tbody>${slice.map(r => `<tr data-id="${esc(r[o.key])}">${o.cols.map(([c, , num]) => `<td class="${num ? 'num' : ''}">${cell(r[c], num)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  <div class="pager"><span>${fmtN(n)} résultat(s) · page ${s.page + 1} / ${pages}</span><span><button id="prev" ${s.page ? '' : 'disabled'}>◀</button> <button id="next" ${s.page < pages - 1 ? '' : 'disabled'}>▶</button></span></div></div>`;
+}
+function bindList(k) {
+  const s = ST[k], o = OBJ[k];
+  const q = document.getElementById('q');
+  q.oninput = () => { s.q = q.value; s.page = 0; rerenderKeepFocus(k); };
+  document.querySelectorAll('select[data-f]').forEach(el => el.onchange = () => { s.f[el.dataset.f] = el.value; s.page = 0; render(); });
+  document.getElementById('reset').onclick = () => { ST[k] = { q: '', f: {}, sort: null, dir: 1, page: 0 }; render(); };
+  document.querySelectorAll('th[data-c]').forEach(th => th.onclick = () => { const c = th.dataset.c; if (s.sort === c) s.dir *= -1; else { s.sort = c; s.dir = 1; } render(); });
+  document.getElementById('prev').onclick = () => { s.page--; render(); };
+  document.getElementById('next').onclick = () => { s.page++; render(); };
+  document.querySelectorAll('tbody tr[data-id]').forEach(tr => tr.onclick = () => openRecord(k, tr.dataset.id));
+}
+function rerenderKeepFocus(k) {
+  const pos = document.getElementById('q').selectionStart;
+  render(); const q = document.getElementById('q'); q.focus(); q.setSelectionRange(pos, pos);
+}
+
+// ---------- Fiche ----------
+const miniTable = (rows, cols) => rows.length ? `<table><thead><tr>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${cols.map(([c, , n]) => `<td class="${n ? 'num' : ''}">${cell(r[c], n)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '<p class="muted">Aucun</p>';
+function openRecord(k, id) {
+  const o = OBJ[k]; const r = o.rows.find(x => x[o.key] === id); if (!r) return;
+  document.getElementById('dk').textContent = o.label.replace(/s$/, '') + ' · ' + id;
+  document.getElementById('dt').textContent = o.title(r);
+  let h = '<dl>' + o.cols.map(([c, l, n]) => `<dt>${l}</dt><dd>${cell(r[c], n)}</dd>`).join('') + '</dl><div class="rel">';
+  const opC = [['id_opportunite', 'ID'], ['ref_offre', 'Offre'], ['montant_ht', 'Montant', 1], ['etape', 'Étape'], ['date_cloture', 'Clôture']];
+  const acC = [['date', 'Date'], ['type', 'Type'], ['resultat', 'Résultat'], ['proprietaire', 'Par']];
+  if (k === 'contacts') {
+    h += `<h4>Opportunités</h4>` + miniTable(D.opportunites.filter(x => x.id_contact === id), opC);
+    h += `<h4>Activités</h4>` + miniTable(D.activites.filter(x => x.id_contact === id), acC);
+  } else if (k === 'entreprises') {
+    h += `<h4>Contacts</h4>` + miniTable(D.contacts.filter(x => x.id_entreprise === id), [['id_contact', 'ID'], ['prenom', 'Prénom'], ['nom', 'Nom'], ['poste', 'Poste']]);
+    h += `<h4>Opportunités</h4>` + miniTable(D.opportunites.filter(x => x.id_entreprise === id), opC);
+  } else if (k === 'opportunites') {
+    h += `<h4>Contact principal</h4>` + miniTable(D.contacts.filter(x => x.id_contact === r.id_contact), [['id_contact', 'ID'], ['prenom', 'Prénom'], ['nom', 'Nom'], ['poste', 'Poste'], ['telephone', 'Téléphone']]);
+    h += `<h4>Activités</h4>` + miniTable(D.activites.filter(x => x.id_opportunite === id), acC);
+  }
+  document.getElementById('dbody').innerHTML = h + '</div>';
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+// ---------- Tableau de bord (calcul "natif" du CRM, sans retraitement) ----------
+function viewHome() {
+  const O = D.opportunites;
+  const isNum = v => typeof v === 'number';
+  const open = O.filter(o => !['Gagné', 'Perdu'].includes(o.etape));
+  const won = O.filter(o => o.etape === 'Gagné');
+  const lost = O.filter(o => o.etape === 'Perdu');
+  const caWon = won.filter(o => isNum(o.montant_ht)).reduce((a, o) => a + o.montant_ht, 0);
+  const pipe = open.filter(o => isNum(o.montant_ht)).reduce((a, o) => a + o.montant_ht, 0);
+  const pond = open.filter(o => isNum(o.montant_ht)).reduce((a, o) => a + o.montant_ht * o.probabilite / 100, 0);
+  const conv = won.length / (won.length + lost.length);
+  const bySrc = {}; D.contacts.forEach(c => { const k = c.source === '' ? '(vide)' : c.source; bySrc[k] = (bySrc[k] || 0) + 1; });
+  const srcs = Object.entries(bySrc).sort((a, b) => b[1] - a[1]);
+  const maxS = srcs[0][1];
+  const byStage = {}; O.forEach(o => byStage[o.etape] = (byStage[o.etape] || 0) + 1);
+  const stg = Object.entries(byStage).sort((a, b) => b[1] - a[1]); const maxG = stg[0][1];
+  const last = D.activites.slice(-8).reverse();
+  const hb = (l, n, m) => `<div class="hb"><span class="lab" title="${esc(l)}">${esc(l)}</span><div class="t" style="width:${Math.max(2, n / m * 100)}%"></div><span class="n">${n}</span></div>`;
+  const qr = qualityReport(); const qErr = Object.values(qr).reduce((a, x) => a + x.rules.filter(r => r.lvl === 'err').reduce((s, r) => s + r.n, 0), 0);
+  return `<h1>Tableau de bord commercial</h1><p class="sub">Vue d'ensemble de la base TerraCafé Pro au 29/10/2026</p>
+  ${IMPORT_LOG.length ? `<div class="card box ok" style="margin-bottom:12px">Base modifiée par ${IMPORT_LOG.length} import(s), dernier le ${IMPORT_LOG[0].quand}. <a href="#import">Voir l'historique</a></div>` : ''}
+  <div class="kpis">
+   <div class="card kpi"><div class="l">Contacts</div><div class="v">${fmtN(D.contacts.length)}</div></div>
+   <div class="card kpi"><div class="l">Entreprises</div><div class="v">${fmtN(D.entreprises.length)}</div></div>
+   <div class="card kpi"><div class="l">Opportunités</div><div class="v">${fmtN(O.length)}</div></div>
+   <div class="card kpi"><div class="l">CA signé (étape « Gagné »)</div><div class="v">${fmtE(caWon)}</div></div>
+   <div class="card kpi"><div class="l">Pipeline ouvert</div><div class="v">${fmtE(pipe)}</div></div>
+   <div class="card kpi"><div class="l">Pipeline pondéré</div><div class="v">${fmtE(pond)}</div></div>
+   <a class="card kpi" href="#import" style="text-decoration:none;color:inherit"><div class="l">Erreurs qualité détectées</div><div class="v" style="color:${qErr ? 'var(--warn)' : 'var(--acc)'}">${fmtN(qErr)}</div></a>
+   <div class="card kpi"><div class="l">Taux de transformation</div><div class="v">${(conv * 100).toFixed(1).replace('.', ',')} %</div></div>
+  </div>
+  <div class="grid2">
+   <div class="card box"><h3>Contacts par source</h3>${srcs.map(([l, n]) => hb(l, n, maxS)).join('')}</div>
+   <div class="card box"><h3>Opportunités par étape</h3>${stg.map(([l, n]) => hb(l, n, maxG)).join('')}
+    <h3 style="margin-top:18px">Dernières activités</h3>${miniTable(last, [['date', 'Date'], ['type', 'Type'], ['id_contact', 'Contact'], ['resultat', 'Résultat'], ['proprietaire', 'Par']])}</div>
+  </div>
+  <p class="note">Indicateurs calculés en direct par le CRM sur les valeurs saisies, sans aucun retraitement.</p>`;
+}
+
+// ---------- Pipeline ----------
+let pipeOwner = '__all';
+function viewPipeline() {
+  const STAGES = ['Découverte', 'Qualification', 'Proposition', 'Négociation', 'Gagné', 'Perdu'];
+  const rows = D.opportunites.filter(o => pipeOwner === '__all' || o.proprietaire === pipeOwner);
+  const cols = STAGES.map(s => [s, rows.filter(o => o.etape === s)]);
+  cols.push(['Étape non reconnue', rows.filter(o => !STAGES.includes(o.etape))]);
+  const tot = list => list.filter(o => typeof o.montant_ht === 'number').reduce((a, o) => a + o.montant_ht, 0);
+  return `<h1>Pipeline</h1><p class="sub">Opportunités par étape de vente</p>
+  <div class="bar"><select id="po"><option value="__all">Propriétaire : tous</option>${uniq(D.opportunites, 'proprietaire').map(v => `<option ${pipeOwner === v ? 'selected' : ''} value="${esc(v)}">${v || '(vide)'}</option>`).join('')}</select></div>
+  <div class="kanban">${cols.map(([s, list], i) => `<div class="col ${i === 6 ? 'weird' : ''}"><h4>${s} <span>${list.length} · ${fmtE(tot(list))}</span></h4>
+   ${list.slice().sort((a, b) => (typeof b.montant_ht === 'number' ? b.montant_ht : 0) - (typeof a.montant_ht === 'number' ? a.montant_ht : 0)).map(o => `<div class="dc" data-id="${o.id_opportunite}"><b>${esc(o.nom_opportunite)}</b><div class="m"><span>${o.montant_ht === '' ? '<span class="empty">(vide)</span>' : typeof o.montant_ht === 'number' ? fmtE(o.montant_ht) : esc(o.montant_ht)}</span><span>${esc(o.proprietaire) || '?'}</span></div>${i === 6 ? `<div class="m"><span>« ${esc(o.etape)} »</span></div>` : ''}</div>`).join('')}</div>`).join('')}</div>`;
+}
+
+// ---------- Exports ----------
+const EX = { obj: 'contacts', fmt: 'csv_sc', bom: true, scope: 'all', cols: null };
+function goExport(k) { EX.obj = k; EX.scope = 'view'; EX.cols = null; location.hash = 'exports'; }
+const FMT = { csv_sc: 'CSV séparateur point-virgule (Excel FR)', csv_c: 'CSV séparateur virgule (format international)', xlsx: 'Excel (.xlsx)', json: 'JSON (API)' };
+function exportRows() {
+  const rows = EX.scope === 'view' ? filtered(EX.obj) : OBJ[EX.obj].rows;
+  const cols = EX.cols || OBJ[EX.obj].cols.map(c => c[0]);
+  return { rows: rows.map(r => Object.fromEntries(cols.map(c => [c, r[c] ?? '']))), cols };
+}
+function toCSV(rows, cols, sep) {
+  const q = v => { v = String(v ?? ''); return /[",;\n\r]/.test(v) || v.startsWith(' ') || v.endsWith(' ') ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  return [cols.join(sep), ...rows.map(r => cols.map(c => q(r[c])).join(sep))].join('\r\n');
+}
+function viewExports() {
+  const o = OBJ[EX.obj];
+  const allCols = o.cols.map(c => c[0]);
+  if (!EX.cols) EX.cols = allCols.slice();
+  const { rows, cols } = exportRows();
+  let prev;
+  if (EX.fmt === 'json') prev = JSON.stringify(rows.slice(0, 3), null, 2);
+  else if (EX.fmt === 'xlsx') prev = toCSV(rows.slice(0, 8), cols, '\t');
+  else prev = toCSV(rows.slice(0, 8), cols, EX.fmt === 'csv_sc' ? ';' : ',');
+  const fname = fileName();
+  return `<h1>Exports</h1><p class="sub">Extraire les données du CRM pour les retravailler dans Excel ou Power BI</p>
+  <div class="exp"><div class="card box">
+   <h3>1. Objet</h3>${Object.keys(OBJ).map(k => `<label><input type="radio" name="obj" value="${k}" ${EX.obj === k ? 'checked' : ''}> ${OBJ[k].label} <span class="muted">(${OBJ[k].rows.length})</span></label>`).join('')}
+   <h3 style="margin-top:14px">2. Périmètre</h3>
+   <label><input type="radio" name="scope" value="all" ${EX.scope === 'all' ? 'checked' : ''}> Tous les enregistrements</label>
+   <label><input type="radio" name="scope" value="view" ${EX.scope === 'view' ? 'checked' : ''}> Vue filtrée actuelle <span class="muted">(${filtered(EX.obj).length})</span></label>
+   <h3 style="margin-top:14px">3. Format</h3>
+   ${Object.entries(FMT).map(([k, l]) => `<label><input type="radio" name="fmt" value="${k}" ${EX.fmt === k ? 'checked' : ''}> ${l}</label>`).join('')}
+   ${EX.fmt.startsWith('csv') ? `<label><input type="checkbox" id="bom" ${EX.bom ? 'checked' : ''}> Encodage UTF-8 avec BOM</label>` : ''}
+   <h3 style="margin-top:14px">4. Colonnes <a href="#" id="allc" style="font-weight:400;font-size:12px">tout</a> · <a href="#" id="nonec" style="font-weight:400;font-size:12px">aucune</a></h3>
+   <div class="cols">${allCols.map(c => `<label><input type="checkbox" class="cc" value="${c}" ${EX.cols.includes(c) ? 'checked' : ''}> ${c}</label>`).join('')}</div>
+   <div class="bar" style="margin-top:14px"><button class="pri" id="dl">⬇️ Télécharger</button><button id="cp">📋 Copier (coller dans Excel)</button></div>
+   <div class="bar"><button id="full">📦 Export complet de la base (.xlsx, 1 onglet par objet)</button></div>
+  </div>
+  <div class="card box"><h3>Aperçu ${EX.fmt === 'json' ? '(3 premiers enregistrements)' : '(8 premières lignes)'}</h3><div class="preview">${esc(prev)}</div>
+   <p class="note">${fmtN(rows.length)} lignes × ${cols.length} colonnes. Les données sont exportées telles qu'elles ont été saisies dans le CRM.</p></div></div>`;
+}
+function fileName() {
+  const ext = EX.fmt === 'xlsx' ? 'xlsx' : EX.fmt === 'json' ? 'json' : 'csv';
+  return `TerraCRM_${EX.obj}_${EX.scope === 'view' ? 'vue_' : ''}20261029.${ext}`;
+}
+function bindExports() {
+  document.querySelectorAll('input[name=obj]').forEach(el => el.onchange = () => { EX.obj = el.value; EX.cols = null; render(); });
+  document.querySelectorAll('input[name=scope]').forEach(el => el.onchange = () => { EX.scope = el.value; render(); });
+  document.querySelectorAll('input[name=fmt]').forEach(el => el.onchange = () => { EX.fmt = el.value; render(); });
+  const b = document.getElementById('bom'); if (b) b.onchange = () => { EX.bom = b.checked; };
+  document.querySelectorAll('.cc').forEach(el => el.onchange = () => { EX.cols = [...document.querySelectorAll('.cc:checked')].map(x => x.value); render(); });
+  document.getElementById('allc').onclick = e => { e.preventDefault(); EX.cols = null; render(); };
+  document.getElementById('nonec').onclick = e => { e.preventDefault(); EX.cols = []; render(); };
+  document.getElementById('dl').onclick = doDownload;
+  document.getElementById('cp').onclick = async () => {
+    const { rows, cols } = exportRows();
+    try { await navigator.clipboard.writeText(toCSV(rows, cols, '\t')); toast(`${rows.length} lignes copiées : collez-les dans Excel (Ctrl+V)`); }
+    catch (e) { toast('Copie refusée par le navigateur'); }
+  };
+  document.getElementById('full').onclick = doFull;
+}
+let XLSXlib = null;
+function loadXLSX() {
+  if (XLSXlib) return Promise.resolve(XLSXlib);
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => { XLSXlib = window.XLSX; res(XLSXlib); };
+    s.onerror = () => rej(new Error('lib'));
+    document.head.appendChild(s);
+  });
+}
+async function saveFile(filename, data) {
+  let dl = null;
+  try { if (window.claude && window.claude.use) dl = await window.claude.use('downloads'); } catch (e) { dl = null; }
+  if (dl) {
+    try { await dl.save({ filename, data }); toast('Fichier enregistré : ' + filename); }
+    catch (e) { toast(e && e.code === 'declined' ? 'Téléchargement annulé' : 'Téléchargement impossible ici : utilisez « Copier »'); }
+    return;
+  }
+  // Fichier ouvert hors claude.ai (ex. en local) : téléchargement classique
+  const blob = data instanceof Blob ? data : new Blob([data]);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('Téléchargement lancé : ' + filename);
+}
+async function doDownload() {
+  const { rows, cols } = exportRows();
+  const fn = fileName();
+  if (!cols.length) return toast('Sélectionnez au moins une colonne');
+  if (EX.fmt === 'json') return saveFile(fn, new Blob([JSON.stringify({ objet: EX.obj, exporte_le: '2026-10-29', nb: rows.length, data: rows }, null, 2)], { type: 'application/json' }));
+  if (EX.fmt === 'xlsx') {
+    try { const X = await loadXLSX(); const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.json_to_sheet(rows, { header: cols }), OBJ[EX.obj].label); return saveFile(fn, new Blob([X.write(wb, { type: 'array', bookType: 'xlsx' })])); }
+    catch (e) { return toast('Module Excel indisponible : choisissez CSV'); }
+  }
+  const csv = toCSV(rows, cols, EX.fmt === 'csv_sc' ? ';' : ',');
+  saveFile(fn, new Blob([(EX.bom ? '﻿' : '') + csv], { type: 'text/csv' }));
+}
+async function doFull() {
+  try {
+    const X = await loadXLSX(); const wb = X.utils.book_new();
+    Object.keys(OBJ).forEach(k => X.utils.book_append_sheet(wb, X.utils.json_to_sheet(OBJ[k].rows, { header: OBJ[k].cols.map(c => c[0]) }), OBJ[k].label));
+    X.utils.book_append_sheet(wb, X.utils.json_to_sheet(D.owners), 'Utilisateurs');
+    saveFile('TerraCRM_export_complet_20261029.xlsx', new Blob([X.write(wb, { type: 'array', bookType: 'xlsx' })]));
+  } catch (e) { toast('Module Excel indisponible'); }
+}
+
+// ---------- Lisez-moi ----------
+function viewHelp() {
+  const dict = [
+    ['Contacts', 'id_contact', 'Identifiant unique du contact (clé)'], ['Contacts', 'id_entreprise', 'Lien vers l\'entreprise'], ['Contacts', 'source / campagne', 'Canal d\'acquisition (saisi ou choisi par le commercial) et campagne d\'origine (= « Campagne de la session » dans GA4)'], ['Contacts', 'source_support', 'Source / support capté automatiquement par le formulaire du site (= « Source/Support de la session » dans GA4). Vide pour les contacts hors web et ceux créés avant janvier 2026'], ['Opportunités', 'source / campagne', 'Reprises du contact à la création de l\'opportunité'], ['Contacts', 'cycle_de_vie', 'Lead → MQL → SQL → Opportunité → Client'], ['Contacts', 'proprietaire', 'Commercial en charge'],
+    ['Entreprises', 'tranche_effectif', '1-9, 10-49, 50-249, 250+'], ['Entreprises', 'statut_compte', 'Client si au moins une opportunité gagnée'],
+    ['Opportunités', 'ref_offre', 'Référence catalogue (TCP-B10, TCP-B50, TCP-FGP, TCP-MNT, TCP-CAP, TCP-EVT)'], ['Opportunités', 'montant_ht', 'Valeur annuelle HT du contrat'], ['Opportunités', 'etape / probabilite', 'Découverte 10 %, Qualification 25 %, Proposition 50 %, Négociation 75 %, Gagné 100 %, Perdu 0 %'], ['Opportunités', 'date_cloture', 'Date réelle (Gagné, Perdu) ou prévue (en cours)'],
+    ['Activités', 'proprietaire', 'Code utilisateur du commercial (voir tableau ci-dessous)'], ['Activités', 'id_opportunite', 'Vide si l\'activité ne concerne pas une opportunité'],
+  ];
+  return `<div class="help"><h1>Lisez-moi</h1><p class="sub">TerraCRM est le CRM (fictif) de TerraCafé Pro, PME aixoise qui vend des solutions café aux entreprises : machines en location, capsules, fontaines à grains, maintenance et packs événementiels.</p>
+  <h2>Contexte</h2><p>La base a été créée en mars 2025 par import d'un ancien fichier de prospection, puis alimentée par les formulaires du site, la synchronisation LinkedIn Lead Gen, les salons et la saisie manuelle des quatre commerciaux. Personne n'a jamais fait le ménage.</p>
+  <h2>Votre mission</h2><p>Exporter les données dont vous avez besoin (menu <b>Exports</b>, ou bouton <b>Exporter cette vue</b> sur chaque liste) puis les préparer dans Excel ou Power Query pour construire un tableau de bord commercial fiable. Avant de faire confiance au tableau de bord du CRM, vérifiez ses chiffres.</p><p>Une fois les données nettoyées, réinjectez-les avec le menu <b>Import</b> : le CRM contrôle chaque ligne, rejette ce qui n'est pas conforme et recalcule le tableau de bord.</p>
+  <h2>Règles de saisie contrôlées à l'import</h2><ul><li>Dates : <code>jj/mm/aaaa</code> ou <code>aaaa-mm-jj</code></li><li>Montants, probabilités, durées : nombres sans symbole ni espace</li><li>Listes (étape, source, campagne, propriétaire, civilité, cycle de vie…) : valeurs exactes du référentiel ; propriétaire en nom complet, sauf dans Activités (code)</li><li>Codes postaux sur 5 chiffres, téléphones au format <code>04 65 71 12 34</code>, e-mails en minuscules</li><li>Pas d'espace en début ou fin de valeur ; les ID référencés doivent exister</li></ul>
+  <h2>Valeurs autorisées</h2><p><b>Étapes :</b> Découverte, Qualification, Proposition, Négociation, Gagné, Perdu<br><b>Sources :</b> Recherche organique, Accès direct, Google Ads, LinkedIn Ads, LinkedIn organique, Emailing, Site référent, Salon, Recommandation, Prospection sortante<br><b>Campagnes :</b> SEA_machines_bureau, SEA_capsules_pro (Google Ads) ; LI_DecideursRH_T1, LI_OfficeManagers_T2, LI_Rentree_T3 (LinkedIn Ads) ; NL_mensuelle, Relance_devis (Emailing) ; Salon_Bureaux_Expo_Marseille, Salon_RH_Sud_Lyon (Salon)<br><b>Cycle de vie :</b> Lead, MQL, SQL, Opportunité, Client</p>
+  <h2>Modèle de données</h2><p><code>Entreprises</code> 1 → n <code>Contacts</code> 1 → n <code>Opportunités</code> ; <code>Contacts</code> 1 → n <code>Activités</code> ; <code>Opportunités</code> 1 → n <code>Activités</code>.</p>
+  <h2>Dictionnaire des champs (extraits)</h2><table class="card"><thead><tr><th>Objet</th><th>Champ</th><th>Description</th></tr></thead><tbody>${dict.map(r => `<tr><td>${r[0]}</td><td><code>${r[1]}</code></td><td>${r[2]}</td></tr>`).join('')}</tbody></table>
+  <h2>Correspondance avec GA4</h2><table class="card"><thead><tr><th>Source CRM</th><th>Groupe de canaux GA4</th><th>Source / support GA4</th></tr></thead><tbody>
+   ${[['Recherche organique', 'Organic Search', 'google / organic, bing / organic'], ['Accès direct', 'Direct', '(direct) / (none)'], ['Google Ads', 'Paid Search', 'google / cpc'], ['LinkedIn Ads', 'Paid Social', 'linkedin / cpc'], ['LinkedIn organique', 'Organic Social', 'linkedin.com / referral'], ['Emailing', 'Email', 'brevo / email'], ['Site référent', 'Referral', 'annuaire-pro-b2b.fr / referral'], ['Salon, Recommandation, Prospection sortante', '(hors web : absent de GA4)', '']].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table>
+  <h2>Utilisateurs</h2><table class="card"><thead><tr><th>Code</th><th>Nom</th><th>Départements</th></tr></thead><tbody>${D.owners.map(o => `<tr><td>${o.code}</td><td>${o.nom}</td><td>${o.departements}</td></tr>`).join('')}</tbody></table>
+  <h2>Catalogue des offres</h2><table class="card"><thead><tr><th>Réf.</th><th>Libellé</th><th>Valeur annuelle HT</th></tr></thead><tbody>${D.offres.map(o => `<tr><td>${o.ref_offre}</td><td>${o.libelle}</td><td>${fmtN(o.min)} à ${fmtN(o.max)} €</td></tr>`).join('')}</tbody></table>
+  <p class="note">Toutes les données sont fictives : noms inventés, domaines e-mail en .example, numéros de téléphone réservés à la fiction.</p></div>`;
+}
+
+// ================= IMPORT & QUALITÉ =================
+const LS_KEY = 'terracrm_base_v2';
+let IMPORT_LOG = [];
+const ETAPES = ['Découverte', 'Qualification', 'Proposition', 'Négociation', 'Gagné', 'Perdu'];
+const PROBA_ETAPE = { 'Découverte': 10, 'Qualification': 25, 'Proposition': 50, 'Négociation': 75, 'Gagné': 100, 'Perdu': 0 };
+const SOURCES = ['Recherche organique', 'Accès direct', 'Google Ads', 'LinkedIn Ads', 'LinkedIn organique', 'Emailing', 'Site référent', 'Salon', 'Recommandation', 'Prospection sortante'];
+const CAMPAGNES = { 'Google Ads': ['SEA_machines_bureau', 'SEA_capsules_pro'], 'LinkedIn Ads': ['LI_DecideursRH_T1', 'LI_OfficeManagers_T2', 'LI_Rentree_T3'], 'Emailing': ['NL_mensuelle', 'Relance_devis'], 'Salon': ['Salon_Bureaux_Expo_Marseille', 'Salon_RH_Sud_Lyon'] };
+const ALL_CAMP = Object.values(CAMPAGNES).flat();
+const SECTEURS = [...new Set(D.entreprises.map(e => e.secteur))].sort();
+const OWNER_NAMES = D.owners.map(o => o.nom);
+const OWNER_CODES = D.owners.map(o => o.code);
+const DEPTS = ['13', '84', '04', '05', '83', '06', '34', '30', '69', '38'];
+const OFFRE = Object.fromEntries(D.offres.map(o => [o.ref_offre, o]));
+const TYPES_ACT = ['Appel', 'Email', 'RDV', 'Démo', 'Relance devis'];
+const ID_RX = { contacts: /^CT-\d{5}$/, entreprises: /^ENT-\d{4}$/, opportunites: /^OPP-26-\d{4}$/, activites: /^ACT-\d{5}$/ };
+
+// Spécification des champs : t = type, req = obligatoire, list = valeurs autorisées
+const SPEC = {
+  contacts: {
+    id_contact: { t: 'id', req: 1 }, civilite: { t: 'list', list: ['M.', 'Mme'], req: 1 }, prenom: { t: 'name', req: 1 }, nom: { t: 'name', req: 1 },
+    email: { t: 'email' }, telephone: { t: 'phone' }, poste: { t: 'text' }, id_entreprise: { t: 'ref', ref: 'entreprises', req: 1 }, entreprise: { t: 'text' },
+    source: { t: 'list', list: SOURCES, soft: 1 }, campagne: { t: 'list', list: ALL_CAMP }, source_support: { t: 'list', list: ['google / organic', 'bing / organic', '(direct) / (none)', 'google / cpc', 'linkedin / cpc', 'linkedin.com / referral', 'brevo / email', 'annuaire-pro-b2b.fr / referral'] }, date_creation: { t: 'date', req: 1 },
+    proprietaire: { t: 'list', list: OWNER_NAMES, soft: 1 }, cycle_de_vie: { t: 'list', list: ['Lead', 'MQL', 'SQL', 'Opportunité', 'Client'], req: 1 }, optin_newsletter: { t: 'list', list: ['Oui', 'Non'], soft: 1 },
+  },
+  entreprises: {
+    id_entreprise: { t: 'id', req: 1 }, raison_sociale: { t: 'text', req: 1 }, secteur: { t: 'list', list: SECTEURS, req: 1 }, tranche_effectif: { t: 'list', list: ['1-9', '10-49', '50-249', '250+'], req: 1 },
+    code_postal: { t: 'cp', req: 1 }, ville: { t: 'text', req: 1 }, departement: { t: 'list', list: DEPTS, req: 1 }, proprietaire: { t: 'list', list: OWNER_NAMES, soft: 1 },
+    statut_compte: { t: 'list', list: ['Prospect', 'Client'], req: 1 }, date_creation: { t: 'date', req: 1 },
+  },
+  opportunites: {
+    id_opportunite: { t: 'id', req: 1 }, nom_opportunite: { t: 'text', req: 1 }, id_entreprise: { t: 'ref', ref: 'entreprises', req: 1 }, entreprise: { t: 'text' },
+    id_contact: { t: 'ref', ref: 'contacts', req: 1 }, ref_offre: { t: 'list', list: Object.keys(OFFRE), req: 1 }, montant_ht: { t: 'num', req: 1, min: 0 },
+    etape: { t: 'list', list: ETAPES, req: 1 }, probabilite: { t: 'num', req: 1, min: 0, max: 100 }, date_creation: { t: 'date', req: 1 }, date_cloture: { t: 'date', req: 1 },
+    proprietaire: { t: 'list', list: OWNER_NAMES, soft: 1 }, source: { t: 'list', list: SOURCES, soft: 1 }, campagne: { t: 'list', list: ALL_CAMP }, motif_perte: { t: 'text' },
+  },
+  activites: {
+    id_activite: { t: 'id', req: 1 }, date: { t: 'date', req: 1 }, type: { t: 'list', list: TYPES_ACT, req: 1 }, objet: { t: 'text' },
+    id_contact: { t: 'ref', ref: 'contacts', req: 1 }, id_opportunite: { t: 'ref', ref: 'opportunites' }, proprietaire: { t: 'list', list: OWNER_CODES, req: 1 },
+    resultat: { t: 'text' }, duree_min: { t: 'num', min: 0, max: 600 },
+  },
+};
+const SUM_L = { crees: 'fiche(s) créée(s)', mis_a_jour: 'fiche(s) mise(s) à jour', remplaces: 'fiche(s) importée(s)', supprimes: 'fiche(s) supprimée(s)', rejetes: 'ligne(s) rejetée(s)' };
+const FIELD_LABEL = k => Object.fromEntries(OBJ[k].cols.map(c => [c[0], c[1]]));
+
+// ---------- Persistance (navigateur de l'étudiant) ----------
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+    if (s && s.contacts) { ['entreprises', 'contacts', 'opportunites', 'activites'].forEach(k => D[k] = s[k]); IMPORT_LOG = s.log || []; }
+  } catch (e) { }
+}
+function saveState() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ entreprises: D.entreprises, contacts: D.contacts, opportunites: D.opportunites, activites: D.activites, log: IMPORT_LOG })); return true; }
+  catch (e) { return false; }
+}
+function resetState() {
+  try { localStorage.removeItem(LS_KEY); } catch (e) { }
+  const G = generateTerraData();
+  ['entreprises', 'contacts', 'opportunites', 'activites'].forEach(k => D[k] = G[k]);
+  IMPORT_LOG = [];
+  QUALITY_CACHE = null;
+}
+
+// ---------- Contrôles ----------
+function parseDate(v) {
+  const s = String(v); let m, y, mo, d;
+  if ((m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?$/))) { d = +m[1]; mo = +m[2]; y = +m[3]; }
+  else if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?Z?)?$/))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+  else return { err: 'format non reconnu (attendu jj/mm/aaaa ou aaaa-mm-jj)' };
+  const t = Date.UTC(y, mo - 1, d), x = new Date(t);
+  if (x.getUTCMonth() !== mo - 1 || x.getUTCDate() !== d) return { err: 'date impossible' };
+  if (y < 2025 || y > 2027) return { err: 'hors période (2025 à 2027)' };
+  return { t, norm: `${String(d).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${y}` };
+}
+function parseNum(v) {
+  if (typeof v === 'number') return v;
+  const s = String(v);
+  return /^-?\d+([.,]\d+)?$/.test(s) ? Number(s.replace(',', '.')) : NaN;
+}
+const isEmpty = v => v === '' || v == null;
+
+// Contrôle d'un champ : renvoie { v: valeur normalisée, iss: [{lvl, rule, msg}] }
+function checkField(k, f, v) {
+  const sp = SPEC[k][f]; const iss = [];
+  const E = (rule, msg) => iss.push({ lvl: 'err', rule, msg }), W = (rule, msg) => iss.push({ lvl: 'warn', rule, msg });
+  if (!sp) return { v, iss };
+  if (isEmpty(v)) {
+    if (sp.req) E('Champ obligatoire vide', 'valeur obligatoire');
+    else if (sp.soft) W('Champ non renseigné', 'champ vide');
+    return { v: '', iss };
+  }
+  let out = typeof v === 'number' ? v : String(v);
+  const s = String(v);
+  if (typeof v === 'string' && s !== s.trim()) { E('Espaces parasites', 'espace en début ou fin de valeur'); return { v: out, iss }; }
+  switch (sp.t) {
+    case 'id': if (!ID_RX[k].test(s)) E('Identifiant mal formé', 'format d\'ID invalide'); break;
+    case 'ref': if (!ID_RX[sp.ref].test(s)) E('Référence invalide', 'format d\'ID invalide'); else if (!D[sp.ref].some(r => r[OBJ[sp.ref].key] === s)) E('Référence inexistante', `${s} introuvable dans ${OBJ[sp.ref].label}`); break;
+    case 'list': if (!sp.list.includes(s)) E(`Valeur hors liste (${f})`, `« ${s} » n'est pas une valeur autorisée`); break;
+    case 'date': { const p = parseDate(s); if (p.err) E(`Date invalide (${f})`, p.err); else out = p.norm; break; }
+    case 'num': { const n = parseNum(v); if (isNaN(n)) E(`Nombre invalide (${f})`, 'valeur non numérique (pas de symbole € ni d\'espace)'); else if ((sp.min != null && n < sp.min) || (sp.max != null && n > sp.max)) E(`Nombre hors bornes (${f})`, 'valeur hors bornes'); else out = n; break; }
+    case 'email': if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(s)) { if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s) && s !== s.toLowerCase()) W('E-mail en majuscules', 'à passer en minuscules'); else E('E-mail invalide', 'format d\'e-mail invalide'); } break;
+    case 'phone': if (!/^0\d( \d{2}){4}$/.test(s)) W('Téléphone non normalisé', 'format attendu : 04 65 71 12 34'); break;
+    case 'cp': if (/^\d{4}$/.test(s)) E('Code postal sur 4 chiffres', 'zéro initial perdu ?'); else if (!/^\d{5}$/.test(s)) E('Code postal invalide', 'attendu : 5 chiffres'); break;
+    case 'name': if (s.length > 2 && s === s.toUpperCase()) W(`Casse à revoir (${f})`, 'tout en majuscules'); break;
+  }
+  return { v: out, iss };
+}
+
+// Contrôles croisés sur un enregistrement complet
+function crossChecks(k, r) {
+  const iss = [];
+  const W = (rule, msg, field) => iss.push({ lvl: 'warn', rule, msg, field }), E = (rule, msg, field) => iss.push({ lvl: 'err', rule, msg, field });
+  const ent = id => D.entreprises.find(e => e.id_entreprise === id);
+  if (k === 'contacts') {
+    if (r.campagne && CAMPAGNES[r.source] && !CAMPAGNES[r.source].includes(r.campagne)) W('Campagne incohérente avec la source', `« ${r.campagne} » ne relève pas de « ${r.source} »`, 'campagne');
+    if (r.campagne && SOURCES.includes(r.source) && !CAMPAGNES[r.source]) W('Campagne incohérente avec la source', `la source « ${r.source} » n'a pas de campagne`, 'campagne');
+    const e = ent(r.id_entreprise); if (e && r.entreprise && r.entreprise !== e.raison_sociale) W('Libellé entreprise différent de la fiche', `fiche : « ${e.raison_sociale} »`, 'entreprise');
+    if (isEmpty(r.email) && isEmpty(r.telephone)) W('Contact injoignable', 'ni e-mail ni téléphone', 'email');
+  }
+  if (k === 'entreprises') {
+    if (/^\d{5}$/.test(String(r.code_postal)) && r.departement && String(r.code_postal).slice(0, 2) !== r.departement) W('Département incohérent avec le CP', `CP ${r.code_postal} / dép. ${r.departement}`, 'departement');
+    if (r.ville && r.ville.length > 3 && r.ville === r.ville.toUpperCase()) W('Casse à revoir (ville)', 'tout en majuscules', 'ville');
+  }
+  if (k === 'opportunites') {
+    if (r.campagne && CAMPAGNES[r.source] && !CAMPAGNES[r.source].includes(r.campagne)) W('Campagne incohérente avec la source', `« ${r.campagne} » ne relève pas de « ${r.source} »`, 'campagne');
+    const a = parseDate(r.date_creation), b = parseDate(r.date_cloture);
+    if (a.t && b.t && b.t < a.t) E('Clôture avant création', `${r.date_cloture} < ${r.date_creation}`, 'date_cloture');
+    if (ETAPES.includes(r.etape) && typeof r.probabilite === 'number' && PROBA_ETAPE[r.etape] !== r.probabilite) W('Probabilité incohérente avec l\'étape', `${r.etape} = ${PROBA_ETAPE[r.etape]} %`, 'probabilite');
+    if (r.etape === 'Perdu' && isEmpty(r.motif_perte)) W('Motif de perte manquant', 'opportunité perdue sans motif', 'motif_perte');
+    const o = OFFRE[r.ref_offre]; if (o && typeof r.montant_ht === 'number' && (r.montant_ht < o.min || r.montant_ht > o.max)) W('Montant hors fourchette de l\'offre', `${o.min} à ${o.max} €`, 'montant_ht');
+    const e = ent(r.id_entreprise); if (e && r.entreprise && r.entreprise !== e.raison_sociale) W('Libellé entreprise différent de la fiche', `fiche : « ${e.raison_sociale} »`, 'entreprise');
+    const c = D.contacts.find(x => x.id_contact === r.id_contact); if (c && r.id_entreprise && c.id_entreprise !== r.id_entreprise) E('Contact rattaché à une autre entreprise', `${r.id_contact} appartient à ${c.id_entreprise}`, 'id_contact');
+  }
+  if (k === 'activites') {
+    if (r.id_opportunite) { const o = D.opportunites.find(x => x.id_opportunite === r.id_opportunite); if (o && o.id_contact !== r.id_contact) W('Activité et opportunité sur des contacts différents', `${r.id_opportunite} → ${o.id_contact}`, 'id_contact'); }
+  }
+  return iss;
+}
+// Doublons au sein d'un ensemble d'enregistrements
+function dupChecks(k, recs) {
+  const out = []; const groups = {};
+  const keyOf = r => k === 'contacts' ? (r.email ? String(r.email).trim().toLowerCase() : null)
+    : k === 'entreprises' ? String(r.raison_sociale || '').trim().toLowerCase()
+    : k === 'opportunites' ? [r.id_entreprise, r.ref_offre, parseNum(String(r.montant_ht).replace(/[\s€]/g, '')), parseDate(r.date_creation).norm || r.date_creation].join('|') : null;
+  recs.forEach((r, i) => { const key = keyOf(r); if (!key) return; (groups[key] = groups[key] || []).push(i); });
+  const rule = k === 'contacts' ? 'Doublon (même e-mail)' : k === 'entreprises' ? 'Doublon (même raison sociale)' : 'Doublon probable (même entreprise, offre, montant, date)';
+  Object.values(groups).filter(g => g.length > 1).forEach(g => g.slice(1).forEach(i => out.push({ i, lvl: 'warn', rule, msg: `identique à ${recs[g[0]][OBJ[k].key]}` })));
+  return out;
+}
+// Enregistrements enfants qui pointent vers un ID
+function childrenOf(k, id) {
+  const refs = [];
+  if (k === 'entreprises') { refs.push(...D.contacts.filter(c => c.id_entreprise === id).map(c => c.id_contact), ...D.opportunites.filter(o => o.id_entreprise === id).map(o => o.id_opportunite)); }
+  if (k === 'contacts') { refs.push(...D.opportunites.filter(o => o.id_contact === id).map(o => o.id_opportunite), ...D.activites.filter(a => a.id_contact === id).map(a => a.id_activite)); }
+  if (k === 'opportunites') refs.push(...D.activites.filter(a => a.id_opportunite === id).map(a => a.id_activite));
+  return refs;
+}
+function validateFull(k, rec) {
+  const norm = {}; const iss = [];
+  OBJ[k].cols.forEach(([f]) => { const r = checkField(k, f, rec[f] ?? ''); norm[f] = r.v; r.iss.forEach(x => iss.push({ ...x, field: f, value: rec[f] })); });
+  if (!iss.some(x => x.lvl === 'err' && ['date_creation', 'date_cloture'].includes(x.field))) crossChecks(k, norm).forEach(x => iss.push({ ...x, value: rec[x.field] }));
+  else crossChecks(k, norm).filter(x => x.rule !== 'Clôture avant création').forEach(x => iss.push({ ...x, value: rec[x.field] }));
+  return { norm, iss };
+}
+
+// ---------- Qualité de la base ----------
+let QUALITY_CACHE = null;
+function qualityReport() {
+  if (QUALITY_CACHE) return QUALITY_CACHE;
+  const rep = {};
+  Object.keys(OBJ).forEach(k => {
+    const agg = {}; let recs = 0;
+    const add = x => { const key = x.lvl + '|' + x.rule; agg[key] = (agg[key] || 0) + 1; };
+    D[k].forEach(r => { const { iss } = validateFull(k, r); if (iss.length) recs++; iss.forEach(add); });
+    dupChecks(k, D[k]).forEach(add);
+    rep[k] = { recs, rules: Object.entries(agg).map(([key, n]) => ({ lvl: key.split('|')[0], rule: key.split('|').slice(1).join('|'), n })).sort((a, b) => (a.lvl === b.lvl ? b.n - a.n : a.lvl === 'err' ? -1 : 1)) };
+  });
+  return (QUALITY_CACHE = rep);
+}
+
+// ---------- Lecture de fichier ----------
+function parseDelimited(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const first = text.split(/\r?\n/)[0] || '';
+  const cnt = c => first.split(c).length - 1;
+  const sep = [['\t', cnt('\t')], [';', cnt(';')], [',', cnt(',')]].sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"' && cur === '') q = true;
+    else if (ch === sep) { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += ch;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return { rows: rows.filter(r => r.some(c => c !== '')), sep };
+}
+function decodeText(buf) {
+  try { return { text: new TextDecoder('utf-8', { fatal: true }).decode(buf), enc: 'UTF-8' }; }
+  catch (e) { return { text: new TextDecoder('windows-1252').decode(buf), enc: 'ANSI (Windows-1252)' }; }
+}
+function sheetToRows(X, ws) {
+  if (!ws || !ws['!ref']) return [];
+  const R = X.utils.decode_range(ws['!ref']); const out = [];
+  for (let r = R.s.r; r <= R.e.r; r++) {
+    const row = [];
+    for (let c = R.s.c; c <= R.e.c; c++) {
+      const cell = ws[X.utils.encode_cell({ r, c })];
+      if (!cell || cell.v == null) { row.push(''); continue; }
+      if (cell.t === 'n' && cell.z && X.SSF.is_date(cell.z)) { const p = X.SSF.parse_date_code(cell.v); row.push(`${String(p.d).padStart(2, '0')}/${String(p.m).padStart(2, '0')}/${p.y}`); }
+      else if (cell.t === 'd') { const d = cell.v; row.push(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`); }
+      else if (cell.t === 'b') row.push(cell.v ? 'VRAI' : 'FAUX');
+      else row.push(cell.v);
+    }
+    out.push(row);
+  }
+  return out.filter(r => r.some(c => c !== ''));
+}
+
+// ---------- État de l'écran d'import ----------
+const IM = { obj: 'opportunites', mode: 'update', createNew: false, ignoreEmpty: true, file: null, info: '', sheets: null, sheet: null, wb: null, header: [], rows: [], map: {}, report: null, filter: 'all', done: null };
+const normH = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+function autoMap() {
+  const fields = OBJ[IM.obj].cols; IM.map = {};
+  IM.header.forEach((h, i) => {
+    const n = normH(h);
+    const f = fields.find(([c, l]) => normH(c) === n || normH(l) === n);
+    IM.map[i] = f ? f[0] : '';
+  });
+}
+function setTable(rows, info) {
+  IM.header = (rows[0] || []).map(h => String(h).replace(/^\uFEFF/, '').trim());
+  const hs = IM.header.map(normH), order = ['activites', 'opportunites', 'contacts', 'entreprises'];
+  const detected = order.find(o => hs[0] === OBJ[o].key) || order.find(o => hs.includes(OBJ[o].key));
+  if (detected && detected !== IM.obj) { IM.obj = detected; info += ` · objet détecté : ${OBJ[detected].label}`; }
+  IM.rows = rows.slice(1); IM.info = info; IM.report = null; IM.done = null; autoMap();
+}
+async function handleFile(file) {
+  IM.file = file.name; IM.sheets = null; IM.wb = null;
+  const buf = await file.arrayBuffer();
+  if (/\.xlsx?$/i.test(file.name)) {
+    try {
+      const X = await loadXLSX(); const wb = X.read(buf, { type: 'array' });
+      IM.wb = wb; IM.sheets = wb.SheetNames;
+      const guess = wb.SheetNames.find(n => normH(n) === normH(OBJ[IM.obj].label)) || wb.SheetNames[0];
+      IM.sheet = guess; setTable(sheetToRows(X, wb.Sheets[guess]), `Excel · onglet « ${guess} »`);
+    } catch (e) { toast('Lecture du fichier Excel impossible'); return; }
+  } else {
+    const { text, enc } = decodeText(buf); const { rows, sep } = parseDelimited(text);
+    setTable(rows, `Texte · séparateur « ${sep === '\t' ? 'tabulation' : sep} » · encodage ${enc}`);
+  }
+  render();
+}
+
+function analyze() {
+  const k = IM.obj, key = OBJ[k].key, mode = IM.mode;
+  const R = { global: [], issues: [], create: [], update: [], del: [], replace: null, unchanged: 0, rejected: 0, lines: IM.rows.length };
+  const mapped = Object.entries(IM.map).filter(([, f]) => f);
+  const fields = mapped.map(([, f]) => f);
+  const dupF = fields.filter((f, i) => fields.indexOf(f) !== i);
+  if (dupF.length) R.global.push(`Champ associé à plusieurs colonnes : ${[...new Set(dupF)].join(', ')}`);
+  if (!fields.includes(key)) R.global.push(`La colonne d'identifiant « ${key} » doit être associée.`);
+  if (mode === 'replace') { const miss = Object.entries(SPEC[k]).filter(([f, s]) => s.req && !fields.includes(f)).map(([f]) => f); if (miss.length) R.global.push(`Remplacement complet : colonnes obligatoires manquantes : ${miss.join(', ')}`); }
+  if (!IM.rows.length) R.global.push('Le fichier ne contient aucune ligne de données.');
+  if (R.global.length) return (IM.report = R);
+
+  const byId = new Map(D[k].map(r => [r[key], r]));
+  const seen = new Map();
+  const recs = IM.rows.map(row => { const o = {}; mapped.forEach(([i, f]) => { o[f] = row[i] ?? ''; }); return o; });
+  const push = (line, id, x) => R.issues.push({ line, id, field: x.field || '', value: x.value ?? '', lvl: x.lvl, rule: x.rule, msg: x.msg });
+  const okRecs = [];
+  recs.forEach((rec, i) => {
+    const line = i + 2, id = String(rec[key] ?? '');
+    let errs = 0; const P = x => { if (x.lvl === 'err') errs++; push(line, id, x); };
+    if (seen.has(id)) P({ lvl: 'err', rule: 'ID en double dans le fichier', msg: `déjà présent ligne ${seen.get(id)}`, field: key, value: id });
+    else seen.set(id, line);
+    if (mode === 'delete') {
+      if (!byId.has(id)) P({ lvl: 'err', rule: 'ID inconnu', msg: 'aucun enregistrement à supprimer', field: key, value: id });
+      else { const ch = childrenOf(k, id); if (ch.length) P({ lvl: 'err', rule: 'Suppression impossible : enregistrements liés', msg: `${ch.length} lié(s) : ${ch.slice(0, 3).join(', ')}${ch.length > 3 ? '…' : ''}`, field: key, value: id }); }
+      if (!errs) R.del.push(id); else R.rejected++;
+      return;
+    }
+    if (mode === 'update' && byId.has(id)) {
+      if (errs) { R.rejected++; return; }
+      // Mise à jour champ par champ : un champ en erreur est refusé, les autres champs de la ligne sont appliqués
+      const old = byId.get(id); const merged = { ...old }; const changes = {}; let refused = 0;
+      fields.forEach(f => {
+        if (f === key) return;
+        if (IM.ignoreEmpty && isEmpty(rec[f])) return;
+        const r = checkField(k, f, rec[f]);
+        r.iss.forEach(x => push(line, id, { ...x, field: f, value: rec[f], msg: x.msg + (x.lvl === 'err' ? ' · champ non importé' : '') }));
+        if (r.iss.some(x => x.lvl === 'err')) { refused++; return; }
+        merged[f] = r.v; if (String(old[f] ?? '') !== String(r.v ?? '')) changes[f] = r.v;
+      });
+      crossChecks(k, merged).filter(x => fields.includes(x.field) || x.rule === 'Clôture avant création' && (fields.includes('date_creation') || fields.includes('date_cloture'))).forEach(x => {
+        const drop = x.lvl === 'err' ? (x.rule === 'Clôture avant création' ? ['date_creation', 'date_cloture'] : [x.field]).filter(f => f in changes) : [];
+        drop.forEach(f => { delete changes[f]; refused++; });
+        push(line, id, { ...x, value: rec[x.field] ?? merged[x.field], msg: x.msg + (drop.length ? ' · champ non importé' : '') });
+      });
+      if (refused) R.partial = (R.partial || 0) + 1, R.refusedFields = (R.refusedFields || 0) + refused;
+      if (Object.keys(changes).length) { R.update.push({ id, changes, before: Object.fromEntries(Object.keys(changes).map(f => [f, old[f]])) }); okRecs.push({ line, rec: { ...old, ...changes } }); }
+      else { R.unchanged++; okRecs.push({ line, rec: { ...old, ...changes } }); }
+      return;
+    }
+    if (mode === 'update' && !IM.createNew) { P({ lvl: 'err', rule: 'ID inconnu', msg: 'cochez « Créer les nouveaux ID » pour l\'ajouter', field: key, value: id }); R.rejected++; return; }
+    // création (mode mise à jour) ou remplacement complet : contrôle complet
+    const { norm, iss } = validateFull(k, rec); iss.forEach(P);
+    if (errs) { R.rejected++; return; }
+    if (mode === 'replace') okRecs.push({ line, rec: norm });
+    else { R.create.push(norm); okRecs.push({ line, rec: norm }); }
+  });
+  // Doublons : dans le fichier (remplacement) ou fichier + base (mise à jour)
+  if (mode !== 'delete') {
+    const pool = mode === 'replace' ? okRecs.map(o => o.rec) : [...D[k].filter(r => !okRecs.some(o => o.rec[key] === r[key])), ...okRecs.map(o => o.rec)];
+    const offset = mode === 'replace' ? 0 : pool.length - okRecs.length;
+    dupChecks(k, pool).forEach(d => { if (d.i >= offset) { const o = okRecs[d.i - offset]; push(o.line, o.rec[key], { ...d, lvl: mode === 'replace' ? 'err' : 'warn', field: '' }); } });
+  }
+  if (mode === 'replace') {
+    const ids = new Set(okRecs.map(o => o.rec[key]));
+    D[k].filter(r => !seen.has(r[key])).forEach(r => { const ch = childrenOf(k, r[key]); if (ch.length) R.issues.push({ line: '-', id: r[key], field: key, value: '', lvl: 'err', rule: 'Suppression impossible : enregistrements liés', msg: `absent du fichier mais ${ch.length} lié(s) : ${ch.slice(0, 3).join(', ')}` }); });
+    const nErr = R.issues.filter(x => x.lvl === 'err').length;
+    R.replace = { n: okRecs.length, removed: D[k].filter(r => !ids.has(r[key])).length, blocked: nErr > 0 };
+    if (nErr) R.rejected = new Set(R.issues.filter(x => x.lvl === 'err').map(x => x.id)).size;
+  }
+  return (IM.report = R);
+}
+function applyImport() {
+  const k = IM.obj, R = IM.report, key = OBJ[k].key; if (!R) return;
+  let summary;
+  if (IM.mode === 'delete') { const s = new Set(R.del); D[k] = D[k].filter(r => !s.has(r[key])); summary = { supprimes: R.del.length }; }
+  else if (IM.mode === 'replace') {
+    if (R.replace.blocked) return;
+    const rows = IM.rows.map(row => { const o = {}; Object.entries(IM.map).forEach(([i, f]) => { if (f) o[f] = row[i] ?? ''; }); return validateFull(k, o).norm; });
+    summary = { remplaces: rows.length, supprimes: R.replace.removed }; D[k] = rows;
+  } else {
+    R.update.forEach(u => { const r = D[k].find(x => x[key] === u.id); Object.assign(r, u.changes); });
+    R.create.forEach(n => D[k].push(n));
+    summary = { crees: R.create.length, mis_a_jour: R.update.length };
+  }
+  const diff = [];
+  if (IM.mode === 'update') R.update.forEach(u => Object.keys(u.changes).forEach(f => diff.push({ id: u.id, f, a: u.before[f], b: u.changes[f] })));
+  R.create.forEach(n => diff.push({ id: n[key], f: '(nouvelle fiche)', a: '', b: '' }));
+  if (IM.mode === 'delete') R.del.forEach(id => diff.push({ id, f: '(fiche supprimée)', a: '', b: '' }));
+  const p2 = n => String(n).padStart(2, '0'); const now = new Date();
+  IMPORT_LOG.unshift({ quand: `${p2(now.getDate())}/${p2(now.getMonth() + 1)}/${now.getFullYear()} ${p2(now.getHours())}:${p2(now.getMinutes())}`, objet: OBJ[k].label, mode: MODES[IM.mode].l, fichier: IM.file || 'collage', ...summary, rejetes: R.rejected });
+  QUALITY_CACHE = null;
+  const ok = saveState();
+  IM.done = { summary, ok, diff, obj: k }; IM.report = null; IM.header = []; IM.rows = []; IM.file = null; IM.sheets = null; IM.wb = null;
+  toast(ok ? 'Import appliqué et enregistré' : 'Import appliqué (non enregistré : stockage indisponible)');
+  render(); window.scrollTo(0, 0);
+}
+
+// ---------- Écran ----------
+const MODES = {
+  update: { l: 'Mise à jour par ID', d: 'Met à jour les enregistrements existants à partir de leur ID. Seules les colonnes associées sont modifiées.' },
+  replace: { l: 'Remplacement complet', d: 'Le fichier devient la nouvelle table. Les ID absents du fichier sont supprimés. Import refusé s\'il reste une seule erreur.' },
+  delete: { l: 'Suppression', d: 'Supprime les ID listés dans le fichier (seule la colonne ID est utilisée). Impossible si des enregistrements y sont liés.' },
+};
+function viewImport() {
+  const k = IM.obj, R = IM.report, L = FIELD_LABEL(k);
+  const q = qualityReport();
+  const tot = Object.values(q).reduce((a, x) => a + x.rules.filter(r => r.lvl === 'err').reduce((s, r) => s + r.n, 0), 0);
+  let h = `<h1>Import</h1><p class="sub">Réinjecter des données corrigées dans le CRM. Le CRM contrôle chaque ligne comme le ferait un vrai outil.</p>`;
+  if (IM.done) {
+    const df = IM.done.diff || [];
+    h += `<div class="card box ok">✅ <b>Import appliqué dans la base ${OBJ[IM.done.obj].label}</b> : ${Object.entries(IM.done.summary).filter(([, b]) => b).map(([a, b]) => `${b} ${SUM_L[a]}`).join(', ') || 'aucune modification'}.${IM.done.ok ? ' Base enregistrée dans ce navigateur.' : ' <b>Attention : ce navigateur refuse l\'enregistrement, les modifications seront perdues si la page est rechargée.</b>'}
+    ${df.length ? `<details ${df.length <= 30 ? 'open' : ''} style="margin-top:8px"><summary>Voir les ${df.length} modification(s)</summary><div class="tw" style="max-height:280px;margin-top:6px"><table class="qt"><thead><tr><th>ID</th><th>Champ</th><th>Avant</th><th>Après</th></tr></thead><tbody>${df.slice(0, 500).map(d => `<tr><td><a href="#" data-open="${esc(d.id)}">${esc(d.id)}</a></td><td>${esc(d.f)}</td><td>${cell(d.a)}</td><td><b>${cell(d.b)}</b></td></tr>`).join('')}</tbody></table></div></details>` : '<p class="note">Aucune valeur n\'a changé : les données importées étaient identiques à celles de la base.</p>'}</div>`;
+  }
+  h += `<div class="imp"><div class="card box">
+   <h3>1. Objet à importer</h3>${Object.keys(OBJ).map(o => `<label><input type="radio" name="iobj" value="${o}" ${k === o ? 'checked' : ''}> ${OBJ[o].label}</label>`).join('')}
+   <h3 style="margin-top:14px">2. Mode</h3>${Object.entries(MODES).map(([m, x]) => `<label title="${esc(x.d)}"><input type="radio" name="imode" value="${m}" ${IM.mode === m ? 'checked' : ''}> ${x.l}</label>`).join('')}
+   <p class="note" style="margin-top:4px">${esc(MODES[IM.mode].d)}</p>
+   ${IM.mode === 'update' ? `<label><input type="checkbox" id="inew" ${IM.createNew ? 'checked' : ''}> Créer les nouveaux ID</label><label><input type="checkbox" id="iempty" ${IM.ignoreEmpty ? 'checked' : ''}> Ignorer les cellules vides (ne pas effacer)</label>` : ''}
+   <h3 style="margin-top:14px">3. Fichier</h3>
+   <label class="drop" id="drop"><input type="file" id="ifile" accept=".csv,.txt,.xlsx,.xls" hidden><b>Déposer un fichier ici</b><br><span class="muted">ou cliquer pour choisir · CSV (; , tabulation), XLSX</span></label>
+   <details style="margin-top:8px"><summary class="muted">… ou coller depuis Excel</summary><textarea id="ipaste" rows="5" placeholder="Copiez la plage avec la ligne d'en-têtes puis collez ici"></textarea><button id="ipastego" style="margin-top:6px">Utiliser le collage</button></details>
+   ${IM.header.length ? `<p class="note">📄 <b>${esc(IM.file || 'Collage')}</b> · ${esc(IM.info)} · ${IM.rows.length} ligne(s)</p>` : ''}
+   ${IM.sheets && IM.sheets.length > 1 ? `<label>Onglet : <select id="isheet">${IM.sheets.map(s => `<option ${s === IM.sheet ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>` : ''}
+  </div>
+  <div class="card box">${IM.header.length ? `<h3>4. Correspondance des colonnes</h3>
+   <div class="tw" style="max-height:340px"><table><thead><tr><th>Colonne du fichier</th><th>Exemple</th><th>Champ TerraCRM</th></tr></thead><tbody>
+   ${IM.header.map((hd, i) => `<tr><td>${esc(hd) || '<span class="empty">(sans titre)</span>'}</td><td class="muted">${esc(String(IM.rows[0]?.[i] ?? '')).slice(0, 40)}</td><td><select data-map="${i}"><option value="">Ne pas importer</option>${OBJ[k].cols.map(([c, l]) => `<option value="${c}" ${IM.map[i] === c ? 'selected' : ''}>${c}${SPEC[k][c]?.req ? ' *' : ''}</option>`).join('')}</select></td></tr>`).join('')}
+   </tbody></table></div><p class="note">* champ obligatoire. Les noms de colonnes des exports TerraCRM sont reconnus automatiquement.</p>
+   <div class="bar"><button class="pri" id="ianalyze">🔍 Analyser le fichier</button></div>` : `<h3>Comment ça marche</h3><ol class="steps"><li>Exportez un objet depuis le menu <b>Exports</b>.</li><li>Nettoyez-le dans Excel ou Power Query sans toucher aux ID.</li><li>Réimportez-le ici : le CRM vérifie chaque ligne et refuse ce qui n'est pas conforme.</li><li>Corrigez les rejets et recommencez jusqu'à un rapport sans erreur.</li></ol>
+   <p class="note">Formats acceptés : dates jj/mm/aaaa ou aaaa-mm-jj, montants numériques sans symbole, valeurs de liste exactement comme dans le Lisez-moi, pas d'espaces parasites.</p>`}</div></div>`;
+  if (R) h += viewReport(R, L);
+  h += `<div class="grid2" style="margin-top:14px"><div class="card box"><h3>Qualité de la base actuelle</h3><p class="note" style="margin-top:0">${tot ? `<b>${fmtN(tot)} erreur(s)</b> détectée(s) par les contrôles du CRM.` : '✅ Aucune erreur bloquante détectée.'}</p>
+   ${Object.keys(OBJ).map(o => `<h4 class="qh">${OBJ[o].label} <span class="muted">(${q[o].recs} fiche(s) concernée(s) sur ${D[o].length})</span></h4>${q[o].rules.length ? `<table class="qt"><tbody>${q[o].rules.map(r => `<tr><td><span class="lv ${r.lvl}">${r.lvl === 'err' ? 'Erreur' : 'Alerte'}</span></td><td>${esc(r.rule)}</td><td class="num">${r.n}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">RAS</p>'}`).join('')}
+  </div><div class="card box"><h3>Historique des imports</h3>${IMPORT_LOG.length ? `<table class="qt"><thead><tr><th>Quand</th><th>Objet</th><th>Mode</th><th>Fichier</th><th>Résultat</th></tr></thead><tbody>${IMPORT_LOG.map(l => `<tr><td>${l.quand}</td><td>${l.objet}</td><td>${l.mode}</td><td>${esc(l.fichier)}</td><td>${['crees', 'mis_a_jour', 'remplaces', 'supprimes', 'rejetes'].filter(x => l[x]).map(x => `${l[x]} ${SUM_L[x]}`).join(', ') || 'aucune modification'}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Aucun import pour l\'instant.</p>'}
+   <div class="bar" style="margin-top:12px"><button id="ireset" class="danger">↺ Réinitialiser la base d'origine</button></div><p class="note">Les modifications sont enregistrées dans ce navigateur uniquement.</p></div></div>`;
+  return h;
+}
+function viewReport(R, L) {
+  if (R.global.length) return `<div class="card box err" style="margin-top:14px"><h3>Import impossible</h3><ul>${R.global.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>`;
+  const nE = R.issues.filter(x => x.lvl === 'err').length, nW = R.issues.length - nE;
+  const list = R.issues.filter(x => IM.filter === 'all' || x.lvl === IM.filter);
+  let chips;
+  if (IM.mode === 'delete') chips = [['À supprimer', R.del.length], ['Rejetées', R.rejected]];
+  else if (IM.mode === 'replace') chips = [['Lignes valides', R.replace.n - (R.replace.blocked ? R.rejected : 0)], ['Fiches supprimées', R.replace.removed], ['Lignes en erreur', R.rejected]];
+  else chips = [['À créer', R.create.length], ['Fiches à modifier', R.update.length], ['Inchangées', R.unchanged], ['Lignes rejetées', R.rejected], ['Champs refusés', R.refusedFields || 0]];
+  const canApply = IM.mode === 'replace' ? !R.replace.blocked : (R.create.length + R.update.length + R.del.length) > 0;
+  const nChg = R.update.reduce((a, u) => a + Object.keys(u.changes).length, 0);
+  const applyBtn = `<button class="pri" id="iapply" ${canApply ? '' : 'disabled'}>✔ Appliquer l'import${IM.mode === 'replace' ? ' (remplacer la table)' : IM.mode === 'update' ? ` · ${R.update.length + R.create.length} fiche(s), ${nChg} valeur(s)` : ''}</button>`;
+  return `<div class="card box" style="margin-top:14px" id="report"><h3>5. Rapport d'analyse · ${R.lines} ligne(s)</h3>
+   <div class="warnbox">${canApply ? `⚠️ <b>Rien n'est encore modifié.</b> Vérifiez le rapport puis cliquez sur « Appliquer l'import ».` : IM.mode === 'update' ? `ℹ️ <b>Aucune valeur à modifier.</b> Les données du fichier sont identiques à la base, ou leurs champs ont tous été refusés (voir le détail).` : `ℹ️ Import impossible en l'état : corrigez les erreurs ci-dessous.`}</div>
+   <div class="bar">${applyBtn}</div>
+   <div class="chips">${chips.map(([l, n]) => `<div class="chip"><b>${fmtN(n)}</b>${l}</div>`).join('')}<div class="chip e"><b>${nE}</b>erreur(s)</div><div class="chip w"><b>${nW}</b>alerte(s)</div></div>
+   ${IM.mode === 'replace' && R.replace.blocked ? '<p class="note"><b>Remplacement bloqué :</b> corrigez toutes les erreurs avant de pouvoir remplacer la table.</p>' : ''}
+   ${R.issues.length ? `<div class="bar"><select id="ifilter"><option value="all" ${IM.filter === 'all' ? 'selected' : ''}>Tout afficher</option><option value="err" ${IM.filter === 'err' ? 'selected' : ''}>Erreurs (ligne rejetée)</option><option value="warn" ${IM.filter === 'warn' ? 'selected' : ''}>Alertes (ligne importée)</option></select><button id="icopy">📋 Copier le rapport</button></div>
+   <div class="tw" style="max-height:360px"><table><thead><tr><th>Ligne</th><th>ID</th><th>Niveau</th><th>Contrôle</th><th>Champ</th><th>Valeur</th><th>Détail</th></tr></thead><tbody>
+   ${list.slice(0, 500).map(x => `<tr><td>${x.line}</td><td>${esc(x.id)}</td><td><span class="lv ${x.lvl}">${x.lvl === 'err' ? 'Erreur' : 'Alerte'}</span></td><td>${esc(x.rule)}</td><td>${esc(x.field)}</td><td>${cell(x.value)}</td><td>${esc(x.msg)}</td></tr>`).join('')}
+   </tbody></table></div>${list.length > 500 ? `<p class="note">500 premières lignes affichées sur ${list.length}. Utilisez « Copier le rapport » pour tout récupérer.</p>` : ''}` : '<p>✅ Aucune anomalie détectée.</p>'}
+   ${IM.mode === 'update' && (R.rejected || R.refusedFields) ? `<p class="note">Les lignes rejetées (ID inconnu ou en double) et les champs refusés ne seront pas importés ; les autres champs valides de chaque ligne le seront.</p>` : ''}
+   ${R.rejected && IM.mode === 'delete' ? `<p class="note">Les ${R.rejected} ligne(s) rejetée(s) seront ignorées.</p>` : ''}</div>`;
+}
+function bindImport() {
+  document.querySelectorAll('input[name=iobj]').forEach(el => el.onchange = () => { IM.obj = el.value; if (IM.wb && IM.sheets) { const g = IM.sheets.find(n => normH(n) === normH(OBJ[IM.obj].label)); if (g) { IM.sheet = g; loadXLSX().then(X => { setTable(sheetToRows(X, IM.wb.Sheets[g]), `Excel · onglet « ${g} »`); render(); }); return; } } if (IM.header.length) autoMap(); IM.report = null; render(); });
+  document.querySelectorAll('input[name=imode]').forEach(el => el.onchange = () => { IM.mode = el.value; IM.report = null; render(); });
+  const n = document.getElementById('inew'); if (n) n.onchange = () => { IM.createNew = n.checked; IM.report = null; render(); };
+  const e = document.getElementById('iempty'); if (e) e.onchange = () => { IM.ignoreEmpty = e.checked; IM.report = null; render(); };
+  const f = document.getElementById('ifile'); f.onchange = () => f.files[0] && handleFile(f.files[0]);
+  const drop = document.getElementById('drop');
+  drop.ondragover = ev => { ev.preventDefault(); drop.classList.add('over'); };
+  drop.ondragleave = () => drop.classList.remove('over');
+  drop.ondrop = ev => { ev.preventDefault(); drop.classList.remove('over'); const fl = ev.dataTransfer.files[0]; if (fl) handleFile(fl); };
+  document.getElementById('ipastego').onclick = () => { const t = document.getElementById('ipaste').value; if (!t.trim()) return toast('Rien à importer'); IM.file = 'Collage'; IM.sheets = null; IM.wb = null; const { rows } = parseDelimited(t); setTable(rows, 'Collage depuis le presse-papiers'); render(); };
+  const sh = document.getElementById('isheet'); if (sh) sh.onchange = async () => { IM.sheet = sh.value; const X = await loadXLSX(); setTable(sheetToRows(X, IM.wb.Sheets[sh.value]), `Excel · onglet « ${sh.value} »`); render(); };
+  document.querySelectorAll('select[data-map]').forEach(s => s.onchange = () => { IM.map[s.dataset.map] = s.value; IM.report = null; });
+  const a = document.getElementById('ianalyze'); if (a) a.onclick = () => { analyze(); IM.done = null; IM.filter = 'all'; render(); document.getElementById('report')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  document.querySelectorAll('a[data-open]').forEach(a => a.onclick = ev => { ev.preventDefault(); openRecord(IM.done.obj, a.dataset.open); });
+  const fl = document.getElementById('ifilter'); if (fl) fl.onchange = () => { IM.filter = fl.value; render(); };
+  const cp = document.getElementById('icopy'); if (cp) cp.onclick = async () => {
+    const R = IM.report; const t = ['ligne\tid\tniveau\tcontrole\tchamp\tvaleur\tdetail', ...R.issues.map(x => [x.line, x.id, x.lvl === 'err' ? 'Erreur' : 'Alerte', x.rule, x.field, x.value, x.msg].join('\t'))].join('\n');
+    try { await navigator.clipboard.writeText(t); toast(`${R.issues.length} anomalie(s) copiée(s)`); } catch (e) { toast('Copie refusée par le navigateur'); }
+  };
+  const ap = document.getElementById('iapply'); if (ap) ap.onclick = () => IM.mode === 'update' ? applyImport() : askConfirm(IM.mode === 'replace' ? `Remplacer toute la table ${OBJ[IM.obj].label} par le fichier (${IM.report.replace.removed} fiche(s) supprimée(s)) ?` : `Supprimer définitivement ${IM.report.del.length} fiche(s) ${OBJ[IM.obj].label} ?`, applyImport);
+  document.getElementById('ireset').onclick = () => askConfirm('Revenir à la base d\'origine ? Tous les imports seront perdus.', () => { resetState(); IM.report = null; IM.done = null; toast('Base d\'origine restaurée'); render(); });
+}
+function askConfirm(msg, fn) {
+  const m = document.getElementById('modal');
+  m.querySelector('p').textContent = msg; m.classList.add('open');
+  m.querySelector('.yes').onclick = () => { m.classList.remove('open'); fn(); };
+  m.querySelector('.no').onclick = () => m.classList.remove('open');
+}
+
+loadState();
+// ---------- Routeur ----------
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 3200); }
+function render() {
+  const v = (location.hash || '#accueil').slice(1);
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
+  const m = document.getElementById('main');
+  if (OBJ[v]) { m.innerHTML = viewList(v); bindList(v); }
+  else if (v === 'pipeline') { m.innerHTML = viewPipeline(); document.getElementById('po').onchange = e => { pipeOwner = e.target.value; render(); }; document.querySelectorAll('.dc').forEach(c => c.onclick = () => openRecord('opportunites', c.dataset.id)); }
+  else if (v === 'exports') { m.innerHTML = viewExports(); bindExports(); }
+  else if (v === 'import') { m.innerHTML = viewImport(); bindImport(); }
+  else if (v === 'aide') m.innerHTML = viewHelp();
+  else m.innerHTML = viewHome();
+}
+window.addEventListener('hashchange', () => { closeDrawer(); render(); });
+render();
+</script>
+</body>
+</html>
