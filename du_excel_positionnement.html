@@ -1,9 +1,19 @@
 <!DOCTYPE html>
 <!--
   Data Unchained · Test de positionnement Excel
-  Version : 1.6.0
+  Version : 1.9.0
 
   Historique :
+    1.9.0 : Nouvelle charte graphique, reprise du site public Data Unchained (assets/style.css) :
+            --text-primary passe de #333333 à #2A2E2B, --text-secondary de #6B6B6B à #5C635F,
+            --border de #E1DFDD à #DAD7D3. Les couleurs de marque (vert --bg-dark/--bg-dark-2,
+            doré --accent/--accent-dark, orange --brand-orange, jaune --brand-yellow, vert data
+            --data-blue) étaient déjà identiques entre les deux chartes et restent inchangées.
+            Nouvelle variable --display ('Bricolage Grotesque' en police d'affichage, utilisée sur
+            h1/h2/h3) et --sans basculé sur 'Figtree' en texte courant ; les deux polices se
+            replient sur Segoe UI/system-ui en attendant l'intégration des fichiers .woff2 en
+            base64 (contrainte hors-ligne du projet). --mono (Cascadia Code, pour les formules)
+            inchangé : la charte du site ne couvre pas ce besoin, propre aux outils pédagogiques.
     1.0.0 : Version initiale. 3 onglets (Accueil, Test, Révisions), 20 questions QCM réparties
             en 5 niveaux de difficulté croissante, jauge de niveau mise à jour en direct
             (Débutant à Expert), onglet Révisions limité aux questions en erreur.
@@ -62,6 +72,35 @@
     1.6.0 : Nouvel onglet « À propos » (à droite du bandeau) : présentation d'Olivier Faure et
             de Data Unchained, liens LinkedIn et YouTube, encart sur l'énergie consommée pour
             concevoir l'outil avec l'IA, et notes de version complètes.
+    1.7.0 : 20 nouvelles questions dans 4 nouveaux formats, 4 par niveau, mélangées aux QCM
+            dans le tirage aléatoire (POOL passe à 100 questions) : association (sélection par
+            menu déroulant entre deux colonnes), texte à trous (menus déroulants insérés dans
+            une phrase, pensés pour ne jamais exiger de normalisation accent/casse), mise dans
+            l'ordre (boutons ▲▼ pour réordonner une liste), et choix multiples (cases à cocher,
+            plusieurs bonnes réponses). Score partiel proportionnel pour ces 4 formats (ex. 3
+            associations correctes sur 4 = 75 % des points de la question), le QCM restant en
+            tout ou rien. Le 50/50 existe aussi pour ces formats, sous une forme adaptée à
+            chacun : élimine une mauvaise réponse (choix multiples), révèle une association,
+            verrouille un élément à sa bonne place (ordre), ou réduit les choix de chaque trou
+            (texte à trous) ; dans tous les cas, la question ne rapporte alors que la moitié de
+            ses points. Nouvelle validation explicite (bouton « Valider ma réponse ») pour ces
+            4 formats, le QCM restant à validation immédiate au clic. L'onglet Révisions affiche
+            désormais un récapitulatif de réponse adapté à chaque type.
+    1.8.0 : Deux questions existantes passent à une vraie mécanique interactive (technologies
+            reprises de l'Atelier TOSA Excel) au lieu de la liste à réordonner utilisée jusque-là.
+            Nouveau type « formulamouse » (niveau Débutant, thème Écrire une formule à la souris) :
+            mini-feuille cliquable où la formule se construit uniquement en touchant les cellules
+            et des boutons d'opérateurs (aucune saisie clavier), avec une poignée de recopie dorée
+            à étirer vers le bas pour propager la formule (références décalées automatiquement,
+            comme dans Excel). Nouveau type « pivot » (niveau Intermédiaire, thème Construire un
+            tableau croisé dynamique) : champs à déposer (glisser-déposer sur ordinateur, boutons
+            L/C/Σ au doigt sur mobile) dans les zones Lignes, Colonnes et Σ Valeurs d'un vrai TCD,
+            avec résultat recalculé en direct sur un petit jeu de données Ventes. Les deux types
+            utilisent le score partiel proportionnel déjà en place (formule + recopie comptent
+            chacune pour moitié ; chaque champ du TCD compte pour sa part), et un 50/50 adapté
+            (révèle la formule complète, ou verrouille le placement du champ de calcul). Mise en
+            page mobile retravaillée sur l'onglet Test : sous 900px, la question apparaît avant la
+            jauge de niveau plutôt qu'après (inspiré de l'outil de positionnement Power BI).
 -->
 <html lang="fr">
 <head>
@@ -79,9 +118,9 @@
     --data-blue:#1D8A57;
     --brand-yellow:#F3D163;
     --brand-orange:#B95E01;
-    --text-primary:#333333;
-    --text-secondary:#6B6B6B;
-    --border:#E1DFDD;
+    --text-primary:#2A2E2B;
+    --text-secondary:#5C635F;
+    --border:#DAD7D3;
     --border-strong:#C8C6C4;
     --error:#A80000;
     --error-bg:#FDF3F3;
@@ -90,10 +129,12 @@
     --radius:4px;
     --hdr-h:110px;
     --mono:'Cascadia Code','Consolas','SFMono-Regular',Menlo,monospace;
-    --sans:'Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+    --sans:'Figtree','Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+    --display:'Bricolage Grotesque','Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; padding:0; background:var(--bg-canvas); color:var(--text-primary); font-family:var(--sans); }
+  h1,h2,h3{ font-family:var(--display); }
   .wrap{ width:min(1600px,94vw); margin:0 auto; }
   .app-footer{ text-align:center; font-size:11px; color:var(--text-secondary); padding:6px 14px 26px; }
   .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
@@ -175,7 +216,7 @@
   .test-layout{ display:grid; grid-template-columns:330px 1fr; gap:14px; padding:14px; align-items:start; }
   @media (max-width:900px){ .test-layout{ grid-template-columns:1fr; } }
   .gauge-card{ position:sticky; top:calc(var(--hdr-h) + 14px); padding:14px 14px 12px; }
-  @media (max-width:900px){ .gauge-card{ position:static; } }
+  @media (max-width:900px){ .gauge-card{ position:static; order:2; } .test-layout > #testHost{ order:1; } }
   .gauge-card svg, .hero-gauge svg{ width:100%; height:auto; display:block; }
   .gauge-level{ text-align:center; margin:2px 0 10px; }
   .gauge-level .lvl-chip{ font-size:14px; padding:4px 16px; }
@@ -228,7 +269,100 @@
   .fb{ border-radius:var(--radius); padding:10px 12px; font-size:13px; line-height:1.55; margin-bottom:12px; }
   .fb.ok{ background:var(--success-bg); border:1px solid #C3E6C3; color:#14603C; }
   .fb.ko{ background:var(--error-bg); border:1px solid #F1C0C0; color:#7A1212; }
+  .fb.partial{ background:#FFF9E6; border:1px solid #EEDD9C; color:#5C4A00; }
   .q-actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between; align-items:center; }
+
+  /* ---------- Types de question : association, choix multiples, ordre, texte à trous ---------- */
+  .opt.selected{ border-color:var(--data-blue); background:var(--success-bg); opacity:1; }
+  .opt.selected .letter{ background:var(--data-blue); color:#fff; border-color:var(--data-blue); }
+  .opt.sel-ok{ background:var(--success-bg); border-color:var(--success); opacity:1; }
+  .opt.sel-ko{ background:var(--error-bg); border-color:var(--error); opacity:1; }
+  .opt.miss{ border:1.5px dashed var(--accent-dark); opacity:1; }
+  .opt.miss .letter{ background:#fff; border-color:var(--accent-dark); color:var(--accent-dark); }
+
+  .match-wrap{ display:flex; flex-direction:column; gap:8px; margin:0 0 12px; }
+  .match-row{ display:grid; grid-template-columns:1fr 24px 1fr; align-items:center; gap:8px; }
+  .match-left{ padding:9px 11px; background:#F7F6F5; border:1px solid var(--border-strong); border-radius:6px; font-size:13.5px; font-weight:600; }
+  .match-arrow{ text-align:center; color:var(--text-secondary); }
+  .match-row select{ width:100%; padding:8px 9px; border:1.5px solid var(--border-strong); border-radius:6px; font-family:inherit; font-size:13px; background:#fff; color:var(--text-primary); }
+  .match-row select:disabled{ opacity:.85; }
+  .match-row.row-ok select{ border-color:var(--success); background:var(--success-bg); }
+  .match-row.row-ko select{ border-color:var(--error); background:var(--error-bg); }
+
+  .order-list{ list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .order-item{ display:flex; align-items:center; gap:10px; padding:9px 11px; background:#fff; border:1.5px solid var(--border-strong); border-radius:6px; font-size:13.5px; }
+  .order-item .order-pos{ width:22px; height:22px; border-radius:50%; background:#F3F2F1; border:1px solid var(--border-strong); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+  .order-item .order-text{ flex:1; }
+  .order-item .order-btns{ display:flex; gap:4px; flex-shrink:0; }
+  .order-item .order-btns button{ padding:4px 9px; font-size:12px; }
+  .order-item.locked{ background:#F7F6F5; opacity:.85; }
+  .order-item.row-ok{ border-color:var(--success); background:var(--success-bg); }
+  .order-item.row-ko{ border-color:var(--error); background:var(--error-bg); }
+
+  .blank-text{ font-size:14.5px; line-height:2.4; margin:0 0 12px; font-weight:600; }
+  .blank-text select{ display:inline-block; margin:0 3px; padding:4px 8px; border:1.5px solid var(--border-strong); border-radius:6px; font-family:"Cascadia Code","Consolas",monospace; font-size:12.5px; font-weight:600; background:#FFFCF2; color:var(--text-primary); vertical-align:middle; }
+  .blank-text select:disabled{ opacity:.9; }
+  .blank-text select.b-ok{ border-color:var(--success); background:var(--success-bg); }
+  .blank-text select.b-ko{ border-color:var(--error); background:var(--error-bg); }
+
+  .recap-rows{ display:flex; flex-direction:column; gap:4px; margin-bottom:6px; }
+  .recap-row{ font-size:13px; line-height:1.55; padding:7px 10px; border-radius:var(--radius); }
+  .recap-row.ok{ background:var(--success-bg); border:1px solid #C3E6C3; }
+  .recap-row.ko{ background:var(--error-bg); border:1px solid #F1C0C0; }
+  .recap-row i{ color:var(--text-secondary); font-style:normal; }
+
+  /* ---------- Formule à la souris (clic + poignée de recopie) ---------- */
+  .fx-mini-wrap{ position:relative; }
+  .fx-bar-mini{ display:flex; align-items:stretch; border:1.5px solid var(--border-strong); border-radius:6px; background:#fff; overflow:hidden; margin-bottom:8px; }
+  .fx-name-mini{ min-width:40px; padding:0 8px; background:#F7F6F5; border-right:1px solid var(--border); font:700 13px var(--mono); display:flex; align-items:center; justify-content:center; }
+  .fx-fx-mini{ padding:0 9px; color:var(--text-secondary); font-style:italic; font-family:Georgia,serif; display:flex; align-items:center; border-right:1px solid var(--border); }
+  .fx-formula-display{ flex:1; min-width:0; padding:10px; font:15px var(--mono); display:flex; align-items:center; overflow-x:auto; white-space:nowrap; }
+  .fx-formula-display.placeholder{ color:var(--text-secondary); font-style:italic; font-family:var(--sans); font-size:13px; }
+  .fx-btn{ border:none; border-left:1px solid var(--border); background:#fff; min-width:44px; font-size:16px; cursor:pointer; padding:0 8px; color:var(--error); }
+  .fx-sym-mini{ display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px; }
+  .fx-sym-mini button{ min-width:42px; height:40px; padding:0 8px; font:700 15px var(--mono); border:1.5px solid var(--border-strong); background:#fff; border-radius:6px; cursor:pointer; }
+  .fx-sym-mini button:active, .fx-sym-mini button.used{ background:var(--success-bg); border-color:var(--data-blue); }
+  .fx-grid-wrap{ position:relative; overflow-x:auto; border:1px solid var(--border); border-radius:6px; background:#fff; -webkit-overflow-scrolling:touch; margin-bottom:8px; }
+  table.fx-grid-mini{ border-collapse:collapse; font-size:13px; user-select:none; -webkit-user-select:none; width:100%; }
+  table.fx-grid-mini th{ background:#F7F6F5; border:1px solid var(--border); font-weight:600; padding:6px 4px; min-width:56px; text-align:center; color:var(--text-secondary); }
+  table.fx-grid-mini th.rowh{ min-width:28px; width:28px; }
+  table.fx-grid-mini td{ border:1px solid var(--border); padding:8px 10px; min-width:64px; height:38px; white-space:nowrap; cursor:cell; position:relative; touch-action:manipulation; text-align:right; }
+  table.fx-grid-mini td.target{ background:#F2FAF5; box-shadow:inset 0 0 0 2px var(--data-blue); cursor:default; font-weight:700; }
+  table.fx-grid-mini td.copied{ background:#FFF9E6; box-shadow:inset 0 0 0 2px var(--accent); font-weight:700; cursor:default; }
+  table.fx-grid-mini td.refhit{ background:rgba(29,138,87,.14); box-shadow:inset 0 0 0 2px var(--data-blue); }
+  .fx-handle-mini{ position:absolute; width:18px; height:18px; border-radius:50%; background:var(--accent); border:3px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,.4); touch-action:none; cursor:ns-resize; display:none; z-index:5; }
+
+  /* ---------- Tableau croisé dynamique (champs F/L/C/Σ, glisser-déposer) ---------- */
+  .pv-layout{ display:grid; grid-template-columns:230px 1fr; gap:14px; align-items:start; }
+  @media (max-width:800px){ .pv-layout{ grid-template-columns:minmax(0,1fr); } }
+  .field-item{ display:flex; align-items:center; gap:6px; padding:7px 7px 7px 10px; font-size:13px; border-radius:6px; cursor:grab; user-select:none; min-height:40px; border:1px solid transparent; }
+  .field-item:hover{ background:#F3F2F1; }
+  .field-icon{ width:17px; height:17px; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; flex-shrink:0; }
+  .field-icon.num{ background:var(--data-blue); } .field-icon.txt{ background:var(--brand-orange); }
+  .field-name{ flex:1; line-height:1.25; }
+  .zone-toggles{ display:flex; gap:4px; flex-shrink:0; }
+  .zbtn{ width:28px; height:28px; border-radius:6px; border:1px solid var(--border-strong); background:#fff; font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); padding:0; }
+  .zbtn.on-lignes{ background:var(--data-blue); color:#fff; border-color:var(--data-blue); }
+  .zbtn.on-colonnes{ background:var(--accent); color:#3B2F00; border-color:var(--accent-dark); }
+  .zbtn.on-valeurs{ background:var(--accent-dark); color:#fff; border-color:var(--accent-dark); }
+  .fields-hint{ font-size:11.5px; color:var(--text-secondary); padding:6px 2px 0; line-height:1.5; }
+  .zones-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  @media (max-width:560px){ .zones-grid{ grid-template-columns:minmax(0,1fr); } }
+  .dropzone{ min-height:60px; border:1.5px dashed var(--border-strong); border-radius:6px; padding:8px; background:#FAFAF9; }
+  .dropzone.dragover{ border-color:var(--accent); background:#FFF9E6; }
+  .zone-label{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); margin-bottom:6px; display:flex; align-items:center; gap:5px; }
+  .zone-dot{ width:9px; height:9px; border-radius:2px; }
+  .zone-dot.lignes{ background:var(--data-blue); } .zone-dot.colonnes{ background:var(--accent); } .zone-dot.valeurs{ background:var(--accent-dark); }
+  .zone-empty{ font-size:11px; color:var(--text-secondary); font-style:italic; padding:4px 2px; }
+  .pv-chip{ display:inline-flex; align-items:center; gap:5px; background:#fff; border:1px solid var(--border-strong); border-radius:16px; padding:3px 4px 3px 10px; font-size:12px; margin:3px 4px 3px 0; max-width:100%; }
+  .pv-chip select{ border:none; background:transparent; font-size:12px; font-family:var(--sans); color:var(--data-blue); font-weight:700; max-width:110px; min-height:26px; }
+  .pv-chip .chip-remove{ cursor:pointer; color:var(--text-secondary); font-weight:700; padding:4px 7px; border-radius:50%; }
+  table.pivot-mini{ border-collapse:collapse; font-size:12.5px; width:100%; min-width:260px; }
+  table.pivot-mini th, table.pivot-mini td{ border:1px solid var(--border); padding:6px 10px; text-align:right; white-space:nowrap; }
+  table.pivot-mini th{ background:#F7F6F5; font-weight:600; text-align:center; }
+  table.pivot-mini td.rowhead{ text-align:left; font-weight:600; background:#FAFAF9; }
+  table.pivot-mini tr.total-row td{ background:#FBF0D9; font-weight:700; }
+  .pivot-empty{ padding:20px 14px; text-align:center; color:var(--text-secondary); font-size:12.5px; }
 
   .result-card{ padding:22px; }
   .result-card h2{ margin:0 0 6px; font-size:22px; font-weight:600; color:var(--bg-dark); }
@@ -488,7 +622,7 @@
 /* =========================================================
    1. DONNÉES : niveaux et questions
    ========================================================= */
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.9.0';
 
 // 5 niveaux, chacun couvre 20 % de la jauge (score sur 100).
 const LEVELS = [
@@ -1110,6 +1244,161 @@ const POOL = [
     options:[`Office Scripts (enregistreur d'actions, en TypeScript)`, `Power Pivot`, `Le Solveur`, `Les Tableaux Excel`], answer:0,
     why:`Office Scripts enregistre une série d'actions effectuées dans Excel sur le web, générées automatiquement en code TypeScript, puis permet de les rejouer ou de les modifier. C'est l'équivalent moderne des macros VBA, pensé pour le cloud.`,
     tip:`Contrairement à VBA, Office Scripts fonctionne aussi dans Excel sur le web et peut être déclenché automatiquement via Power Automate.` },
+
+  /* ----- Autres formats de question (association, texte à trous, mise dans l'ordre, choix multiples) ----- */
+  /* -- Niveau 0 : Débutant -- */
+  { level:0, type:'formulamouse', theme:`Écrire une formule à la souris`,
+    q:`Construis, uniquement en cliquant (pas de clavier), la formule qui calcule le total (quantité × prix unitaire) dans la cellule C1. Recopie-la ensuite vers le bas avec la poignée de recopie.`,
+    mmData:[ [3,12], [5,8], [2,15] ], // [Quantité, Prix] par ligne (colonnes A et B)
+    target:'C1', accept:[`=A1*B1`,`=B1*A1`], copyRows:3,
+    why:`Excel construit la formule au fur et à mesure que tu cliques : chaque clic sur une cellule insère sa référence à l'endroit où se trouve le curseur. La poignée de recopie (petit carré en bas à droite de la cellule) étend ensuite la formule aux lignes suivantes, en décalant automatiquement les références.`,
+    tip:`Cliquer sur les cellules plutôt que taper leur nom évite les fautes de frappe du type « A1 » écrit « A!1 ».` },
+  { level:0, type:'blank', theme:`Vocabulaire de base`,
+    q:`Complète la phrase ci-dessous avec le bon mot de vocabulaire.`,
+    template:`Une [[0]] est l'intersection d'une ligne et d'une colonne. On la repère par exemple avec l'adresse {{A1}}.`,
+    blanks:[ { correct:`cellule`, distractors:[`feuille`, `classeur`, `plage`] } ],
+    why:`La cellule est l'unité de base d'Excel. Une plage regroupe plusieurs cellules, une feuille regroupe plusieurs plages, et un classeur regroupe plusieurs feuilles.`,
+    tip:`L'adresse d'une cellule combine toujours une lettre de colonne et un numéro de ligne, jamais l'inverse.` },
+  { level:0, type:'match', theme:`Raccourcis clavier de base`,
+    q:`Associe chaque raccourci clavier à l'action qu'il effectue dans Excel.`,
+    left:[`Ctrl+Z`, `Ctrl+C`, `Ctrl+V`, `Ctrl+S`],
+    right:[`Annuler la dernière action`, `Copier la sélection`, `Coller le contenu copié`, `Enregistrer le fichier`],
+    why:`Ces quatre raccourcis sont communs à presque tous les logiciels bureautiques, pas seulement Excel : ils font gagner beaucoup de temps une fois mémorisés.`,
+    tip:`Ctrl+Z peut s'utiliser plusieurs fois de suite pour annuler plusieurs actions d'affilée.` },
+  { level:0, type:'multi', theme:`Reconnaître une formule`,
+    q:`Parmi ces saisies, lesquelles seront interprétées par Excel comme des formules (et pas comme du simple texte) ?`,
+    options:[`=A1+A2`, `A1+A2`, `=SOMME(A1:A2)`, `Total : A1+A2`, `=5*3`],
+    answers:[0,2,4],
+    why:`Une formule commence toujours par le signe =. Sans ce signe, Excel considère la saisie comme du texte brut, même si elle ressemble à un calcul.`,
+    tip:`Si une cellule affiche le texte de ta formule au lieu du résultat, vérifie en premier qu'elle commence bien par =.` },
+
+  /* -- Niveau 1 : Élémentaire -- */
+  { level:1, type:'order', theme:`Trier un tableau`,
+    q:`Remets dans l'ordre les étapes pour trier un tableau avec la boîte de dialogue « Tri personnalisé ».`,
+    items:[`Sélectionner les données du tableau`, `Ouvrir l'onglet Données`, `Cliquer sur Trier`, `Choisir la colonne et l'ordre de tri`, `Valider avec OK`],
+    why:`Le tri personnalisé permet de choisir précisément la colonne de référence et l'ordre (croissant ou décroissant), contrairement au tri rapide des boutons A→Z.`,
+    tip:`Pense à cocher « Mes données ont des en-têtes » si ta première ligne contient les titres de colonnes, sinon elle serait triée avec le reste.` },
+  { level:1, type:'blank', theme:`Syntaxe de la fonction SI`,
+    q:`Complète la syntaxe de la fonction SI.`,
+    template:`La fonction SI s'écrit {{=SI(test_logique;[[0]];[[1]])}}.`,
+    blanks:[
+      { correct:`valeur_si_vrai`, distractors:[`valeur_si_faux`, `test_logique`, `valeur_par_défaut`] },
+      { correct:`valeur_si_faux`, distractors:[`valeur_si_vrai`, `résultat`, `erreur`] },
+    ],
+    why:`SI prend trois arguments : la condition à tester, puis ce qu'il faut renvoyer si elle est vraie, puis ce qu'il faut renvoyer si elle est fausse.`,
+    tip:`Les deux derniers arguments sont optionnels : si tu omets valeur_si_faux, Excel renvoie FAUX quand la condition n'est pas vérifiée.` },
+  { level:1, type:'match', theme:`Fonctions d'agrégation de base`,
+    q:`Associe chaque fonction à ce qu'elle calcule sur une plage de nombres.`,
+    left:[`SOMME`, `MOYENNE`, `MAX`, `MIN`],
+    right:[`Additionne toutes les valeurs de la plage`, `Calcule la valeur moyenne de la plage`, `Renvoie la plus grande valeur de la plage`, `Renvoie la plus petite valeur de la plage`],
+    why:`Ces quatre fonctions d'agrégation s'utilisent de la même façon : =FONCTION(plage). Seul le calcul effectué change.`,
+    tip:`MOYENNE ignore automatiquement les cellules vides, mais pas les cellules contenant un texte ou une erreur.` },
+  { level:1, type:'multi', theme:`Filtre automatique`,
+    q:`Parmi ces actions, lesquelles sont possibles avec le filtre automatique d'Excel ?`,
+    options:[`Afficher uniquement les lignes qui respectent un critère`, `Trier les données par ordre croissant ou décroissant`, `Supprimer définitivement les lignes masquées`, `Filtrer sur plusieurs colonnes à la fois`],
+    answers:[0,1,3],
+    why:`Le filtre masque les lignes qui ne correspondent pas au critère, il ne les supprime jamais : elles réapparaissent dès que le filtre est retiré.`,
+    tip:`Les flèches de filtre proposent aussi un tri rapide, en plus du filtrage : pas besoin d'outil séparé pour ça.` },
+
+  /* -- Niveau 2 : Intermédiaire -- */
+  { level:2, type:'pivot', theme:`Construire un tableau croisé dynamique`,
+    q:`Dépose (ou touche) les champs dans les bonnes zones pour obtenir, dans un tableau croisé dynamique, le total des ventes par région.`,
+    pvFields:[
+      { key:'region', label:'Région', kind:'txt', zone:'lignes' },
+      { key:'categorie', label:'Catégorie', kind:'txt', zone:null },
+      { key:'vendeur', label:'Vendeur', kind:'txt', zone:null },
+      { key:'montant', label:'Montant', kind:'num', zone:'valeurs', agg:'somme' },
+    ],
+    pvData:[
+      {region:'Nord', categorie:'Bureautique', vendeur:'Léa', montant:1200},
+      {region:'Nord', categorie:'Mobilier', vendeur:'Karim', montant:800},
+      {region:'Sud', categorie:'Bureautique', vendeur:'Léa', montant:950},
+      {region:'Sud', categorie:'Mobilier', vendeur:'Nora', montant:1600},
+      {region:'Sud', categorie:'Mobilier', vendeur:'Nora', montant:400},
+      {region:'Est', categorie:'Bureautique', vendeur:'Karim', montant:700},
+      {region:'Est', categorie:'Mobilier', vendeur:'Léa', montant:1100},
+      {region:'Ouest', categorie:'Bureautique', vendeur:'Nora', montant:650},
+    ],
+    why:`Le TCD se construit en posant chaque champ dans la bonne zone : Région en Lignes (un groupe par région), et Montant en Valeurs avec l'agrégation Somme (pour additionner les ventes). Catégorie et Vendeur ne sont pas utiles pour cette demande précise : ils restent de côté.`,
+    tip:`Par défaut, Excel agrège les champs numériques par Somme et les champs texte par Nombre : vérifie toujours ce choix dans Paramètres des champs de valeurs.` },
+  { level:2, type:'blank', theme:`RECHERCHEV : correspondance exacte`,
+    q:`Complète ce rappel sur le dernier argument de RECHERCHEV.`,
+    template:`Dans {{=RECHERCHEV(valeur;plage;no_colonne;dernier_argument)}}, le dernier argument doit valoir [[0]] pour exiger une correspondance [[1]], et [[2]] (ou être omis) pour autoriser une correspondance approchée sur une plage triée.`,
+    blanks:[
+      { correct:`FAUX`, distractors:[`VRAI`, `0`, `texte`] },
+      { correct:`exacte`, distractors:[`approximative`, `partielle`, `aléatoire`] },
+      { correct:`VRAI`, distractors:[`FAUX`, `1`, `texte`] },
+    ],
+    why:`FAUX impose une correspondance exacte : si la valeur n'existe pas, RECHERCHEV renvoie #N/A. VRAI (ou l'omission de l'argument) autorise une correspondance approchée, utile uniquement sur une plage triée.`,
+    tip:`Dans le doute, utilise toujours FAUX : c'est le réglage le plus sûr, même si la plage est triée.` },
+  { level:2, type:'match', theme:`Fonctions conditionnelles`,
+    q:`Associe chaque fonction à ce qu'elle calcule.`,
+    left:[`SOMME.SI`, `NB.SI`, `MOYENNE.SI`, `SOMME.SI.ENS`],
+    right:[`Additionne selon un seul critère`, `Compte les cellules qui respectent un critère`, `Calcule la moyenne selon un seul critère`, `Additionne selon plusieurs critères à la fois`],
+    why:`Le suffixe .SI ajoute une condition à la fonction de base. SOMME.SI.ENS va plus loin en acceptant plusieurs critères simultanés, chacun sur sa propre plage.`,
+    tip:`NB.SI.ENS et MOYENNE.SI.ENS existent aussi, sur le même principe que SOMME.SI.ENS.` },
+  { level:2, type:'multi', theme:`Mise en forme conditionnelle`,
+    q:`Parmi ces règles, lesquelles existent nativement dans la mise en forme conditionnelle d'Excel ?`,
+    options:[`Nuances de couleurs`, `Barres de données`, `Jeux d'icônes`, `Correction orthographique automatique`, `Mettre en surbrillance les doublons`],
+    answers:[0,1,2,4],
+    why:`La mise en forme conditionnelle propose plusieurs familles de règles prêtes à l'emploi : nuances de couleurs, barres de données, jeux d'icônes, et des règles de mise en surbrillance comme les doublons.`,
+    tip:`Toutes ces règles se combinent : une cellule peut par exemple avoir une barre de données ET être surlignée si elle est en doublon.` },
+
+  /* -- Niveau 3 : Avancé -- */
+  { level:3, type:'order', theme:`Transformer des données avec Power Query`,
+    q:`Remets dans l'ordre le déroulement typique d'une transformation de données avec Power Query.`,
+    items:[`Données puis À partir d'un tableau ou d'une plage`, `Appliquer les transformations souhaitées dans l'éditeur Power Query`, `Chaque étape s'enregistre dans le volet Étapes appliquées`, `Cliquer sur Fermer et charger`, `Actualiser pour rejouer les mêmes étapes sur de nouvelles données`],
+    why:`Power Query enregistre chaque transformation comme une étape rejouable. C'est ce qui permet d'actualiser le résultat automatiquement quand les données sources changent.`,
+    tip:`Tu peux revenir sur une étape passée dans le volet Étapes appliquées pour la modifier, sans tout recommencer.` },
+  { level:3, type:'blank', theme:`INDEX et EQUIV`,
+    q:`Complète cette explication sur la combinaison INDEX + EQUIV.`,
+    template:`La combinaison {{=INDEX(plage_résultat;EQUIV(valeur;plage_recherche;[[0]]))}} permet de chercher une valeur même si la colonne de résultat se trouve à [[1]] de la colonne de recherche.`,
+    blanks:[
+      { correct:`0`, distractors:[`1`, `-1`, `VRAI`] },
+      { correct:`gauche`, distractors:[`droite`, `la même position`, `la fin du tableau`] },
+    ],
+    why:`Le 0 dans EQUIV impose une correspondance exacte. Contrairement à RECHERCHEV, INDEX+EQUIV n'a pas besoin que la colonne de résultat soit à droite de la colonne de recherche : elle peut être à gauche.`,
+    tip:`EQUIV renvoie une position (un rang dans la plage), qu'INDEX utilise ensuite pour aller chercher la valeur correspondante ailleurs.` },
+  { level:3, type:'match', theme:`Fonctions de texte`,
+    q:`Associe chaque fonction de texte à ce qu'elle fait.`,
+    left:[`GAUCHE`, `DROITE`, `STXT`, `TROUVE`],
+    right:[`Extrait des caractères depuis le début du texte`, `Extrait des caractères depuis la fin du texte`, `Extrait des caractères à partir d'une position donnée`, `Renvoie la position d'un caractère ou d'un texte`],
+    why:`GAUCHE et DROITE comptent depuis une extrémité du texte. STXT extrait depuis une position précise au milieu. TROUVE, elle, ne renvoie pas du texte mais la position d'un caractère.`,
+    tip:`TROUVE se combine souvent avec STXT : on cherche d'abord la position d'un séparateur, puis on extrait le texte autour.` },
+  { level:3, type:'multi', theme:`Tableaux Excel (Ctrl+T)`,
+    q:`Parmi ces avantages, lesquels sont vrais pour un Tableau Excel créé avec Ctrl+T ?`,
+    options:[`Il s'étend automatiquement aux nouvelles lignes ajoutées en dessous`, `Les formules d'une colonne se recopient automatiquement sur toute la colonne`, `Il trie et conserve une copie des données d'origine en permanence`, `On peut utiliser des références structurées comme Ventes[Montant]`],
+    answers:[0,1,3],
+    why:`Un Tableau Excel s'étend automatiquement, recopie les formules de colonne, et permet des références structurées lisibles. Il ne garde en revanche aucune copie séparée des données d'origine.`,
+    tip:`Les références structurées comme Ventes[Montant] restent lisibles même si le tableau change de taille ou de position sur la feuille.` },
+
+  /* -- Niveau 4 : Expert -- */
+  { level:4, type:'order', theme:`Créer une relation dans le Modèle de données`,
+    q:`Remets dans l'ordre les étapes pour créer une relation entre deux tables dans le Modèle de données (Power Pivot).`,
+    items:[`Charger les deux tables dans le Modèle de données`, `Repérer la colonne commune aux deux tables`, `Ouvrir la gestion des relations`, `Créer la relation en reliant les deux colonnes communes`, `Utiliser les champs des deux tables dans un même TCD`],
+    why:`Une relation relie deux tables par une colonne commune (souvent un identifiant), ce qui permet ensuite de combiner leurs champs dans un même tableau croisé dynamique, sans RECHERCHEV.`,
+    tip:`Les deux colonnes reliées n'ont pas besoin de porter le même nom, mais doivent contenir des valeurs comparables (un même identifiant, par exemple).` },
+  { level:4, type:'blank', theme:`Fonction LET`,
+    q:`Complète cette explication sur l'intérêt de la fonction LET.`,
+    template:`La fonction {{=LET(nom1;valeur1;nom2;valeur2;...;calcul)}} permet de donner un [[0]] à un résultat intermédiaire, pour éviter de le [[1]] plusieurs fois dans la même formule.`,
+    blanks:[
+      { correct:`nom`, distractors:[`format`, `raccourci`, `graphique`] },
+      { correct:`recalculer`, distractors:[`supprimer`, `trier`, `masquer`] },
+    ],
+    why:`LET nomme un résultat intermédiaire une seule fois, puis le réutilise par son nom dans le reste de la formule. Cela évite de répéter un calcul coûteux plusieurs fois et rend la formule plus lisible.`,
+    tip:`Le dernier argument de LET est toujours le calcul final : tous les arguments précédents vont par paires nom puis valeur.` },
+  { level:4, type:'match', theme:`Fonctions matricielles dynamiques`,
+    q:`Associe chaque fonction matricielle dynamique à ce qu'elle fait.`,
+    left:[`FILTRE`, `TRIER`, `UNIQUE`, `SEQUENCE`],
+    right:[`Renvoie les lignes qui respectent une condition`, `Trie une plage selon un ou plusieurs critères`, `Renvoie les valeurs distinctes d'une plage`, `Génère une suite de nombres consécutifs`],
+    why:`Ces fonctions font partie des tableaux dynamiques (depuis Excel 365) : elles renvoient plusieurs résultats à la fois, qui se répartissent automatiquement sur les cellules voisines.`,
+    tip:`Ces fonctions se combinent très bien entre elles, par exemple TRIER(FILTRE(...)) pour filtrer puis trier en une seule formule.` },
+  { level:4, type:'multi', theme:`Modèle de données et DAX`,
+    q:`Parmi ces affirmations sur le Modèle de données (Power Pivot), lesquelles sont vraies ?`,
+    options:[`Il permet de relier plusieurs tables sans RECHERCHEV`, `Le langage DAX sert à créer des mesures et des colonnes calculées`, `Il remplace obligatoirement toutes les formules classiques d'Excel`, `Une mesure DAX comme CALCULATE peut modifier le contexte de filtre`],
+    answers:[0,1,3],
+    why:`Le Modèle de données relie des tables par des relations et utilise le langage DAX pour créer mesures et colonnes calculées. Il coexiste avec les formules Excel classiques, il ne les remplace pas.`,
+    tip:`CALCULATE est considérée comme la fonction DAX la plus puissante : elle permet de recalculer une expression dans un contexte de filtre différent de celui du TCD.` },
 ];
 
 const MAX_SCORE = POINTS.reduce((s,p)=> s + p*QUESTIONS_PER_LEVEL, 0);
@@ -1123,6 +1412,8 @@ let state = { started:false, finished:false, idx:0, score:0, perm:[], picks:[], 
 
 // Pioche QUESTIONS_PER_LEVEL questions au hasard dans chaque niveau de POOL, puis les met
 // bout à bout dans l'ordre des niveaux (0 à 4), pour garder la difficulté croissante.
+// Chaque niveau mélange naturellement QCM classiques et nouveaux formats (association,
+// texte à trous, mise dans l'ordre, choix multiples), puisqu'ils partagent le même POOL.
 function buildSession(){
   let session = [];
   for(let lvl=0; lvl<LEVELS.length; lvl++){
@@ -1135,10 +1426,110 @@ function buildSession(){
 // tout (texte, grille, options, bonne réponse) à chaque appel. Une question qui porte
 // seulement un gridGen() garde son texte et ses réponses fixes, mais reçoit une mini-vue
 // Excel fraîche à chaque tirage (valeurs différentes, sans incidence sur la correction).
+// Dans tous les cas on renvoie une copie neuve : les questions de type association, ordre
+// ou texte à trous reçoivent en plus un ordre d'affichage mélangé (rightOrder / itemOrder),
+// propre à cette session, qui ne doit jamais modifier l'objet POOL d'origine.
 function materializeQuestion(q){
-  if(q.dynamic) return q.build();
-  if(q.gridGen){ return Object.assign({}, q, { grid: q.gridGen() }); }
-  return q;
+  let m;
+  if(q.dynamic) m = q.build();
+  else if(q.gridGen) m = Object.assign({}, q, { grid: q.gridGen() });
+  else m = Object.assign({}, q);
+  if(!m.type) m.type = 'qcm';
+  if(m.type === 'match'){ m.rightOrder = shuffle(m.right.map((_,idx)=> idx)); }
+  if(m.type === 'order'){ m.itemOrder = shuffle(m.items.map((_,idx)=> idx)); }
+  if(m.type === 'blank'){ m.blankOptions = m.blanks.map(b=> shuffle([{v:b.correct, correct:true}].concat(b.distractors.map(d=>({v:d, correct:false}))))); }
+  return m;
+}
+// Calcule la fraction de bonnes réponses (0 à 1) pour les types à réponse multiple ou
+// à plusieurs éléments. Le QCM classique n'utilise pas cette fonction : il reste en 0/1 strict.
+function computeFraction(q, payload){
+  if(q.type === 'multi'){
+    const total = q.options.length;
+    let correct = 0;
+    for(let idx=0; idx<total; idx++){
+      const shouldBeChecked = q.answers.includes(idx);
+      const isChecked = payload.has(idx);
+      if(shouldBeChecked === isChecked) correct++;
+    }
+    return correct / total;
+  }
+  if(q.type === 'match'){
+    let correct = 0;
+    for(let k=0;k<q.left.length;k++){ if(payload[k] === k) correct++; }
+    return correct / q.left.length;
+  }
+  if(q.type === 'order'){
+    let correct = 0;
+    for(let pos=0;pos<payload.length;pos++){ if(payload[pos] === pos) correct++; }
+    return correct / payload.length;
+  }
+  if(q.type === 'blank'){
+    let correct = 0;
+    for(let bi=0;bi<q.blanks.length;bi++){
+      const choice = payload[bi];
+      if(choice != null && q.blankOptions[bi][choice].correct) correct++;
+    }
+    return correct / q.blanks.length;
+  }
+  if(q.type === 'formulamouse'){
+    const formulaOk = q.accept.map(normFormula).includes(normFormula(payload.formula)) ? 1 : 0;
+    const copyNeeded = (q.copyRows || 1) - 1;
+    if(copyNeeded <= 0) return formulaOk;
+    const copyOk = Math.min(1, (payload.filledRows || 0) / copyNeeded);
+    return (formulaOk + copyOk) / 2;
+  }
+  if(q.type === 'pivot'){
+    let correct = 0;
+    q.pvFields.forEach(f=>{
+      const placedZone = ['lignes','colonnes','valeurs'].find(z=> payload.zones[z].some(it=> it.field===f.key)) || null;
+      if(placedZone === f.zone){
+        if(f.zone === 'valeurs'){
+          const it = payload.zones.valeurs.find(it=> it.field===f.key);
+          if(it && it.agg === f.agg) correct++;
+        } else correct++;
+      }
+    });
+    return correct / q.pvFields.length;
+  }
+  return 0;
+}
+// Libellé du bouton 50/50, adapté à chaque type de question : l'esprit reste le même
+// (une aide qui coûte la moitié des points), mais le geste change selon le format.
+function fiftyLabel(type){
+  if(type === 'multi') return 'éliminer une mauvaise réponse (question à moitié de points)';
+  if(type === 'match') return 'révéler une association (question à moitié de points)';
+  if(type === 'order') return 'placer un élément au bon endroit (question à moitié de points)';
+  if(type === 'blank') return 'réduire les choix de chaque trou (question à moitié de points)';
+  if(type === 'formulamouse') return 'révéler la formule (question à moitié de points)';
+  if(type === 'pivot') return 'placer le champ de calcul (question à moitié de points)';
+  return 'éliminer 2 réponses (question à moitié de points)';
+}
+// Valeur de départ du brouillon de réponse (state.draft[i]) pour chaque type, avant toute
+// manipulation de l'apprenant.
+function emptyDraft(q){
+  if(q.type === 'multi') return new Set();
+  if(q.type === 'match') return q.left.map(()=> null);
+  if(q.type === 'order') return q.itemOrder.slice();
+  if(q.type === 'blank') return q.blanks.map(()=> null);
+  if(q.type === 'formulamouse') return { formula:'', filledRows:0 };
+  if(q.type === 'pivot') return { zones:{ lignes:[], colonnes:[], valeurs:[] } };
+  return null;
+}
+const ZONE_LABELS = { lignes:'Lignes', colonnes:'Colonnes', valeurs:'Valeurs' };
+const AGG_LABELS = { somme:'Somme', moyenne:'Moyenne', nombre:'Nombre', min:'Min', max:'Max' };
+// Normalise une formule (espaces et casse) pour la comparer aux formules acceptées.
+function normFormula(s){ return (s||'').replace(/\s+/g,'').toUpperCase(); }
+// Évalue une formule simple (une seule opération entre deux références, construite par
+// clics) en décalant les références de rowOffset lignes, pour simuler la recopie.
+function evalShiftedFormula(formula, rowOffset, mmData){
+  const expr = formula.replace(/^=/, '').replace(/([A-Z])(\d+)/g, (m, col, row)=>{
+    const r = parseInt(row,10) + rowOffset;
+    const colIdx = col.charCodeAt(0) - 65; // A=0, B=1...
+    const v = mmData[r-1] ? mmData[r-1][colIdx] : 0;
+    return String(v);
+  });
+  if(!/^[0-9+\-*/.() ]+$/.test(expr)) return null;
+  try{ const v = Function('"use strict";return (' + expr + ')')(); return (typeof v==='number' && isFinite(v)) ? v : null; }catch(_){ return null; }
 }
 
 /* =========================================================
@@ -1208,9 +1599,12 @@ function startTest(){
   QUESTIONS = buildSession();
   state = {
     started:true, finished:false, idx:0, score:0,
-    perm: QUESTIONS.map(q=> shuffle(q.options.map((_,i)=>i))),
+    perm: QUESTIONS.map(q=> q.type==='qcm' ? shuffle(q.options.map((_,i)=>i)) : null),
     picks: QUESTIONS.map(()=>null),
     results: QUESTIONS.map(()=>null),
+    earned: QUESTIONS.map(()=>null),
+    draft: QUESTIONS.map(emptyDraft),
+    userAnswer: QUESTIONS.map(()=>null),
     fiftyHidden: QUESTIONS.map(()=>null),
     tabSwitches: 0,
   };
@@ -1224,45 +1618,136 @@ function restartTest(){
 function renderDots(){
   return `<div class="dots" aria-hidden="true">` + QUESTIONS.map((_,i)=>{
     let c = 'dot';
-    if(state.results[i] === true) c += ' ok';
-    else if(state.results[i] === false) c += ' ko';
+    if(state.results[i] === 1) c += ' ok';
+    else if(state.results[i] !== null && state.results[i] !== undefined) c += ' ko';
     else if(i === state.idx && !state.finished) c += ' cur';
     return `<span class="${c}"></span>`;
   }).join('') + `</div>`;
 }
-function renderTest(){
-  const host = $('testHost');
-  if(!state.started){ host.innerHTML = ''; return; }
-  if(state.finished){ renderResults(host); return; }
-  const i = state.idx, q = QUESTIONS[i], perm = state.perm[i];
-  const picked = state.picks[i];
-  const answered = picked !== null;
-  const isLast = i === QUESTIONS.length - 1;
-  const hidden = state.fiftyHidden[i];
-  const fullPts = POINTS[q.level];
-  const halfPts = Math.round(fullPts / 2);
-  const pts = hidden ? halfPts : fullPts;
-
-  const tableHtml = renderGrid(q.grid);
-
+// Corps de la question, spécifique à chaque type (qcm, multi, match, order, blank).
+function renderQuestionBody(q, i, answered){
+  if(q.type === 'multi') return renderMultiBody(q, i, answered);
+  if(q.type === 'match') return renderMatchBody(q, i, answered);
+  if(q.type === 'order') return renderOrderBody(q, i, answered);
+  if(q.type === 'blank') return renderBlankBody(q, i, answered);
+  if(q.type === 'formulamouse') return answered ? renderAnswerRecap(q, i) : `<div id="mmHost"></div>`;
+  if(q.type === 'pivot') return answered ? renderAnswerRecap(q, i) : `<div id="pvHost"></div>`;
+  return renderQcmBody(q, i, answered);
+}
+function renderQcmBody(q, i, answered){
+  const perm = state.perm[i], picked = state.picks[i], hidden = state.fiftyHidden[i];
   const optsHtml = perm.map((orig, d)=>{
     if(hidden && hidden.has(orig)) return '';
     let cls = 'opt';
     if(answered && orig === picked) cls += (orig === q.answer) ? ' picked-ok' : ' picked-ko';
     return `<button type="button" class="${cls}" data-d="${d}" ${answered?'disabled':''}><span class="letter">${'ABCD'[d]}</span><span>${fmt(q.options[orig])}</span></button>`;
   }).join('');
+  return `<div class="opts">${optsHtml}</div>`;
+}
+function renderMultiBody(q, i, answered){
+  const hidden = state.fiftyHidden[i];
+  const draft = answered ? state.userAnswer[i] : state.draft[i];
+  const optsHtml = q.options.map((opt, orig)=>{
+    if(hidden && hidden.has(orig)) return '';
+    const isCorrect = q.answers.includes(orig);
+    const isSel = draft.has(orig);
+    let cls = 'opt';
+    if(answered){
+      if(isSel && isCorrect) cls += ' sel-ok';
+      else if(isSel && !isCorrect) cls += ' sel-ko';
+      else if(!isSel && isCorrect) cls += ' miss';
+    } else if(isSel) cls += ' selected';
+    return `<button type="button" class="${cls}" data-orig="${orig}" ${answered?'disabled':''}><span class="letter">${isSel?'☑':'☐'}</span><span>${fmt(opt)}</span></button>`;
+  }).join('');
+  return `<div class="opts">${optsHtml}</div><p class="q-note" style="margin:6px 0 0">💡 Plusieurs réponses sont correctes : coche-les toutes avant de valider.</p>`;
+}
+function renderMatchBody(q, i, answered){
+  const hidden = state.fiftyHidden[i];
+  const draft = answered ? state.userAnswer[i] : state.draft[i];
+  const rows = q.left.map((label, k)=>{
+    const chosen = draft[k];
+    const isLocked = !answered && hidden && hidden.lockedLeft === k;
+    const rowCls = answered ? (chosen === k ? ' row-ok' : ' row-ko') : '';
+    const optionsHtml = `<option value="">— choisis —</option>` + q.rightOrder.map(origR=>
+      `<option value="${origR}" ${chosen===origR?'selected':''}>${esc(q.right[origR])}</option>`
+    ).join('');
+    return `<div class="match-row${rowCls}">
+      <div class="match-left">${esc(label)}</div>
+      <div class="match-arrow">→</div>
+      <select data-k="${k}" ${answered||isLocked?'disabled':''}>${optionsHtml}</select>
+    </div>`;
+  }).join('');
+  return `<div class="match-wrap">${rows}</div>`;
+}
+function renderOrderBody(q, i, answered){
+  const hidden = state.fiftyHidden[i];
+  const draft = answered ? state.userAnswer[i] : state.draft[i];
+  const lockedPos = (!answered && hidden) ? hidden.lockedPos : -1;
+  const itemsHtml = draft.map((origIdx, pos)=>{
+    let cls = 'order-item';
+    if(answered) cls += (origIdx === pos) ? ' row-ok' : ' row-ko';
+    else if(pos === lockedPos) cls += ' locked';
+    let btns = '';
+    if(!answered){
+      const upDisabled = pos===0 || pos===lockedPos || (pos-1)===lockedPos;
+      const downDisabled = pos===draft.length-1 || pos===lockedPos || (pos+1)===lockedPos;
+      btns = `<div class="order-btns">
+        <button type="button" data-act="up" data-pos="${pos}" ${upDisabled?'disabled':''}>▲</button>
+        <button type="button" data-act="down" data-pos="${pos}" ${downDisabled?'disabled':''}>▼</button>
+      </div>`;
+    }
+    return `<li class="${cls}"><span class="order-pos">${pos+1}</span><span class="order-text">${fmt(q.items[origIdx])}</span>${btns}</li>`;
+  }).join('');
+  return `<ol class="order-list">${itemsHtml}</ol>`;
+}
+function renderBlankBody(q, i, answered){
+  const hidden = state.fiftyHidden[i];
+  const draft = answered ? state.userAnswer[i] : state.draft[i];
+  let html = fmt(q.template);
+  q.blanks.forEach((b, bi)=>{
+    const opts = q.blankOptions[bi];
+    const hiddenSet = (!answered && hidden) ? hidden[bi] : null;
+    const chosen = draft[bi];
+    const optionsHtml = `<option value="">…</option>` + opts.map((o, oi)=>{
+      if(hiddenSet && hiddenSet.has(oi)) return '';
+      return `<option value="${oi}" ${chosen===oi?'selected':''}>${esc(o.v)}</option>`;
+    }).join('');
+    let selCls = '';
+    if(answered) selCls = (chosen != null && opts[chosen].correct) ? 'b-ok' : 'b-ko';
+    const selectHtml = `<select data-bi="${bi}" class="${selCls}" ${answered?'disabled':''}>${optionsHtml}</select>`;
+    html = html.split('[['+bi+']]').join(selectHtml);
+  });
+  return `<p class="blank-text">${html}</p>`;
+}
+function renderTest(){
+  const host = $('testHost');
+  if(!state.started){ host.innerHTML = ''; return; }
+  if(state.finished){ renderResults(host); return; }
+  const i = state.idx, q = QUESTIONS[i];
+  const answered = state.results[i] !== null;
+  const isLast = i === QUESTIONS.length - 1;
+  const hidden = state.fiftyHidden[i];
+  const fullPts = POINTS[q.level];
+  const halfPts = Math.round(fullPts / 2);
+
+  const tableHtml = renderGrid(q.grid);
+  const bodyHtml = renderQuestionBody(q, i, answered);
 
   let fbHtml = '';
   if(answered){
-    if(state.results[i]) fbHtml = `<div class="fb ok" role="status">✓ <b>Bonne réponse !</b> +${pts} points sur la jauge${hidden ? ' (question à moitié de points, 50/50 utilisé)' : ''}.</div>`;
-    else fbHtml = `<div class="fb ko" role="status">✗ <b>Pas cette fois.</b> Pas de panique : la bonne réponse et l'explication t'attendent dans l'onglet Révisions.</div>`;
+    const frac = state.results[i], earned = state.earned[i];
+    if(frac === 1) fbHtml = `<div class="fb ok" role="status">✓ <b>Bonne réponse !</b> +${earned} points sur la jauge${hidden ? ' (question à moitié de points, 50/50 utilisé)' : ''}.</div>`;
+    else if(frac === 0) fbHtml = `<div class="fb ko" role="status">✗ <b>Pas cette fois.</b> Pas de panique : la bonne réponse et l'explication t'attendent dans l'onglet Révisions.</div>`;
+    else fbHtml = `<div class="fb partial" role="status">➗ <b>Partiellement juste</b> (${Math.round(frac*100)} % de bonnes réponses) : +${earned} point${earned>1?'s':''} sur la jauge. Le détail t'attend dans l'onglet Révisions.</div>`;
   }
 
   const fiftyHtml = !answered
     ? (hidden
         ? `<p class="q-note" style="margin:0 0 8px">🎯 50/50 utilisé : cette question ne rapporte plus que ${halfPts} point${halfPts>1?'s':''} (au lieu de ${fullPts}).</p>`
-        : `<div style="text-align:right;margin-bottom:8px"><button type="button" class="ghost" id="btnFifty">🎯 50/50 : éliminer 2 réponses (question à moitié de points)</button></div>`)
+        : `<div style="text-align:right;margin-bottom:8px"><button type="button" class="ghost" id="btnFifty">🎯 50/50 : ${fiftyLabel(q.type)}</button></div>`)
     : '';
+
+  const needsValidate = !answered && q.type !== 'qcm';
 
   host.innerHTML = `<div class="panel q-card">
     <div class="q-head">
@@ -1273,41 +1758,370 @@ function renderTest(){
     <p class="q-text">${fmt(q.q)}</p>
     ${tableHtml}
     ${fiftyHtml}
-    <div class="opts">${optsHtml}</div>
+    ${bodyHtml}
     ${fbHtml}
     <div class="q-actions">
-      <span class="q-note">${answered ? '' : 'Choisis une réponse pour la valider.'}</span>
+      <span class="q-note">${answered ? '' : (needsValidate ? '' : 'Choisis une réponse pour la valider.')}</span>
+      ${needsValidate ? `<button type="button" class="primary big" id="btnValidate">Valider ma réponse</button>` : ''}
       ${answered ? `<button type="button" class="primary big" id="btnNext">${isLast ? 'Voir mon résultat' : 'Question suivante ▸'}</button>` : ''}
     </div>
   </div>`;
 
-  host.querySelectorAll('.opt').forEach(b=> b.addEventListener('click', ()=> answerQuestion(parseInt(b.dataset.d,10))));
+  attachQuestionListeners(q, i, answered);
   $('btnRestart').addEventListener('click', restartTest);
   const fiftyBtn = $('btnFifty'); if(fiftyBtn) fiftyBtn.addEventListener('click', useFifty);
+  const validateBtn = $('btnValidate'); if(validateBtn) validateBtn.addEventListener('click', submitAnswer);
   const next = $('btnNext'); if(next){ next.addEventListener('click', nextQuestion); next.focus({preventScroll:true}); }
 }
-// Élimine 2 des 3 mauvaises réponses de la question en cours (esprit « 50/50 »). Ne peut
-// être utilisé qu'une fois par question, avant de répondre ; la question ne rapporte
-// ensuite que la moitié de ses points habituels, même en cas de bonne réponse.
+// Écouteurs d'événements propres à chaque type de question. Attachés une seule fois par
+// rendu (le DOM est régénéré à chaque appel de renderTest), jamais empilés.
+function attachQuestionListeners(q, i, answered){
+  const host = $('testHost');
+  if(answered) return;
+  if(q.type === 'qcm'){
+    host.querySelectorAll('.opt').forEach(b=> b.addEventListener('click', ()=> answerQuestion(parseInt(b.dataset.d,10))));
+  } else if(q.type === 'multi'){
+    host.querySelectorAll('.opt').forEach(b=> b.addEventListener('click', ()=>{
+      const orig = parseInt(b.dataset.orig,10);
+      const draft = state.draft[i];
+      if(draft.has(orig)) draft.delete(orig); else draft.add(orig);
+      renderTest();
+    }));
+  } else if(q.type === 'match'){
+    host.querySelectorAll('select[data-k]').forEach(sel=> sel.addEventListener('change', ()=>{
+      const k = parseInt(sel.dataset.k,10);
+      state.draft[i][k] = sel.value === '' ? null : parseInt(sel.value,10);
+    }));
+  } else if(q.type === 'order'){
+    host.querySelectorAll('button[data-act]').forEach(b=> b.addEventListener('click', ()=>{
+      const pos = parseInt(b.dataset.pos,10);
+      const swapWith = b.dataset.act === 'up' ? pos-1 : pos+1;
+      const draft = state.draft[i];
+      [draft[pos], draft[swapWith]] = [draft[swapWith], draft[pos]];
+      renderTest();
+    }));
+  } else if(q.type === 'blank'){
+    host.querySelectorAll('select[data-bi]').forEach(sel=> sel.addEventListener('change', ()=>{
+      const bi = parseInt(sel.dataset.bi,10);
+      state.draft[i][bi] = sel.value === '' ? null : parseInt(sel.value,10);
+    }));
+  } else if(q.type === 'formulamouse'){
+    mountFormulaMouse($('mmHost'), q, i);
+  } else if(q.type === 'pivot'){
+    mountPivotQuestion($('pvHost'), q, i);
+  }
+}
+// Mini-feuille de calcul cliquable : construit une formule au clic (sans clavier), puis
+// propose une poignée de recopie pour l'étendre vers le bas, exactement comme dans Excel.
+// Le widget est monté une seule fois par question et gère ses propres interactions ; il ne
+// déclenche jamais renderTest() lui-même (ça détruirait l'état en cours de glisser-déposer).
+function mountFormulaMouse(host, q, i){
+  const payload = state.draft[i];
+  const hidden = state.fiftyHidden[i];
+  const nCols = q.mmData[0].length + 1; // colonnes A, B... + colonne cible
+  const colLetters = Array.from({length:nCols}, (_,c)=> String.fromCharCode(65+c));
+  const targetCol = colLetters[nCols-1];
+  const nRows = q.mmData.length;
+  const SYMS = ['=','+','-','*','/','(',')'];
+
+  host.innerHTML = `
+    <div class="fx-mini-wrap">
+      <div class="fx-bar-mini">
+        <span class="fx-name-mini">${q.target}</span>
+        <span class="fx-fx-mini">fx</span>
+        <span class="fx-formula-display${payload.formula?'':' placeholder'}" id="mmFormula">${payload.formula ? esc(payload.formula) : 'touche = pour commencer'}</span>
+        <button type="button" class="fx-btn" id="mmClear" title="Effacer la formule" aria-label="Effacer">✕</button>
+      </div>
+      <div class="fx-sym-mini" id="mmSym">${SYMS.map(s=>`<button type="button" data-s="${s}">${s}</button>`).join('')}</div>
+      <div class="fx-grid-wrap"><table class="fx-grid-mini" id="mmGrid"></table><div class="fx-handle-mini" id="mmHandle"></div></div>
+      <p class="q-note" style="margin:0">💡 Touche = pour commencer la formule, puis touche une cellule pour insérer son adresse, et un symbole pour l'opérateur. Une fois le résultat affiché, étire la poignée dorée vers le bas pour recopier la formule.</p>
+    </div>`;
+
+  const table = $('mmGrid'), handleEl = $('mmHandle'), wrap = host.querySelector('.fx-grid-wrap'), formulaEl = $('mmFormula');
+
+  function canAppendRef(){
+    const f = payload.formula;
+    if(!f) return false;
+    const last = f.slice(-1);
+    return last==='=' || '+-*/('.includes(last);
+  }
+  function setFormula(f){
+    payload.formula = f;
+    formulaEl.textContent = f || 'touche = pour commencer';
+    formulaEl.classList.toggle('placeholder', !f);
+    renderGridMini();
+  }
+  function cellValue(r, c){ return q.mmData[r-1][c]; } // c: 0..nCols-2 (colonnes de données)
+  function computeTarget(rowOffset){ return evalShiftedFormula(payload.formula, rowOffset, q.mmData); }
+
+  function renderGridMini(){
+    let h = '<thead><tr><th class="rowh"></th>';
+    for(let c=0;c<nCols;c++) h += `<th>${colLetters[c]}</th>`;
+    h += '</tr></thead><tbody>';
+    const baseResult = payload.formula ? computeTarget(0) : null;
+    for(let r=1;r<=nRows;r++){
+      h += `<tr><th class="rowh">${r}</th>`;
+      for(let c=0;c<nCols;c++){
+        const addr = colLetters[c] + r;
+        let cls = '', txt = '';
+        if(c === nCols-1){
+          if(r === 1){
+            cls = 'target'; txt = baseResult!=null ? baseResult : '?';
+          } else if(r <= 1 + (payload.filledRows||0)){
+            cls = 'copied'; const v = computeTarget(r-1); txt = v!=null ? v : '?';
+          } else txt = '';
+        } else {
+          txt = cellValue(r, c);
+        }
+        h += `<td data-r="${r}" data-c="${c}" class="${cls}">${txt}</td>`;
+      }
+      h += '</tr>';
+    }
+    table.innerHTML = h + '</tbody>';
+    placeHandle();
+  }
+  function placeHandle(){
+    if(!payload.formula){ handleEl.style.display = 'none'; return; }
+    const lastFilledRow = 1 + (payload.filledRows||0);
+    const td = table.querySelector(`td[data-r="${lastFilledRow}"][data-c="${nCols-1}"]`);
+    if(!td){ handleEl.style.display = 'none'; return; }
+    handleEl.style.display = 'block';
+    handleEl.style.left = (td.offsetLeft + td.offsetWidth - 10) + 'px';
+    handleEl.style.top  = (td.offsetTop  + td.offsetHeight - 10) + 'px';
+  }
+
+  // -- symboles / opérateurs --
+  $('mmSym').querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=>{
+    const s = b.dataset.s;
+    if(s === '='){ if(!payload.formula) setFormula('='); return; }
+    if(!payload.formula || !payload.formula.startsWith('=')) return;
+    setFormula(payload.formula + s);
+  }));
+  $('mmClear').addEventListener('click', ()=>{ payload.filledRows = 0; setFormula(''); });
+
+  // -- clic sur une cellule de données : insère sa référence --
+  table.addEventListener('click', e=>{
+    const td = e.target.closest ? e.target.closest('td[data-r]') : null; if(!td) return;
+    const c = parseInt(td.dataset.c,10), r = parseInt(td.dataset.r,10);
+    if(c === nCols-1) return; // pas d'auto-référence sur la colonne cible
+    if(!canAppendRef()) return;
+    setFormula(payload.formula + colLetters[c] + r);
+  });
+
+  // -- poignée de recopie (glisser vers le bas) --
+  let dragging = false;
+  handleEl.addEventListener('pointerdown', e=>{ e.preventDefault(); e.stopPropagation(); if(!payload.formula) return; dragging = true; try{ handleEl.setPointerCapture(e.pointerId); }catch(_){} });
+  handleEl.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const els = document.elementsFromPoint(e.clientX, e.clientY);
+    for(const el of els){
+      const td = el.closest ? el.closest('td[data-r]') : null;
+      if(td && parseInt(td.dataset.c,10) === nCols-1){
+        const r = parseInt(td.dataset.r,10);
+        const n = Math.max(0, Math.min(nRows-1, r-1));
+        if(n !== payload.filledRows){ payload.filledRows = n; renderGridMini(); }
+        break;
+      }
+    }
+  });
+  const endDrag = ()=>{ dragging = false; };
+  handleEl.addEventListener('pointerup', endDrag);
+  handleEl.addEventListener('pointercancel', endDrag);
+  wrap.addEventListener('mousedown', e=>{ if(e.target===handleEl) e.preventDefault(); });
+
+  renderGridMini();
+  if(hidden && hidden.revealedFormula){ /* formule déjà pré-remplie par le 50/50 */ }
+}
+// Constructeur de tableau croisé dynamique : champs à glisser-déposer (ou à toucher sur
+// mobile, via les petits boutons L/C/Σ) dans les zones Lignes, Colonnes, Valeurs.
+function mountPivotQuestion(host, q, i){
+  const payload = state.draft[i];
+  const zones = payload.zones;
+  const lockedField = state.fiftyHidden[i] ? state.fiftyHidden[i].lockedField : null;
+
+  host.innerHTML = `<div class="pv-layout">
+    <div class="panel" style="padding:10px;"><div id="pvFieldsMini"></div>
+      <div class="fields-hint">💡 Touche L, C ou Σ pour placer un champ dans une zone (ou glisse-le sur ordinateur). Un champ peut rester de côté s'il n'est pas utile.</div></div>
+    <div>
+      <div class="zones-grid">
+        <div class="dropzone" data-zone="lignes"><div class="zone-label"><span class="zone-dot lignes"></span>Lignes</div><div id="pvz-lignes"></div></div>
+        <div class="dropzone" data-zone="colonnes"><div class="zone-label"><span class="zone-dot colonnes"></span>Colonnes</div><div id="pvz-colonnes"></div></div>
+        <div class="dropzone" data-zone="valeurs" style="grid-column:1 / -1;"><div class="zone-label"><span class="zone-dot valeurs"></span>Σ Valeurs</div><div id="pvz-valeurs"></div></div>
+      </div>
+      <div class="panel" style="padding:10px;"><div class="zone-label" style="margin-bottom:8px">Résultat</div><div id="pvResultMini"></div></div>
+    </div></div>`;
+
+  const inZone = (z,k)=> zones[z].some(it=> it.field===k);
+  function fieldByKey(k){ return q.pvFields.find(f=> f.key===k); }
+  function add(z,k){
+    const f = fieldByKey(k);
+    if(z==='valeurs') zones.valeurs.push({ field:k, agg:f.kind==='num' ? 'somme' : 'nombre' });
+    else zones[z].push({ field:k });
+  }
+  function toggle(z,k){
+    if(k===lockedField && z==='valeurs') return; // verrouillé par le 50/50
+    const idx = zones[z].findIndex(it=> it.field===k);
+    if(idx>=0) zones[z].splice(idx,1); else add(z,k);
+    render();
+  }
+  function cfgNow(){ return { lignes:zones.lignes.map(it=>it.field), colonnes:zones.colonnes.map(it=>it.field), valeurs:zones.valeurs }; }
+
+  function computePivotMini(cfg){
+    const L = cfg.lignes, C = cfg.colonnes, V = cfg.valeurs;
+    if(!V.length || (!L.length && !C.length)) return { empty:true };
+    const rowMap = new Map(), colMap = new Map(), cellMap = new Map();
+    q.pvData.forEach(row=>{
+      const rp = L.map(k=>String(row[k])), cp = C.map(k=>String(row[k]));
+      const rk = rp.join('§'), ck = cp.join('§');
+      if(!rowMap.has(rk)) rowMap.set(rk,{parts:rp, rows:[]}); rowMap.get(rk).rows.push(row);
+      if(!colMap.has(ck)) colMap.set(ck,{parts:cp, rows:[]}); colMap.get(ck).rows.push(row);
+      const key = rk+'||'+ck; if(!cellMap.has(key)) cellMap.set(key,[]); cellMap.get(key).push(row);
+    });
+    const agg = (rows, field, kind)=>{
+      if(kind==='nombre') return rows.length;
+      const vals = rows.map(r=> Number(r[field])).filter(v=> !isNaN(v));
+      if(!vals.length) return 0;
+      if(kind==='somme') return vals.reduce((a,b)=>a+b,0);
+      if(kind==='moyenne') return Math.round((vals.reduce((a,b)=>a+b,0)/vals.length)*10)/10;
+      if(kind==='min') return Math.min(...vals);
+      if(kind==='max') return Math.max(...vals);
+      return 0;
+    };
+    const rowCombos = [...rowMap.entries()].map(([key,v])=>({key, parts:v.parts})).sort((a,b)=> a.parts.join().localeCompare(b.parts.join(),'fr'));
+    const colCombos = [...colMap.entries()].map(([key,v])=>({key, parts:v.parts})).sort((a,b)=> a.parts.join().localeCompare(b.parts.join(),'fr'));
+    const cells = new Map(), rowTotals = new Map();
+    cellMap.forEach((rows,key)=> V.forEach(v=> cells.set(key+'||'+v.field+'_'+v.agg, agg(rows, v.field, v.agg))));
+    rowMap.forEach((v,key)=> V.forEach(vv=> rowTotals.set(key+'||'+vv.field+'_'+vv.agg, agg(v.rows, vv.field, vv.agg))));
+    return { empty:false, hasCols:C.length>0, rowCombos, colCombos, cells, rowTotals, V };
+  }
+  function renderResultMini(){
+    const p = computePivotMini(cfgNow());
+    const el = $('pvResultMini');
+    if(p.empty){ el.innerHTML = '<div class="pivot-empty">Ajoute au moins un champ en Lignes, et un champ en Valeurs pour voir le résultat.</div>'; return; }
+    const rowLabel = cfgNow().lignes.map(k=> fieldByKey(k).label).join(' › ') || '(Total)';
+    let head = `<tr><th>${esc(rowLabel)}</th>`;
+    if(p.hasCols) p.colCombos.forEach(cc=> p.V.forEach(v=> head += `<th>${esc(cc.parts.join(' › '))}<br>${AGG_LABELS[v.agg]} ${esc(fieldByKey(v.field).label)}</th>`));
+    else p.V.forEach(v=> head += `<th>${AGG_LABELS[v.agg]} ${esc(fieldByKey(v.field).label)}</th>`);
+    head += '</tr>';
+    let body = '';
+    p.rowCombos.forEach(rc=>{
+      body += `<tr><td class="rowhead">${esc(rc.parts.join(' › '))}</td>`;
+      if(p.hasCols) p.colCombos.forEach(cc=> p.V.forEach(v=>{ const x = p.cells.get(rc.key+'||'+cc.key+'||'+v.field+'_'+v.agg); body += `<td>${x===undefined?'—':x.toLocaleString('fr-FR')}</td>`; }));
+      else p.V.forEach(v=>{ const x = p.rowTotals.get(rc.key+'||'+v.field+'_'+v.agg); body += `<td>${(x||0).toLocaleString('fr-FR')}</td>`; });
+      body += '</tr>';
+    });
+    el.innerHTML = `<div style="overflow:auto"><table class="pivot-mini">${head}<tbody>${body}</tbody></table></div>`;
+  }
+
+  function render(){
+    $('pvFieldsMini').innerHTML = q.pvFields.map(f=> `<div class="field-item" draggable="true" data-key="${f.key}"><span class="field-icon ${f.kind}">${f.kind==='num'?'#':'T'}</span><span class="field-name">${esc(f.label)}</span><span class="zone-toggles">${
+      ['lignes','colonnes','valeurs'].map(z=>{ const L = z==='lignes'?'L':z==='colonnes'?'C':'Σ'; return `<button type="button" class="zbtn${inZone(z,f.key)?' on-'+z:''}" data-zone="${z}" data-key="${f.key}">${L}</button>`; }).join('')
+    }</span></div>`).join('');
+    $('pvFieldsMini').querySelectorAll('.zbtn').forEach(b=> b.addEventListener('click', e=>{ e.stopPropagation(); toggle(b.dataset.zone, b.dataset.key); }));
+    $('pvFieldsMini').querySelectorAll('.field-item').forEach(it=> it.addEventListener('dragstart', e=> e.dataTransfer.setData('text/plain', it.dataset.key)));
+    ['lignes','colonnes'].forEach(z=>{
+      $('pvz-'+z).innerHTML = zones[z].length ? zones[z].map((it,idx)=> `<span class="pv-chip">${esc(fieldByKey(it.field).label)}<span class="chip-remove" data-zone="${z}" data-idx="${idx}">✕</span></span>`).join('') : `<div class="zone-empty">Dépose ou touche ${z==='lignes'?'L':'C'}</div>`;
+    });
+    $('pvz-valeurs').innerHTML = zones.valeurs.length ? zones.valeurs.map((it,idx)=>{
+      const f = fieldByKey(it.field);
+      const opts = Object.keys(AGG_LABELS).map(a=> `<option value="${a}"${it.agg===a?' selected':''}>${AGG_LABELS[a]}</option>`).join('');
+      const locked = it.field===lockedField;
+      return `<span class="pv-chip">${esc(f.label)} : <select data-idx="${idx}" ${locked?'disabled':''}>${opts}</select>${locked?'':'<span class="chip-remove" data-zone="valeurs" data-idx="'+idx+'">✕</span>'}</span>`;
+    }).join('') : '<div class="zone-empty">Dépose ou touche Σ</div>';
+    host.querySelectorAll('.chip-remove').forEach(x=> x.addEventListener('click', ()=>{ zones[x.dataset.zone].splice(parseInt(x.dataset.idx,10),1); render(); }));
+    host.querySelectorAll('.pv-chip select').forEach(s=> s.addEventListener('change', ()=>{ zones.valeurs[parseInt(s.dataset.idx,10)].agg = s.value; renderResultMini(); }));
+    renderResultMini();
+  }
+  host.querySelectorAll('.dropzone').forEach(dz=>{
+    dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('dragover'); });
+    dz.addEventListener('dragleave', ()=> dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e=>{
+      e.preventDefault(); dz.classList.remove('dragover');
+      const k = e.dataTransfer.getData('text/plain'); if(!k) return;
+      const z = dz.dataset.zone; if(z!=='valeurs' && inZone(z,k)) return;
+      add(z,k); render();
+    });
+  });
+  render();
+}
+// Élimine des réponses de la question en cours (esprit « 50/50 »), sous une forme adaptée
+// à chaque type. Ne peut être utilisé qu'une fois par question, avant de répondre ; la
+// question ne rapporte ensuite que la moitié de ses points habituels.
 function useFifty(){
   const i = state.idx;
-  if(state.picks[i] !== null || state.fiftyHidden[i]) return;
+  if(state.results[i] !== null || state.fiftyHidden[i]) return;
   const q = QUESTIONS[i];
-  const wrongIdx = q.options.map((_,idx)=> idx).filter(idx=> idx !== q.answer);
-  state.fiftyHidden[i] = new Set(shuffle(wrongIdx).slice(0,2));
+  if(q.type === 'qcm'){
+    const wrongIdx = q.options.map((_,idx)=> idx).filter(idx=> idx !== q.answer);
+    state.fiftyHidden[i] = new Set(shuffle(wrongIdx).slice(0,2));
+  } else if(q.type === 'multi'){
+    const wrongIdx = q.options.map((_,idx)=> idx).filter(idx=> !q.answers.includes(idx));
+    state.fiftyHidden[i] = new Set(shuffle(wrongIdx).slice(0,1));
+  } else if(q.type === 'match'){
+    const k = rInt(0, q.left.length-1);
+    state.draft[i][k] = k;
+    state.fiftyHidden[i] = { lockedLeft:k };
+  } else if(q.type === 'order'){
+    const pos = rInt(0, q.items.length-1);
+    const draft = state.draft[i];
+    const curPos = draft.indexOf(pos);
+    [draft[pos], draft[curPos]] = [draft[curPos], draft[pos]];
+    state.fiftyHidden[i] = { lockedPos:pos };
+  } else if(q.type === 'blank'){
+    state.fiftyHidden[i] = q.blanks.map((b, bi)=>{
+      const opts = q.blankOptions[bi];
+      const correctOi = opts.findIndex(o=> o.correct);
+      const wrongOi = opts.map((_,oi)=> oi).filter(oi=> oi !== correctOi);
+      const keep = shuffle(wrongOi).slice(0,1);
+      return new Set(opts.map((_,oi)=> oi).filter(oi=> oi !== correctOi && !keep.includes(oi)));
+    });
+  } else if(q.type === 'formulamouse'){
+    state.draft[i].formula = q.accept[0];
+    state.fiftyHidden[i] = { revealedFormula:true };
+  } else if(q.type === 'pivot'){
+    const valField = q.pvFields.find(f=> f.zone === 'valeurs');
+    if(valField && !state.draft[i].zones.valeurs.some(it=> it.field===valField.key)){
+      state.draft[i].zones.valeurs.push({ field:valField.key, agg:valField.agg });
+    }
+    state.fiftyHidden[i] = { lockedField: valField ? valField.key : null };
+  }
   renderTest();
 }
 function answerQuestion(d){
   const i = state.idx;
-  if(state.picks[i] !== null) return;
+  if(state.results[i] !== null) return;
   const orig = state.perm[i][d];
   const ok = orig === QUESTIONS[i].answer;
   state.picks[i] = orig;
-  state.results[i] = ok;
-  if(ok){
-    const fullPts = POINTS[QUESTIONS[i].level];
-    state.score += state.fiftyHidden[i] ? Math.round(fullPts / 2) : fullPts;
-  }
+  state.userAnswer[i] = orig;
+  state.results[i] = ok ? 1 : 0;
+  const fullPts = POINTS[QUESTIONS[i].level];
+  const earned = ok ? (state.fiftyHidden[i] ? Math.round(fullPts / 2) : fullPts) : 0;
+  state.earned[i] = earned;
+  state.score += earned;
+  updateGauge(); renderTest(); renderRevisions(); updateTabBadge();
+}
+// Validation de réponse pour les types association, ordre, texte à trous et choix
+// multiples : le score est une fraction proportionnelle au nombre d'éléments corrects
+// (contrairement au QCM, qui reste en tout ou rien).
+function submitAnswer(){
+  const i = state.idx, q = QUESTIONS[i];
+  if(state.results[i] !== null) return;
+  const payload = state.draft[i];
+  const frac = computeFraction(q, payload);
+  let snapshot;
+  if(q.type === 'multi') snapshot = new Set(payload);
+  else if(Array.isArray(payload)) snapshot = payload.slice();
+  else if(q.type === 'formulamouse') snapshot = { formula:payload.formula, filledRows:payload.filledRows };
+  else if(q.type === 'pivot') snapshot = { zones:{ lignes:payload.zones.lignes.slice(), colonnes:payload.zones.colonnes.slice(), valeurs:payload.zones.valeurs.map(it=>Object.assign({},it)) } };
+  else snapshot = payload;
+  state.userAnswer[i] = snapshot;
+  state.results[i] = frac;
+  const fullPts = POINTS[q.level];
+  const basePts = state.fiftyHidden[i] ? Math.round(fullPts / 2) : fullPts;
+  const earned = Math.round(basePts * frac);
+  state.earned[i] = earned;
+  state.score += earned;
   updateGauge(); renderTest(); renderRevisions(); updateTabBadge();
 }
 function scrollToTestTop(){
@@ -1336,12 +2150,12 @@ function nextQuestion(){
 }
 function renderResults(host){
   const lvl = levelOf(state.score);
-  const good = state.results.filter(r=>r===true).length;
+  const good = state.results.filter(r=>r===1).length;
   const nbErr = QUESTIONS.length - good;
   const rows = LEVELS.map((L,li)=>{
     const idxs = QUESTIONS.map((q,qi)=> q.level===li ? qi : -1).filter(x=>x>=0);
-    const ok = idxs.filter(qi=> state.results[qi] === true).length;
-    const cells = idxs.map(qi=> `<span class="bd-cell" style="background:${state.results[qi]===true ? L.color : '#E8E6E4'}"></span>`).join('');
+    const ok = idxs.filter(qi=> state.results[qi] === 1).length;
+    const cells = idxs.map(qi=> `<span class="bd-cell" style="background:${state.results[qi]===1 ? L.color : (state.results[qi]>0 ? 'var(--accent)' : '#E8E6E4')}"></span>`).join('');
     return `<div class="bd-row"><span>${L.name}</span><span class="bd-bar">${cells}</span><span>${ok} / ${idxs.length}</span></div>`;
   }).join('');
   const missing = lvl < LEVELS.length - 1 ? levelMin(lvl+1) - state.score : 0;
@@ -1387,7 +2201,7 @@ function renderResults(host){
    ========================================================= */
 function buildSummaryText(){
   const lvl = levelOf(state.score);
-  const wrong = QUESTIONS.map((q,i)=>({q,i})).filter(o=> state.results[o.i] === false);
+  const wrong = QUESTIONS.map((q,i)=>({q,i})).filter(o=> state.results[o.i] < 1);
   const good = QUESTIONS.length - wrong.length;
   const now = new Date();
   const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
@@ -1455,9 +2269,75 @@ function copySummary(){
    6. RÉVISIONS : uniquement les questions en erreur
    ========================================================= */
 function updateTabBadge(){
-  const n = state.results.filter(r=>r===false).length;
+  const n = state.results.filter(r=>r!==null && r<1).length;
   const b = $('revBadge');
   b.hidden = n === 0; b.textContent = n;
+}
+// Récapitulatif « ta réponse / bonne réponse », adapté à chaque type de question.
+function renderAnswerRecap(q, i){
+  if(q.type === 'multi'){
+    const chosen = state.userAnswer[i];
+    const chosenTxt = q.options.map((o,idx)=> chosen.has(idx) ? fmt(o) : null).filter(Boolean).join(', ') || '(aucune réponse cochée)';
+    const correctTxt = q.answers.map(idx=> fmt(q.options[idx])).join(', ');
+    return `<div class="ans ko">✗ <b>Ta sélection :</b> ${chosenTxt}</div>
+      <div class="ans ok">✓ <b>Bonnes réponses :</b> ${correctTxt}</div>`;
+  }
+  if(q.type === 'match'){
+    const chosenArr = state.userAnswer[i];
+    const rows = q.left.map((label,k)=>{
+      const chosen = chosenArr[k];
+      const ok = chosen === k;
+      const chosenTxt = chosen != null ? fmt(q.right[chosen]) : '(pas de réponse)';
+      return `<div class="recap-row ${ok?'ok':'ko'}">${esc(label)} → ${chosenTxt}${ok?'':' <i>(bonne réponse : '+fmt(q.right[k])+')</i>'}</div>`;
+    }).join('');
+    return `<div class="recap-rows">${rows}</div>`;
+  }
+  if(q.type === 'order'){
+    const draft = state.userAnswer[i];
+    const yourOrder = draft.map(origIdx=> fmt(q.items[origIdx])).join(' → ');
+    const correctOrder = q.items.map(t=> fmt(t)).join(' → ');
+    return `<div class="ans ko">✗ <b>Ton ordre :</b> ${yourOrder}</div>
+      <div class="ans ok">✓ <b>Ordre correct :</b> ${correctOrder}</div>`;
+  }
+  if(q.type === 'blank'){
+    const draft = state.userAnswer[i];
+    const rows = q.blanks.map((b,bi)=>{
+      const chosenOi = draft[bi];
+      const chosenTxt = chosenOi != null ? esc(q.blankOptions[bi][chosenOi].v) : '(pas de réponse)';
+      const ok = chosenOi != null && q.blankOptions[bi][chosenOi].correct;
+      return `<div class="recap-row ${ok?'ok':'ko'}">Trou n°${bi+1} : ${chosenTxt}${ok?'':' <i>(réponse attendue : '+esc(b.correct)+')</i>'}</div>`;
+    }).join('');
+    return `<div class="recap-rows">${rows}</div>`;
+  }
+  if(q.type === 'formulamouse'){
+    const payload = state.userAnswer[i];
+    const formulaOk = q.accept.map(normFormula).includes(normFormula(payload.formula));
+    const copyNeeded = (q.copyRows || 1) - 1;
+    const copyOk = copyNeeded<=0 || (payload.filledRows||0) >= copyNeeded;
+    const rows = [
+      `<div class="recap-row ${formulaOk?'ok':'ko'}">Formule en ${q.target} : ${esc(payload.formula || '(aucune formule)')}${formulaOk?'':' <i>(formule attendue : '+esc(q.accept[0])+')</i>'}</div>`,
+    ];
+    if(copyNeeded>0) rows.push(`<div class="recap-row ${copyOk?'ok':'ko'}">Recopie vers le bas : ${payload.filledRows||0} ligne${(payload.filledRows||0)>1?'s':''} sur ${copyNeeded} attendue${copyNeeded>1?'s':''}${copyOk?'':' <i>(étire la poignée jusqu\'en bas du tableau)</i>'}</div>`);
+    return `<div class="recap-rows">${rows.join('')}</div>`;
+  }
+  if(q.type === 'pivot'){
+    const payload = state.userAnswer[i];
+    const rows = q.pvFields.map(f=>{
+      const placedZone = ['lignes','colonnes','valeurs'].find(z=> payload.zones[z].some(it=> it.field===f.key)) || null;
+      let ok = placedZone === f.zone;
+      let detail = placedZone ? ZONE_LABELS[placedZone] : '(non utilisé)';
+      if(ok && f.zone === 'valeurs'){
+        const it = payload.zones.valeurs.find(it=> it.field===f.key);
+        detail += ' · ' + AGG_LABELS[it.agg];
+        if(it.agg !== f.agg) ok = false;
+      }
+      const expected = f.zone ? ZONE_LABELS[f.zone] + (f.zone==='valeurs' ? ' · '+AGG_LABELS[f.agg] : '') : '(non utilisé)';
+      return `<div class="recap-row ${ok?'ok':'ko'}">${esc(f.label)} → ${esc(detail)}${ok?'':' <i>(attendu : '+esc(expected)+')</i>'}</div>`;
+    });
+    return `<div class="recap-rows">${rows.join('')}</div>`;
+  }
+  return `<div class="ans ko">✗ <b>Ta réponse :</b> ${fmt(q.options[state.picks[i]])}</div>
+    <div class="ans ok">✓ <b>Bonne réponse :</b> ${fmt(q.options[q.answer])}</div>`;
 }
 function renderRevisions(){
   const host = $('revHost');
@@ -1466,7 +2346,7 @@ function renderRevisions(){
     return;
   }
   const lvl = levelOf(state.score);
-  const wrong = QUESTIONS.map((q,i)=>({q,i})).filter(o=> state.results[o.i] === false).sort((a,b)=> a.q.level - b.q.level || a.i - b.i);
+  const wrong = QUESTIONS.map((q,i)=>({q,i})).filter(o=> state.results[o.i] !== null && state.results[o.i] < 1).sort((a,b)=> a.q.level - b.q.level || a.i - b.i);
 
   const goal = `<section class="panel goal">
     <h2>${state.finished ? 'Ton niveau' : 'Ton niveau estimé pour l\'instant'} : ${chip(lvl)}</h2>
@@ -1483,12 +2363,14 @@ function renderRevisions(){
   } else {
     list = `<div class="rev-list">` + wrong.map(({q,i})=>{
       const tableHtml = renderGrid(q.grid);
+      const frac = state.results[i];
+      const scoreNote = (frac > 0 && frac < 1) ? `<p class="q-note" style="margin:0 0 10px">➗ Score obtenu sur cette question : ${Math.round(frac*100)} %.</p>` : '';
       return `<article class="panel rev-card">
         <div class="rev-top">${chip(q.level)}<span class="rev-theme">${esc(q.theme)}</span><span class="rev-theme">· question ${i+1}</span></div>
         <p class="rev-q">${fmt(q.q)}</p>
         ${tableHtml}
-        <div class="ans ko">✗ <b>Ta réponse :</b> ${fmt(q.options[state.picks[i]])}</div>
-        <div class="ans ok">✓ <b>Bonne réponse :</b> ${fmt(q.options[q.answer])}</div>
+        ${scoreNote}
+        ${renderAnswerRecap(q, i)}
         <p class="why"><b>Pourquoi :</b> ${fmt(q.why)}</p>
         <div class="tip">💡 ${fmt(q.tip)}</div>
         ${q.link ? `<a class="rev-link" href="${esc(q.link.url)}" target="_blank" rel="noopener noreferrer">📘 Pour aller plus loin : ${esc(q.link.label)}</a>` : ''}
@@ -1692,6 +2574,9 @@ $('appVersion').textContent = 'v' + APP_VERSION;
    10. À PROPOS : notes de version (de la plus récente à la plus ancienne)
    ========================================================= */
 const RELEASE_NOTES = [
+  { v:'1.9.0', d:'9 nov. 2026', t:"Nouvelle charte graphique, alignée sur le site Data Unchained : textes et bordures retravaillés (gris plus profonds), titres en Bricolage Grotesque et texte courant en Figtree (avec repli sur Segoe UI en attendant l'intégration hors ligne des polices). Les couleurs de marque (vert, doré, orange, jaune) restent inchangées." },
+  { v:'1.8.0', d:'9 nov. 2026', t:"Deux questions passent à une mécanique vraiment manipulable, à la souris comme au doigt : écrire une formule en cliquant les cellules puis la recopier avec la poignée dorée, et construire un vrai tableau croisé dynamique (champs à déposer dans Lignes, Colonnes, Σ Valeurs, résultat calculé en direct). Mise en page mobile retravaillée : sur petit écran, la question passe avant la jauge de niveau." },
+  { v:'1.7.0', d:'17 oct. 2026', t:"20 nouvelles questions dans 4 nouveaux formats (association, texte à trous, mise dans l'ordre, choix multiples), mélangées aux QCM dans le tirage aléatoire. Score partiel proportionnel pour ces nouveaux formats, et une version adaptée du 50/50 pour chacun." },
   { v:'1.6.0', d:'12 oct. 2026', t:"Nouvel onglet « À propos » : présentation d'Olivier Faure et de Data Unchained, liens LinkedIn et YouTube, notes de version." },
   { v:'1.5.1', d:'10 oct. 2026', t:"Corrections suite à retours : mini-vues Excel harmonisées (en-têtes cohérents avec les plages des formules), mise en évidence qui révélait la réponse corrigée (RECHERCHEV, SEQUENCE), détection de changement de fenêtre qui ignore désormais une mise en veille de l'écran pendant une pause de lecture." },
   { v:'1.5.0', d:'oct. 2026', t:"Barème (points par niveau, total sur 100) affiché sur la page d'Accueil. Bouton 50/50 par question, qui élimine 2 des 3 mauvaises réponses (question à moitié de points si utilisé)." },
