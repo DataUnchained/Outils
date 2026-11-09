@@ -187,36 +187,86 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
 (function(){
   if(!document.querySelector('a.card[data-preview]'))return;
   var SKIP='du_tool_intro_skip',dlg=null;
+  // pictos : [icône, titre, explication par défaut]
+  var IC={
+    install:['<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M6.5 6.5h.01M9 6.5h.01"/>','Sans installation','S’ouvre dans ton navigateur, sans compte'],
+    fictif:['<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="15" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/>','Données fictives','Aucune donnée réelle, tu peux tout tester'],
+    demo:['<circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/>','Version démo','Adaptable à ton contexte sur demande'],
+    local:['<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>','Rien n’est envoyé','Tout reste sur ton poste'],
+    chrono:['<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5M12 3v3.5"/>','Chronométré',''],
+    save:['<path d="M6 3h12v18l-6-4-6 4z"/>','Progression gardée','Reprends là où tu en étais'],
+    offline:['<path d="M3 3l18 18"/><path d="M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 5-2.7M14 10.3A10 10 0 0 1 19 13M2 9.5a15 15 0 0 1 4.5-2.8M11 5.1A15 15 0 0 1 22 9.5"/><path d="M12 20h.01"/>','Hors connexion','La base est embarquée dans la page'],
+    excel:['<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 12l4 5M13 12l-4 5"/>','Export Excel','Récupère les données pour les retravailler']
+  };
+  // texte et pictos propres à chaque outil (clé = data-preview)
+  var TOOLS={
+    'dax_sandbox.html':['pour que tu puisses écrire et tester tes mesures DAX sans ouvrir Power BI, puis progresser avec des défis de plus en plus corsés.',['install','fictif','local','demo']],
+    'du_pl300_examen_blanc.html':['pour t’entraîner dans les conditions de la certification PL-300 et repérer les domaines à revoir avant le jour J.',['install',['chrono','100 minutes, comme le jour J'],['fictif','Études de cas inventées'],'demo']],
+    'du_tcd_atelier.html':['pour que tu comprennes les tableaux croisés dynamiques en les manipulant, sans risque d’abîmer un vrai fichier.',['install',['fictif','Jeu de données RH inventé'],'local','demo']],
+    'du_excel_positionnement.html':['pour que tu connaisses ton niveau avant la formation, et que le contenu colle à tes vrais besoins.',['install',['chrono','Quelques minutes suffisent'],'local','demo']],
+    'du_cahier_vacances_excel.html':['pour que tu continues à pratiquer les formules après la formation, à ton rythme, exercice après exercice.',['install','fictif',['save','Un code de sauvegarde garde tes médailles'],'demo']],
+    'du_exam.html':['pour évaluer de vraies compétences, en limitant l’aide de l’IA pendant l’épreuve.',['install',['chrono','Durée réglable selon ton besoin'],'fictif',['demo','Codes de séance fixés pour la démo']]],
+    'du_sql_lab_offline_2.html':['pour que tu pratiques le SQL sur une vraie base de données, sans rien installer ni configurer.',['install','fictif','offline','demo']],
+    'du_terracrm.html':['pour que tu t’entraînes sur des données commerciales imparfaites, comme dans la vraie vie, avant de construire ton tableau de bord.',['install','fictif','excel','demo']]
+  };
+  var DEF=['pour que tu apprennes en pratiquant, à ton rythme.',['install','fictif','local','demo']];
   function skip(){try{return sessionStorage.getItem(SKIP)==='1'}catch(e){return false}}
+  function badges(list){
+    return list.map(function(b){
+      var k=typeof b==='string'?b:b[0],d=IC[k],txt=typeof b==='string'?d[2]:b[1];
+      return '<li><span class="tb-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d[0]+'</svg></span><span><b>'+d[1]+'</b><small>'+txt+'</small></span></li>';
+    }).join('');
+  }
   function build(){
     dlg=document.createElement('dialog');dlg.className='dlg dlg-tool';dlg.id='toolDlg';dlg.setAttribute('aria-labelledby','toolDlgTitle');
     dlg.innerHTML='<div class="dlg-head"><h2 id="toolDlgTitle"></h2><button type="button" class="dlg-x" aria-label="Fermer">×</button></div>'+
       '<div class="dlg-body">'+
-      '<p><b>Comment il a été créé ?</b> Je l’ai conçu et développé moi-même, Olivier Faure (Data Unchained). Il s’ouvre directement dans ton navigateur, sans installation ni compte, avec des données 100 % fictives.</p>'+
-      '<p><b>Pourquoi ?</b> Pour mes stagiaires, et pour toi : apprendre en pratiquant, à ton rythme, avant, pendant ou après une formation.</p>'+
-      '<div class="tool-custom"><b>Tu veux une version sur mesure ?</b> Je l’adapte à ton thème, avec tes propres questions, tes données métier et ta charte graphique. C’est tout à fait possible, contacte-moi.</div>'+
+      '<div class="tool-why"><span class="tw-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/><path d="M12 3v3M21 12h-3"/></svg></span><p><b>Objectif :</b> cet outil a été développé <span id="toolWhy"></span></p></div>'+
+      '<ul class="tool-badges" id="toolBadges"></ul>'+
+      '<div class="tool-custom"><b>Tu veux une version sur mesure ?</b> Ton thème, tes propres questions, tes données métier et ta charte graphique : c’est tout à fait possible, contacte-moi.</div>'+
       '<div class="btn-row"><a class="btn primary" id="toolGo" target="_blank" rel="noopener noreferrer">Accéder à l’outil</a><a class="btn" href="index.html#contact">Me contacter</a></div>'+
       '<label class="dlg-check"><input type="checkbox" id="toolSkip"> Ne plus afficher ce message pendant ma visite</label>'+
-      '</div>';
+      '<p class="tool-auto" id="toolAuto" aria-live="off"></p>'+
+      '</div>'+
+      '<svg class="tool-ring" aria-hidden="true"><rect pathLength="100"/></svg>';
     document.body.appendChild(dlg);
     dlg.querySelector('.dlg-x').addEventListener('click',close);
     dlg.addEventListener('click',function(e){if(e.target===dlg)close()});
-    dlg.querySelector('#toolGo').addEventListener('click',function(){
-      if(dlg.querySelector('#toolSkip').checked){try{sessionStorage.setItem(SKIP,'1')}catch(e){}}
-      close();
+    dlg.querySelector('#toolGo').addEventListener('click',function(){remember();close()});
+    dlg.addEventListener('close',stop);
+    ['pointermove','pointerdown','keydown','wheel','touchstart','scroll'].forEach(function(ev){
+      dlg.addEventListener(ev,function(){last=performance.now()},{passive:true,capture:true});
     });
+    document.addEventListener('visibilitychange',function(){last=performance.now()});
   }
-  function close(){if(dlg.close)dlg.close();else dlg.removeAttribute('open')}
+  function remember(){if(dlg.querySelector('#toolSkip').checked){try{sessionStorage.setItem(SKIP,'1')}catch(e){}}}
+  function close(){stop();if(dlg.close)dlg.close();else dlg.removeAttribute('open')}
+  // minuteur : 30 s sans activité dans la fenêtre, l'outil s'ouvre (même onglet, les navigateurs bloquent un nouvel onglet ouvert sans clic)
+  var DELAY=30000,last=0,raf=0,shown=-1;
+  function stop(){cancelAnimationFrame(raf);raf=0}
+  function tick(now){
+    var el=Math.min(DELAY,now-last),left=Math.ceil((DELAY-el)/1000);
+    var svg=dlg.querySelector('.tool-ring'),r=svg.firstChild,w=dlg.clientWidth,h=dlg.clientHeight;
+    r.setAttribute('rx',20);r.setAttribute('x',3);r.setAttribute('y',3);r.setAttribute('width',Math.max(0,w-6));r.setAttribute('height',Math.max(0,h-6));
+    r.style.strokeDashoffset=100*(1-el/DELAY);
+    if(left!==shown){shown=left;dlg.querySelector('#toolAuto').textContent='Sans action de ta part, l’outil s’ouvre dans '+left+'\u00a0s.'}
+    if(el>=DELAY){remember();var u=dlg.querySelector('#toolGo').href;close();location.href=u;return}
+    raf=requestAnimationFrame(tick);
+  }
   document.addEventListener('click',function(e){
     var c=e.target.closest('a.card[data-preview]');
     if(!c||e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||skip())return;
     e.preventDefault();
     if(!dlg)build();
     var tp=document.getElementById('toolPreview');if(tp)tp.classList.remove('show');
+    var cfg=TOOLS[c.dataset.preview]||DEF;
     dlg.querySelector('#toolDlgTitle').textContent=(c.querySelector('h3')||{}).textContent||'Outil gratuit';
+    dlg.querySelector('#toolWhy').textContent=cfg[0];
+    dlg.querySelector('#toolBadges').innerHTML=badges(cfg[1]);
     dlg.querySelector('#toolGo').href=c.href;
     dlg.querySelector('#toolSkip').checked=false;
     if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');
     dlg.querySelector('#toolGo').focus();
+    stop();last=performance.now();shown=-1;raf=requestAnimationFrame(tick);
   });
 })();
