@@ -7,6 +7,9 @@
 <style>
 :root{--bg:#f5f3ef;--panel:#fff;--ink:#2b2420;--mut:#7a6f66;--line:#e6e0d8;--brand:#6b3f22;--brand2:#a8693b;--acc:#2f7d6d;--warn:#b5502f;--chip:#f1ebe3;--sel:#fbf6ef}
 *{box-sizing:border-box}
+:root{color-scheme:light}
+input,select,button,textarea{color:var(--ink)}
+button.pri{color:#fff}
 body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
 .app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
 aside{background:#2b2420;color:#efe7dd;padding:18px 0;position:sticky;top:0;height:100vh;overflow:auto}
@@ -104,6 +107,36 @@ textarea{width:100%;font:12px ui-monospace,Consolas,monospace;border:1px solid v
 .warnbox{background:#fdf6e3;border:1px solid #efdfae;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:30}
 .modal.open{display:flex}.modal>div{background:#fff;border-radius:12px;padding:20px;max-width:420px}
+/* suivi commerciaux */
+.tcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tcard .th{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.av{width:38px;height:38px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none}
+.tk{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.tk div{display:flex;flex-direction:column}.tk .big{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}.tk .big.w{color:var(--warn)}.tk .muted{font-size:11px}
+.spk{width:100%;height:38px}.spk rect{fill:var(--brand2)}
+.ttab td{white-space:nowrap}.ttab th{white-space:normal;vertical-align:bottom;line-height:1.25}.ttab th.num{text-align:right}.ttab tbody tr{cursor:default}
+@media (max-width:1100px){.tcards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tcard{cursor:pointer;transition:border-color .15s,box-shadow .15s}.tcard:hover{border-color:var(--brand2)}.tcard.sel{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand2)}
+.ttab tbody tr[data-u]{cursor:pointer}.ttab tbody tr.sel td:first-child{box-shadow:inset 4px 0 0 var(--brand)}
+.chips2{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip2{border-radius:20px;padding:5px 12px;font-size:12.5px;background:#fff}
+.chip2 span{color:var(--mut);margin-left:4px}.chip2.on{background:var(--brand);border-color:var(--brand);color:#fff}.chip2.on span{color:#f3d3b5}
+.tag.bad{background:#f6d8cc;color:#8c3418}
+td.late{color:var(--warn);font-weight:700}
+#tdetail tbody tr[data-opp]{cursor:pointer}
+/* tableau de bord */
+.hb5{grid-template-columns:200px 1fr 90px;cursor:pointer;margin:16px 0}.hb5 .t{height:22px}.hb5:hover .lab{color:var(--brand)}
+.treemap{position:relative;height:270px;border-radius:8px;overflow:hidden}
+.tm{position:absolute;box-sizing:border-box;border:2px solid #fff;color:#fff;padding:8px 10px;display:flex;flex-direction:column;gap:2px;font-size:12px;overflow:hidden}
+.tm b{font-size:14px}
+.ticker{position:sticky;bottom:0;margin-top:16px;background:var(--ink);color:#fff;border-radius:10px;overflow:hidden;display:flex;align-items:center;z-index:3;box-shadow:0 -4px 14px rgba(0,0,0,.12)}
+.ticker .tl{flex:none;background:var(--warn);padding:10px 14px;font-weight:600;font-size:13px;white-space:nowrap}
+.ticker .vp{overflow:hidden;flex:1}
+.ticker .track{display:inline-flex;gap:48px;white-space:nowrap;padding-left:100%;animation:tick var(--d) linear infinite;font-size:13px}
+.ticker:hover .track{animation-play-state:paused}
+.ticker .it{cursor:pointer}.ticker .it:hover{text-decoration:underline}.ticker .it b{color:#f3d3b5}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){.ticker .track{animation:none;padding-left:14px}.ticker .vp{overflow-x:auto}}
 @media (max-width:900px){.imp{grid-template-columns:1fr}}
 @media (max-width:900px){.app{grid-template-columns:1fr}aside{position:static;height:auto}.grid2,.exp{grid-template-columns:1fr}}
 </style>
@@ -117,7 +150,7 @@ textarea{width:100%;font:12px ui-monospace,Consolas,monospace;border:1px solid v
       <a href="#contacts" data-v="contacts">👤 Contacts</a>
       <a href="#entreprises" data-v="entreprises">🏢 Entreprises</a>
       <a href="#opportunites" data-v="opportunites">💼 Opportunités</a>
-      <a href="#pipeline" data-v="pipeline">🧭 Pipeline</a>
+      <a href="#equipe" data-v="equipe">📈 Suivi commerciaux</a>
       <a href="#activites" data-v="activites">📞 Activités</a>
       <div class="sep"></div>
       <a href="#exports" data-v="exports">⬇️ Exports</a>
@@ -370,13 +403,19 @@ function generateTerraData() {
 
   const PROBA = { 'Découverte': 10, 'Qualification': 25, 'Proposition': 50, 'Négociation': 75, 'Gagné': 100, 'Perdu': 0 };
   const MOTIFS = [['Prix trop élevé', 30], ['Concurrent retenu', 25], ['Pas de budget', 15], ['Projet reporté', 15], ['Pas de réponse', 10], ['', 5]];
+  // Second générateur, indépendant : sert uniquement à retirer environ la moitié des coquilles des opportunités
+  // sans décaler le reste des données. Les coquilles des affaires gagnées qui portent l'histoire (étape, montant, propriétaire, doublons) sont conservées.
+  let s2 = 777;
+  const rnd2 = () => { s2 |= 0; s2 = (s2 + 0x6D2B79F5) | 0; let t = Math.imul(s2 ^ (s2 >>> 15), 1 | s2); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const keepDefect = won => rnd2() < (won ? 0.5 : 0.4);
   const opportunites = oppsCore.map((o, i) => {
-    const c = o._c, e = c._e;
+    const c = o._c, e = c._e, won = o._stage === 'Gagné';
     let etape = o._stage;
     if (etape === 'Gagné' && chance(0.08)) etape = pick(['gagné', 'Gagne', 'Closed Won']);
     else if (etape === 'Perdu' && chance(0.08)) etape = pick(['perdu', 'Perdu ', 'Closed Lost']);
     else if (etape === 'Négociation' && chance(0.12)) etape = 'Negociation';
-    return {
+    if (!won && etape !== o._stage && rnd2() >= 0.5) etape = o._stage;
+    const r = {
       _o: o,
       id_opportunite: 'OPP-26-' + String(i + 1).padStart(4, '0'),
       nom_opportunite: e._name + ' - ' + OFFERS[o._ref].lib,
@@ -391,9 +430,15 @@ function generateTerraData() {
       date_cloture: chance(0.05) ? F.iso(o._close) : F.fr(o._close),
       proprietaire: ownerLabel(e._owner, 0.07, 0.02),
       source: srcLabel(c._src, 0.06),
-      campagne: (c.campagne && hash(c.id_contact + o._ref) % 20 !== 0) ? c.campagne : '',
+      campagne: (c.campagne && hash(c.id_contact + o._ref) % 40 !== 0) ? c.campagne : '',
       motif_perte: o._stage === 'Perdu' ? wpick(MOTIFS) : '',
     };
+    if (r.entreprise !== e._name && !keepDefect(won)) r.entreprise = e._name;
+    if (/^\d{4}-/.test(r.date_creation) && !keepDefect(won)) r.date_creation = F.fr(o._t);
+    if (/^\d{4}-/.test(r.date_cloture) && !keepDefect(won)) r.date_cloture = F.fr(o._close);
+    if (!won && r.proprietaire !== e._owner.nom && !keepDefect(false)) r.proprietaire = e._owner.nom;
+    if (r.source !== c._src && !keepDefect(won)) r.source = c._src;
+    return r;
   });
   // Défauts volontaires sur les opportunités
   const idxOf = pred => opportunites.map((x, i) => pred(x) ? i : -1).filter(i => i >= 0);
@@ -401,12 +446,12 @@ function generateTerraData() {
   const openIdx = shuffle(idxOf(x => !['Gagné', 'Perdu'].includes(x._o._stage)));
   const fmtEur = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
   wonIdx.slice(0, 2).forEach(i => { opportunites[i].montant_ht = fmtEur(opportunites[i].montant_ht); });
-  openIdx.slice(0, 3).forEach(i => { opportunites[i].montant_ht = fmtEur(opportunites[i].montant_ht); });
-  openIdx.slice(3, 6).forEach(i => { opportunites[i].montant_ht = ''; });
+  openIdx.slice(0, 1).forEach(i => { opportunites[i].montant_ht = fmtEur(opportunites[i].montant_ht); });
+  openIdx.slice(3, 4).forEach(i => { opportunites[i].montant_ht = ''; });
   // 2 dates de clôture antérieures à la création (saisie erronée)
-  openIdx.slice(6, 8).forEach(i => { const o = opportunites[i]._o; opportunites[i].date_cloture = F.fr(add(o._t, -ri(20, 60))); });
+  openIdx.slice(6, 8).forEach((i, j) => { const o = opportunites[i]._o; const v = F.fr(add(o._t, -ri(20, 60))); if (j === 0) opportunites[i].date_cloture = v; });
   // 4 doublons (double saisie), dont 2 gagnés
-  const dupSrc = [wonIdx[3], wonIdx[4], openIdx[9], openIdx[10]];
+  const dupSrc = [wonIdx[3], wonIdx[4]];
   let nextId = opportunites.length + 1;
   dupSrc.forEach(i => {
     const copy = { ...opportunites[i], id_opportunite: 'OPP-26-' + String(nextId++).padStart(4, '0') };
@@ -466,7 +511,15 @@ function generateTerraData() {
     'Relance devis': [['Sans réponse', 50], ['Réponse reçue', 50]],
   };
   const OBJ = { 'Appel': 'Appel de qualification', 'Email': 'Envoi documentation', 'RDV': 'Rendez-vous sur site', 'Démo': 'Démonstration machine', 'Relance devis': 'Relance proposition commerciale' };
-  const pushAct = (t, type, c, oppId) => {
+  // Dates réalistes : pas d'activité le week-end, et pas d'empilement sur la veille de l'extraction
+  const spread = (t, minT, salt) => {
+    if (t >= TODAY - DAY) t = Math.max(minT, TODAY - DAY - (hash(salt) % 21) * DAY);
+    const wd = new Date(t).getUTCDay();
+    if (wd === 6) t -= DAY; else if (wd === 0) t = (t + DAY <= TODAY - DAY) ? t + DAY : t - 2 * DAY;
+    return t;
+  };
+  const pushAct = (t0, type, c, oppId, minT) => {
+    const t = spread(t0, minT ?? c._t, c.id_contact + type + activites.length);
     const res = wpick(ACT_RES[type]);
     activites.push({
       _t: t, id_activite: '', date: F.fr(t), type, objet: OBJ[type],
@@ -479,11 +532,11 @@ function generateTerraData() {
   opportunites.slice(0, oppsCore.length).forEach(op => {
     const o = op._o, c = o._c;
     const end = ['Gagné', 'Perdu'].includes(o._stage) ? o._close : Math.min(TODAY - DAY, o._t + ri(5, 200) * DAY);
-    const n = ri(1, 6);
+    const n = Math.min(ri(1, 6), 1 + Math.floor(Math.max(0, (end - o._t) / DAY) / 6)); // une activité environ tous les 6 jours au plus
     const seq = ['Appel', 'Email', 'RDV', 'Démo', 'Relance devis', 'Appel', 'Relance devis'];
     for (let j = 0; j < n; j++) {
       const t = o._t + Math.round((end - o._t) * (j / n)) + ri(0, 2) * DAY;
-      pushAct(Math.min(t, TODAY - DAY), seq[j], c, op.id_opportunite);
+      pushAct(Math.min(t, TODAY - DAY), seq[j], c, op.id_opportunite, o._t);
     }
   });
   contactsCore.forEach(c => {
@@ -493,6 +546,22 @@ function generateTerraData() {
   });
   activites.sort((a, b) => a._t - b._t);
   activites.forEach((a, i) => { a.id_activite = 'ACT-' + String(i + 1).padStart(5, '0'); });
+
+  // Allègement des coquilles (08/11/2026) : générateur séparé, appliqué en dernier pour ne décaler aucune autre donnée.
+  // Les coquilles des affaires gagnées (étape, montant, propriétaire, doublons) restent intactes : elles portent l'histoire.
+  let s3 = 4242;
+  const rnd3 = () => { s3 |= 0; s3 = (s3 + 0x6D2B79F5) | 0; let t = Math.imul(s3 ^ (s3 >>> 15), 1 | s3); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  contactsCore.forEach(c => {
+    if (c.date_creation !== F.fr(c._t) && rnd3() < 0.65) c.date_creation = F.fr(c._t);
+    if (c.source !== c._src && rnd3() < 0.6) c.source = c._src;
+    if (c.proprietaire !== c._e._owner.nom && rnd3() < 0.6) c.proprietaire = c._e._owner.nom;
+  });
+  entreprises.forEach(e => { if (e.proprietaire !== e._owner.nom && rnd3() < 0.5) e.proprietaire = e._owner.nom; });
+  opportunites.forEach(r => {
+    const o = r._o, won = o._stage === 'Gagné';
+    if (!won && r.proprietaire !== o._c._e._owner.nom && rnd3() < 0.6) r.proprietaire = o._c._e._owner.nom;
+    if (r.source !== o._c._src && rnd3() < 0.65) r.source = o._c._src;
+  });
 
   const clean = arr => arr.map(r => { const o = {}; for (const k in r) if (k[0] !== '_') o[k] = r[k]; return o; });
   return {
@@ -548,6 +617,7 @@ const cell = (v, num) => v === '' || v == null ? '<span class="empty">(vide)</sp
 
 function viewList(k) {
   const o = OBJ[k], s = ST[k];
+  o.filters.forEach(f => { if (s.f[f] && s.f[f] !== '__all' && !uniq(o.rows, f).includes(s.f[f])) delete s.f[f]; });
   const rows = filtered(k), n = rows.length, pages = Math.max(1, Math.ceil(n / PAGE));
   if (s.page >= pages) s.page = pages - 1;
   const slice = rows.slice(s.page * PAGE, s.page * PAGE + PAGE);
@@ -602,42 +672,175 @@ function closeDrawer() { document.getElementById('drawer').classList.remove('ope
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
 // ---------- Tableau de bord (calcul "natif" du CRM, sans retraitement) ----------
+function squarify(data, W, H) {
+  const total = data.reduce((a, d) => a + d.v, 0), scale = W * H / total;
+  const items = data.map(d => ({ ...d, a: d.v * scale })); const out = [];
+  let x = 0, y = 0, w = W, h = H, row = [];
+  const worst = (r, side) => { const s = r.reduce((a, q) => a + q.a, 0), mx = Math.max(...r.map(q => q.a)), mn = Math.min(...r.map(q => q.a)); return Math.max(side * side * mx / (s * s), (s * s) / (side * side * mn)); };
+  const lay = r => { const s = r.reduce((a, q) => a + q.a, 0);
+    if (w >= h) { const rw = s / h; let yy = y; r.forEach(q => { const rh = q.a / rw; out.push({ ...q, x, y: yy, w: rw, h: rh }); yy += rh; }); x += rw; w -= rw; }
+    else { const rh = s / w; let xx = x; r.forEach(q => { const rw = q.a / rh; out.push({ ...q, x: xx, y, w: rw, h: rh }); xx += rw; }); y += rh; h -= rh; } };
+  let i = 0;
+  while (i < items.length) { const side = Math.min(w, h); if (!row.length || worst([...row, items[i]], side) <= worst(row, side)) { row.push(items[i]); i++; } else { lay(row); row = []; } }
+  if (row.length) lay(row);
+  return out;
+}
+const BASE_DATE = Date.UTC(2026, 9, 29);
+const parseFr = s => { const m = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if (m) return Date.UTC(+m[3], m[2] - 1, +m[1]); const n = String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/); return n ? Date.UTC(+n[1], n[2] - 1, +n[3]) : null; };
+function urgentFollowUps() {
+  const last = {}; D.activites.forEach(a => { if (!a.id_opportunite) return; const t = parseFr(a.date); if (t && (!last[a.id_opportunite] || t > last[a.id_opportunite])) last[a.id_opportunite] = t; });
+  const ent = Object.fromEntries(D.entreprises.map(e => [e.id_entreprise, e.raison_sociale]));
+  const lib = Object.fromEntries(D.offres.map(o => [o.ref_offre, o.libelle]));
+  return D.opportunites.filter(o => ['Proposition', 'Négociation'].includes(o.etape)).map(o => {
+    const ref = last[o.id_opportunite] || parseFr(o.date_creation);
+    return { o, idle: ref ? Math.round((BASE_DATE - ref) / 86400000) : null, ent: ent[o.id_entreprise] || o.entreprise, lib: lib[o.ref_offre] || o.ref_offre, pond: (typeof o.montant_ht === 'number' ? o.montant_ht : 0) * o.probabilite / 100 };
+  }).filter(r => r.idle != null && r.idle > 30).sort((a, b) => b.pond - a.pond).slice(0, 12);
+}
 function viewHome() {
   const O = D.opportunites;
   const isNum = v => typeof v === 'number';
   const open = O.filter(o => !['Gagné', 'Perdu'].includes(o.etape));
   const won = O.filter(o => o.etape === 'Gagné');
   const lost = O.filter(o => o.etape === 'Perdu');
-  const caWon = won.filter(o => isNum(o.montant_ht)).reduce((a, o) => a + o.montant_ht, 0);
+  const wonNum = won.filter(o => isNum(o.montant_ht));
+  const caWon = wonNum.reduce((a, o) => a + o.montant_ht, 0);
   const pipe = open.filter(o => isNum(o.montant_ht)).reduce((a, o) => a + o.montant_ht, 0);
   const pond = open.filter(o => isNum(o.montant_ht)).reduce((a, o) => a + o.montant_ht * o.probabilite / 100, 0);
   const conv = won.length / (won.length + lost.length);
-  const bySrc = {}; D.contacts.forEach(c => { const k = c.source === '' ? '(vide)' : c.source; bySrc[k] = (bySrc[k] || 0) + 1; });
-  const srcs = Object.entries(bySrc).sort((a, b) => b[1] - a[1]);
-  const maxS = srcs[0][1];
+  // Top 5 CA par entreprise (calcul natif)
+  const entName = Object.fromEntries(D.entreprises.map(e => [e.id_entreprise, e.raison_sociale]));
+  const byEnt = {}; wonNum.forEach(o => byEnt[o.id_entreprise] = (byEnt[o.id_entreprise] || 0) + o.montant_ht);
+  const top = Object.entries(byEnt).sort((a, b) => b[1] - a[1]).slice(0, 5); const maxT = top.length ? top[0][1] : 1;
+  // Treemap CA par commercial (libellé tel que saisi)
+  const byOwn = {}; wonNum.forEach(o => { const k = o.proprietaire || '(non attribué)'; byOwn[k] = (byOwn[k] || 0) + o.montant_ht; });
+  const own = Object.entries(byOwn).map(([label, v]) => ({ label, v })).filter(d => d.v > 0).sort((a, b) => b.v - a.v);
+  const TW = 600, TH = 270, PAL = ['#6b3f22', '#a8693b', '#2f7d6d', '#4f6b8a', '#b5502f', '#8a7a6c', '#c08b5c', '#5d8a6f'];
+  const tiles = own.length ? squarify(own, TW, TH) : [];
+  const treemap = tiles.map((t, i) => { const pct = (t.v / caWon * 100).toFixed(1).replace('.', ','); const big = t.w > 90 && t.h > 48;
+    return `<div class="tm" style="left:${t.x / TW * 100}%;top:${t.y / TH * 100}%;width:${t.w / TW * 100}%;height:${t.h / TH * 100}%;background:${PAL[i % PAL.length]}" title="${esc(t.label)} : ${fmtE(t.v)} (${pct} %)">${big ? `<b>${esc(t.label)}</b><span>${fmtE(t.v)} · ${pct} %</span>` : (t.w > 70 && t.h > 22 ? `<span>${esc(t.label)}</span>` : '')}</div>`; }).join('');
   const byStage = {}; O.forEach(o => byStage[o.etape] = (byStage[o.etape] || 0) + 1);
   const stg = Object.entries(byStage).sort((a, b) => b[1] - a[1]); const maxG = stg[0][1];
   const last = D.activites.slice(-8).reverse();
-  const hb = (l, n, m) => `<div class="hb"><span class="lab" title="${esc(l)}">${esc(l)}</span><div class="t" style="width:${Math.max(2, n / m * 100)}%"></div><span class="n">${n}</span></div>`;
-  const qr = qualityReport(); const qErr = Object.values(qr).reduce((a, x) => a + x.rules.filter(r => r.lvl === 'err').reduce((s, r) => s + r.n, 0), 0);
+  const hb = (l, n, m, txt) => `<div class="hb"><span class="lab" title="${esc(l)}">${esc(l)}</span><div class="t" style="width:${Math.max(2, n / m * 100)}%"></div><span class="n">${txt ?? n}</span></div>`;
+  const urg = urgentFollowUps();
+  const tick = urg.map(r => `<span class="it" data-opp="${esc(r.o.id_opportunite)}">⚠️ <b>${esc(r.ent)}</b> · ${esc(r.lib)} · ${typeof r.o.montant_ht === 'number' ? fmtE(r.o.montant_ht) : esc(r.o.montant_ht || 'montant ?')} · ${esc(r.o.etape)} · <b>${r.idle} j sans contact</b> · ${esc(r.o.proprietaire || 'non attribué')}</span>`).join('');
   return `<h1>Tableau de bord commercial</h1><p class="sub">Vue d'ensemble de la base TerraCafé Pro au 29/10/2026</p>
   ${IMPORT_LOG.length ? `<div class="card box ok" style="margin-bottom:12px">Base modifiée par ${IMPORT_LOG.length} import(s), dernier le ${IMPORT_LOG[0].quand}. <a href="#import">Voir l'historique</a></div>` : ''}
   <div class="kpis">
    <div class="card kpi"><div class="l">Contacts</div><div class="v">${fmtN(D.contacts.length)}</div></div>
-   <div class="card kpi"><div class="l">Entreprises</div><div class="v">${fmtN(D.entreprises.length)}</div></div>
    <div class="card kpi"><div class="l">Opportunités</div><div class="v">${fmtN(O.length)}</div></div>
    <div class="card kpi"><div class="l">CA signé (étape « Gagné »)</div><div class="v">${fmtE(caWon)}</div></div>
-   <div class="card kpi"><div class="l">Pipeline ouvert</div><div class="v">${fmtE(pipe)}</div></div>
-   <div class="card kpi"><div class="l">Pipeline pondéré</div><div class="v">${fmtE(pond)}</div></div>
-   <a class="card kpi" href="#import" style="text-decoration:none;color:inherit"><div class="l">Erreurs qualité détectées</div><div class="v" style="color:${qErr ? 'var(--warn)' : 'var(--acc)'}">${fmtN(qErr)}</div></a>
    <div class="card kpi"><div class="l">Taux de transformation</div><div class="v">${(conv * 100).toFixed(1).replace('.', ',')} %</div></div>
   </div>
   <div class="grid2">
-   <div class="card box"><h3>Contacts par source</h3>${srcs.map(([l, n]) => hb(l, n, maxS)).join('')}</div>
-   <div class="card box"><h3>Opportunités par étape</h3>${stg.map(([l, n]) => hb(l, n, maxG)).join('')}
-    <h3 style="margin-top:18px">Dernières activités</h3>${miniTable(last, [['date', 'Date'], ['type', 'Type'], ['id_contact', 'Contact'], ['resultat', 'Résultat'], ['proprietaire', 'Par']])}</div>
+   <div class="card box"><h3>Top 5 entreprises par CA signé</h3>${top.map(([id, v]) => `<div class="hb hb5" data-ent="${esc(id)}"><span class="lab" title="${esc(entName[id] || id)}">${esc(entName[id] || id)}</span><div class="t" style="width:${Math.max(2, v / maxT * 100)}%"></div><span class="n">${fmtE(v)}</span></div>`).join('') || '<p class="muted">Aucune affaire gagnée</p>'}</div>
+   <div class="card box"><h3>CA signé par commercial</h3><div class="treemap">${treemap || '<p class="muted">Aucune affaire gagnée</p>'}</div></div>
   </div>
-  <p class="note">Indicateurs calculés en direct par le CRM sur les valeurs saisies, sans aucun retraitement.</p>`;
+  <div class="grid2" style="margin-top:14px">
+   <div class="card box"><h3>Opportunités par étape</h3>${stg.map(([l, n]) => hb(l, n, maxG)).join('')}</div>
+   <div class="card box"><h3>Dernières activités</h3>${miniTable(last, [['date', 'Date'], ['type', 'Type'], ['id_contact', 'Contact'], ['resultat', 'Résultat'], ['proprietaire', 'Par']])}</div>
+  </div>
+  <p class="note">Indicateurs calculés en direct par le CRM sur les valeurs saisies, sans aucun retraitement.</p>
+  ${urg.length ? `<div class="ticker"><div class="tl">🔔 Relances urgentes</div><div class="vp"><div class="track" style="--d:${Math.max(40, urg.length * 9)}s">${tick}</div></div></div>` : ''}`;
+}
+function bindHome() {
+  document.querySelectorAll('[data-ent]').forEach(el => el.onclick = () => openRecord('entreprises', el.dataset.ent));
+  document.querySelectorAll('.ticker [data-opp]').forEach(el => el.onclick = () => openRecord('opportunites', el.dataset.opp));
+}
+
+// ---------- Suivi de l'activité commerciale ----------
+let teamPeriod = '30', teamSel = null, teamStage = '__all', teamAct = '__all';
+const PERIODS = { '7': '7 derniers jours', '30': '30 derniers jours', '90': '90 derniers jours', 'ytd': 'Depuis le 1er janvier' };
+const ACT_TYPES = [['Appel', 'Appels'], ['Email', 'E\u2011mails'], ['RDV', 'RDV'], ['Démo', 'Démos'], ['Relance devis', 'Relances devis']];
+function viewTeam() {
+  const DAY = 86400000, end = BASE_DATE + DAY;
+  const start = teamPeriod === 'ytd' ? Date.UTC(2026, 0, 1) : end - (+teamPeriod) * DAY;
+  const inP = t => t != null && t >= start && t < end;
+  const lastAct = {}; D.activites.forEach(a => { if (!a.id_opportunite) return; const t = parseFr(a.date); if (t && (!lastAct[a.id_opportunite] || t > lastAct[a.id_opportunite])) lastAct[a.id_opportunite] = t; });
+  const OPEN = ['Découverte', 'Qualification', 'Proposition', 'Négociation'];
+  const rows = D.owners.map(u => {
+    const acts = D.activites.filter(a => a.proprietaire === u.code);
+    const actsP = acts.filter(a => inP(parseFr(a.date)));
+    const byType = Object.fromEntries(ACT_TYPES.map(([t]) => [t, actsP.filter(a => a.type === t).length]));
+    const opps = D.opportunites.filter(o => o.proprietaire === u.nom);
+    const created = opps.filter(o => inP(parseFr(o.date_creation))).length;
+    const wonP = opps.filter(o => o.etape === 'Gagné' && inP(parseFr(o.date_cloture)));
+    const ca = wonP.filter(o => typeof o.montant_ht === 'number').reduce((a, o) => a + o.montant_ht, 0);
+    const open = opps.filter(o => OPEN.includes(o.etape));
+    const dormant = open.filter(o => { const ref = lastAct[o.id_opportunite] || parseFr(o.date_creation); return ref && (BASE_DATE - ref) / DAY > 30; }).length;
+    const weeks = Array.from({ length: 12 }, (_, w) => { const e = end - (11 - w) * 7 * DAY, s0 = e - 7 * DAY; return acts.filter(a => { const t = parseFr(a.date); return t >= s0 && t < e; }).length; });
+    const rdv = actsP.filter(a => a.type === 'Appel' && a.resultat === 'RDV fixé').length;
+    const calls = byType['Appel'];
+    return { u, byType, total: actsP.length, created, won: wonP.length, ca, open: open.length, dormant, weeks, rdvRate: calls ? rdv / calls : null };
+  });
+  const unassigned = D.opportunites.filter(o => !D.owners.some(u => u.nom === o.proprietaire)).length;
+  const maxOf = k => Math.max(1, ...rows.map(r => typeof k === 'function' ? k(r) : r[k]));
+  const heat = (v, m, warn) => `background:rgba(${warn ? '181,80,47' : '47,125,109'},${(0.08 + 0.5 * v / m).toFixed(2)})`;
+  const spark = ws => { const m = Math.max(1, ...ws); return `<svg viewBox="0 0 120 34" class="spk" aria-hidden="true">${ws.map((v, i) => `<rect x="${i * 10 + 1}" y="${34 - Math.max(1, v / m * 32)}" width="8" height="${Math.max(1, v / m * 32)}" rx="1.5"></rect>`).join('')}</svg>`; };
+  const COLORS = { JMA: '#a8693b', KBE: '#6b3f22', SLA: '#2f7d6d', TRO: '#4f6b8a' };
+  const cards = rows.map(r => `<div class="card box tcard ${teamSel === r.u.code ? 'sel' : ''}" data-u="${r.u.code}" title="Voir le détail">
+    <div class="th"><span class="av" style="background:${COLORS[r.u.code]}">${r.u.nom.split(' ').map(x => x[0]).join('')}</span><div><b>${esc(r.u.nom)}</b><div class="muted" style="font-size:12px">Dép. ${esc(r.u.departements)}</div></div></div>
+    <div class="tk"><div><span class="big">${r.total}</span><span class="muted">activités</span></div><div><span class="big">${r.won}</span><span class="muted">gagnées</span></div><div><span class="big ${r.dormant ? 'w' : ''}">${r.dormant}</span><span class="muted">sans contact &gt; 30 j</span></div></div>
+    ${spark(r.weeks)}<div class="muted" style="font-size:11px">Activités par semaine, 12 dernières semaines</div></div>`).join('');
+  const col = (label, k, o = {}) => ({ label, k, ...o });
+  const COLS = [...ACT_TYPES.map(([t, l]) => col(l, r => r.byType[t])), col('Total', r => r.total, { bold: 1 }), col('Opport. créées', r => r.created), col('Gagnées', r => r.won), col('CA signé', r => r.ca, { eur: 1 }), col('Taux de RDV / appels', r => r.rdvRate, { pct: 1 }), col('En cours', r => r.open), col('Sans contact > 30 j', r => r.dormant, { warn: 1 })];
+  const fmtCell = (c, v) => v == null ? '–' : c.eur ? fmtE(v) : c.pct ? Math.round(v * 100) + ' %' : fmtN(v);
+  return `<h1>Suivi de l'activité commerciale</h1><p class="sub">Ce que fait chaque commercial, et ce que ça produit · base au 29/10/2026</p>
+  <div class="bar">${Object.entries(PERIODS).map(([k, l]) => `<button class="${teamPeriod === k ? 'pri' : ''}" data-p="${k}">${l}</button>`).join('')}</div>
+  <div class="tcards">${cards}</div>
+  <div class="card" style="margin-top:14px"><div class="tw" style="max-height:none"><table class="ttab"><thead><tr><th>Commercial</th>${COLS.map(c => `<th class="num">${c.label}</th>`).join('')}</tr></thead><tbody>
+  ${rows.map(r => `<tr data-u="${r.u.code}" class="${teamSel === r.u.code ? 'sel' : ''}"><td><b>${esc(r.u.nom)}</b></td>${COLS.map(c => { const v = c.k(r); const m = maxOf(c.k); return `<td class="num" style="${v ? heat(v, m, c.warn) : ''}${c.bold ? ';font-weight:700' : ''}">${fmtCell(c, v)}</td>`; }).join('')}</tr>`).join('')}
+  </tbody></table></div></div>
+  <p class="note">Période : ${PERIODS[teamPeriod].toLowerCase()}. Activités : date de l'activité. Opportunités créées : date de création. Gagnées et CA signé : date de clôture. « Sans contact &gt; 30 j » : affaires en cours sans activité depuis plus de 30 jours, quelle que soit la période.
+  ${unassigned ? `<br>⚠️ <b>${unassigned} opportunité(s)</b> ne sont rattachées à aucun commercial (propriétaire vide ou mal saisi) : elles n'apparaissent pas dans ce tableau.` : ''}</p>
+  ${teamSel ? teamDetail(teamSel, start, end, inP, lastAct) : '<p class="note">👉 Cliquez sur un commercial pour afficher le détail de ses affaires et de ses activités.</p>'}`;
+}
+function teamDetail(code, start, end, inP, lastAct) {
+  const u = D.owners.find(x => x.code === code); if (!u) return '';
+  const ent = Object.fromEntries(D.entreprises.map(e => [e.id_entreprise, e.raison_sociale]));
+  const ct = Object.fromEntries(D.contacts.map(c => [c.id_contact, c]));
+  const lib = Object.fromEntries(D.offres.map(o => [o.ref_offre, o.libelle]));
+  const opps = D.opportunites.filter(o => o.proprietaire === u.nom);
+  const ORDER = ['Découverte', 'Qualification', 'Proposition', 'Négociation', 'Gagné', 'Perdu'];
+  const stages = [...new Set(opps.map(o => o.etape))].sort((a, b) => (ORDER.indexOf(a) + 1 || 99) - (ORDER.indexOf(b) + 1 || 99) || a.localeCompare(b));
+  const OPEN = ['Découverte', 'Qualification', 'Proposition', 'Négociation'];
+  const match = o => teamStage === '__all' || (teamStage === '__open' ? OPEN.includes(o.etape) : o.etape === teamStage);
+  if (teamStage !== '__all' && teamStage !== '__open' && !stages.includes(teamStage)) teamStage = '__all';
+  const list = opps.filter(match).map(o => { const la = lastAct[o.id_opportunite]; return { o, la, idle: la ? Math.round((BASE_DATE - la) / 86400000) : null }; })
+    .sort((a, b) => (parseFr(b.o.date_creation) || 0) - (parseFr(a.o.date_creation) || 0));
+  const tot = list.filter(x => typeof x.o.montant_ht === 'number').reduce((a, x) => a + x.o.montant_ht, 0);
+  const chip = (v, l, n) => `<button class="chip2 ${teamStage === v ? 'on' : ''}" data-st="${esc(v)}">${esc(l)} <span>${n}</span></button>`;
+  const acts = D.activites.filter(a => a.proprietaire === code && inP(parseFr(a.date)));
+  const types = [...new Set(acts.map(a => a.type))];
+  if (teamAct !== '__all' && !types.includes(teamAct)) teamAct = '__all';
+  const actList = acts.filter(a => teamAct === '__all' || a.type === teamAct).slice().sort((a, b) => parseFr(b.date) - parseFr(a.date));
+  const achip = (v, l, n) => `<button class="chip2 ${teamAct === v ? 'on' : ''}" data-at="${esc(v)}">${esc(l)} <span>${n}</span></button>`;
+  const known = ORDER.includes.bind(ORDER);
+  return `<div class="card box" id="tdetail" style="margin-top:16px">
+   <div class="bar" style="justify-content:space-between"><h2 style="margin:0;font-size:18px">Détail · ${esc(u.nom)}</h2><button id="tclose">✕ Fermer</button></div>
+   <h3 style="margin:12px 0 8px">Affaires <span class="muted" style="font-weight:400">(toutes périodes, ${opps.length} au total)</span></h3>
+   <div class="chips2">${chip('__all', 'Toutes', opps.length)}${chip('__open', 'En cours', opps.filter(o => OPEN.includes(o.etape)).length)}${stages.map(st => chip(st, known(st) ? st : `« ${st} »`, opps.filter(o => o.etape === st).length)).join('')}</div>
+   <div class="tw" style="max-height:380px"><table><thead><tr><th>ID</th><th>Entreprise</th><th>Offre</th><th class="num">Montant HT</th><th>Étape</th><th>Créée le</th><th>Clôture</th><th>Dernière activité</th><th class="num">Jours sans contact</th></tr></thead><tbody>
+   ${list.map(x => { const o = x.o, open = OPEN.includes(o.etape); return `<tr data-opp="${esc(o.id_opportunite)}"><td>${esc(o.id_opportunite)}</td><td>${esc(ent[o.id_entreprise] || o.entreprise)}</td><td>${esc(lib[o.ref_offre] || o.ref_offre)}</td><td class="num">${cell(o.montant_ht, 1)}</td><td>${known(o.etape) ? `<span class="tag">${esc(o.etape)}</span>` : `<span class="tag bad">${esc(o.etape)}</span>`}</td><td>${esc(o.date_creation)}</td><td>${esc(o.date_cloture)}</td><td>${x.la ? new Date(x.la).toLocaleDateString('fr-FR', { timeZone: 'UTC' }) : '<span class="empty">aucune</span>'}</td><td class="num ${open && x.idle > 30 ? 'late' : ''}">${open && x.idle != null ? x.idle : '–'}</td></tr>`; }).join('') || '<tr><td colspan="9" class="muted">Aucune affaire</td></tr>'}
+   </tbody></table></div>
+   <p class="note">${list.length} affaire(s) · ${fmtE(tot)} (montants numériques uniquement). « Jours sans contact » : affaires en cours, en orange au-delà de 30 jours. Clic sur une ligne = fiche de l'affaire.</p>
+   <h3 style="margin:18px 0 8px">Activités <span class="muted" style="font-weight:400">(${PERIODS[teamPeriod].toLowerCase()})</span></h3>
+   <div class="chips2">${achip('__all', 'Toutes', acts.length)}${ACT_TYPES.filter(([t]) => types.includes(t)).map(([t, l]) => achip(t, l, acts.filter(a => a.type === t).length)).join('')}</div>
+   <div class="tw" style="max-height:340px"><table><thead><tr><th>Date</th><th>Type</th><th>Objet</th><th>Contact</th><th>Entreprise</th><th>Opportunité</th><th>Résultat</th><th class="num">Durée</th></tr></thead><tbody>
+   ${actList.map(a => { const c = ct[a.id_contact]; return `<tr${a.id_opportunite ? ` data-opp="${esc(a.id_opportunite)}"` : ''}><td>${esc(a.date)}</td><td>${esc(a.type)}</td><td>${esc(a.objet)}</td><td>${c ? esc(c.prenom + ' ' + c.nom) : esc(a.id_contact)}</td><td>${c ? esc(ent[c.id_entreprise] || '') : ''}</td><td>${a.id_opportunite ? esc(a.id_opportunite) : '<span class="empty">–</span>'}</td><td>${esc(a.resultat)}</td><td class="num">${a.duree_min ? a.duree_min + ' min' : ''}</td></tr>`; }).join('') || '<tr><td colspan="8" class="muted">Aucune activité sur la période</td></tr>'}
+   </tbody></table></div></div>`;
+}
+function bindTeam() {
+  const keep = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { teamPeriod = b.dataset.p; keep(); });
+  document.querySelectorAll('[data-u]').forEach(el => el.onclick = () => {
+    teamSel = teamSel === el.dataset.u ? null : el.dataset.u; teamStage = '__all'; teamAct = '__all'; render();
+    document.getElementById('tdetail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { teamStage = b.dataset.st; keep(); });
+  document.querySelectorAll('[data-at]').forEach(b => b.onclick = () => { teamAct = b.dataset.at; keep(); });
+  document.querySelectorAll('#tdetail tr[data-opp]').forEach(tr => tr.onclick = () => openRecord('opportunites', tr.dataset.opp));
+  const c = document.getElementById('tclose'); if (c) c.onclick = () => { teamSel = null; keep(); };
 }
 
 // ---------- Pipeline ----------
@@ -763,7 +966,7 @@ async function doFull() {
 // ---------- Lisez-moi ----------
 function viewHelp() {
   const dict = [
-    ['Contacts', 'id_contact', 'Identifiant unique du contact (clé)'], ['Contacts', 'id_entreprise', 'Lien vers l\'entreprise'], ['Contacts', 'source / campagne', 'Canal d\'acquisition (saisi ou choisi par le commercial) et campagne d\'origine (= « Campagne de la session » dans GA4)'], ['Contacts', 'source_support', 'Source / support capté automatiquement par le formulaire du site (= « Source/Support de la session » dans GA4). Vide pour les contacts hors web et ceux créés avant janvier 2026'], ['Opportunités', 'source / campagne', 'Reprises du contact à la création de l\'opportunité'], ['Contacts', 'cycle_de_vie', 'Lead → MQL → SQL → Opportunité → Client'], ['Contacts', 'proprietaire', 'Commercial en charge'],
+    ['Contacts', 'id_contact', 'Identifiant unique du contact (clé)'], ['Contacts', 'id_entreprise', 'Lien vers l\'entreprise'], ['Contacts', 'source / campagne', 'Canal d\'acquisition (saisi ou choisi par le commercial) et campagne d\'origine (= « Campagne de la session » dans GA4)'], ['Contacts', 'source_support', 'Source / support capté automatiquement par le formulaire du site (= « Source/Support de la session » dans GA4). Vide pour les contacts hors web et ceux créés avant janvier 2026'], ['Opportunités', 'source / campagne', 'Reprises du contact principal. Corriger la source ou la campagne d\'un contact (import) met à jour ses opportunités'], ['Contacts', 'cycle_de_vie', 'Lead → MQL → SQL → Opportunité → Client'], ['Contacts', 'proprietaire', 'Commercial en charge'],
     ['Entreprises', 'tranche_effectif', '1-9, 10-49, 50-249, 250+'], ['Entreprises', 'statut_compte', 'Client si au moins une opportunité gagnée'],
     ['Opportunités', 'ref_offre', 'Référence catalogue (TCP-B10, TCP-B50, TCP-FGP, TCP-MNT, TCP-CAP, TCP-EVT)'], ['Opportunités', 'montant_ht', 'Valeur annuelle HT du contrat'], ['Opportunités', 'etape / probabilite', 'Découverte 10 %, Qualification 25 %, Proposition 50 %, Négociation 75 %, Gagné 100 %, Perdu 0 %'], ['Opportunités', 'date_cloture', 'Date réelle (Gagné, Perdu) ou prévue (en cours)'],
     ['Activités', 'proprietaire', 'Code utilisateur du commercial (voir tableau ci-dessous)'], ['Activités', 'id_opportunite', 'Vide si l\'activité ne concerne pas une opportunité'],
@@ -783,7 +986,7 @@ function viewHelp() {
 }
 
 // ================= IMPORT & QUALITÉ =================
-const LS_KEY = 'terracrm_base_v2';
+const LS_KEY = 'terracrm_base_v4';
 let IMPORT_LOG = [];
 const ETAPES = ['Découverte', 'Qualification', 'Proposition', 'Négociation', 'Gagné', 'Perdu'];
 const PROBA_ETAPE = { 'Découverte': 10, 'Qualification': 25, 'Proposition': 50, 'Négociation': 75, 'Gagné': 100, 'Perdu': 0 };
@@ -823,7 +1026,27 @@ const SPEC = {
     resultat: { t: 'text' }, duree_min: { t: 'num', min: 0, max: 600 },
   },
 };
-const SUM_L = { crees: 'fiche(s) créée(s)', mis_a_jour: 'fiche(s) mise(s) à jour', remplaces: 'fiche(s) importée(s)', supprimes: 'fiche(s) supprimée(s)', rejetes: 'ligne(s) rejetée(s)' };
+const SUM_L = { crees: 'fiche(s) créée(s)', mis_a_jour: 'fiche(s) mise(s) à jour', remplaces: 'fiche(s) importée(s)', supprimes: 'fiche(s) supprimée(s)', rejetes: 'ligne(s) rejetée(s)', opp_sync: 'opportunité(s) synchronisée(s) avec leur contact (source, campagne)', lab_sync: 'libellé(s) d\'entreprise mis à jour sur les contacts et opportunités', stat_sync: 'entreprise(s) passée(s) au statut Client' };
+// Répercute un import sur les tables liées, comme le ferait un CRM
+function propagate(k, before, fields, fileIds) {
+  const out = { opp_sync: 0, lab_sync: 0, stat_sync: 0 }; const key = OBJ[k].key;
+  const changed = f => new Set(D[k].filter(r => !before.has(r[key]) || String(before.get(r[key])[f] ?? '') !== String(r[f] ?? '')).map(r => r[key]));
+  if (k === 'contacts') {
+    // toutes les opportunités des contacts présents dans le fichier, dès que la source ou la campagne fait partie de l'import
+    const ids = new Set([...changed('source'), ...changed('campagne'), ...((fields.has('source') || fields.has('campagne')) ? fileIds : [])]); const byId = new Map(D.contacts.map(c => [c.id_contact, c]));
+    D.opportunites.forEach(o => { if (!ids.has(o.id_contact)) return; const c = byId.get(o.id_contact); let ch = false;
+      ['source', 'campagne'].filter(f => fields.has(f) || IM.mode === 'replace').forEach(f => { if (String(o[f] ?? '') !== String(c[f] ?? '')) { o[f] = c[f] ?? ''; ch = true; } }); if (ch) out.opp_sync++; });
+  }
+  if (k === 'entreprises') {
+    const ids = changed('raison_sociale'); const m = new Map(D.entreprises.map(e => [e.id_entreprise, e.raison_sociale]));
+    [...D.contacts, ...D.opportunites].forEach(r => { if (!ids.has(r.id_entreprise)) return; const n = m.get(r.id_entreprise); if (n && r.entreprise !== n) { r.entreprise = n; out.lab_sync++; } });
+  }
+  if (k === 'opportunites') {
+    const won = new Set(D.opportunites.filter(o => o.etape === 'Gagné').map(o => o.id_entreprise));
+    D.entreprises.forEach(e => { if (won.has(e.id_entreprise) && e.statut_compte !== 'Client') { e.statut_compte = 'Client'; out.stat_sync++; } });
+  }
+  return out;
+}
 const FIELD_LABEL = k => Object.fromEntries(OBJ[k].cols.map(c => [c[0], c[1]]));
 
 // ---------- Persistance (navigateur de l'étudiant) ----------
@@ -847,8 +1070,13 @@ function resetState() {
 
 // ---------- Contrôles ----------
 function parseDate(v) {
+  if (typeof v === 'number' || /^\d{5}(\.\d+)?$/.test(String(v))) {
+    // numéro de série Excel (date stockée comme nombre dans un .xlsx)
+    const n = Number(v); if (n < 40000 || n > 50000) return { err: 'format non reconnu (attendu jj/mm/aaaa ou aaaa-mm-jj)' };
+    const x = new Date(Date.UTC(1899, 11, 30) + Math.floor(n) * 86400000); v = `${String(x.getUTCDate()).padStart(2, '0')}/${String(x.getUTCMonth() + 1).padStart(2, '0')}/${x.getUTCFullYear()}`;
+  }
   const s = String(v); let m, y, mo, d;
-  if ((m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?$/))) { d = +m[1]; mo = +m[2]; y = +m[3]; }
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?$/))) { d = +m[1]; mo = +m[2]; y = +m[3]; }
   else if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?Z?)?$/))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
   else return { err: 'format non reconnu (attendu jj/mm/aaaa ou aaaa-mm-jj)' };
   const t = Date.UTC(y, mo - 1, d), x = new Date(t);
@@ -858,7 +1086,7 @@ function parseDate(v) {
 }
 function parseNum(v) {
   if (typeof v === 'number') return v;
-  const s = String(v);
+  const s = String(v).replace(/(\d)[ \u00a0\u202f](?=\d{3}(?!\d))/g, '$1');
   return /^-?\d+([.,]\d+)?$/.test(s) ? Number(s.replace(',', '.')) : NaN;
 }
 const isEmpty = v => v === '' || v == null;
@@ -1025,7 +1253,7 @@ async function handleFile(file) {
   const buf = await file.arrayBuffer();
   if (/\.xlsx?$/i.test(file.name)) {
     try {
-      const X = await loadXLSX(); const wb = X.read(buf, { type: 'array' });
+      const X = await loadXLSX(); const wb = X.read(buf, { type: 'array', cellNF: true });
       IM.wb = wb; IM.sheets = wb.SheetNames;
       const guess = wb.SheetNames.find(n => normH(n) === normH(OBJ[IM.obj].label)) || wb.SheetNames[0];
       IM.sheet = guess; setTable(sheetToRows(X, wb.Sheets[guess]), `Excel · onglet « ${guess} »`);
@@ -1055,7 +1283,7 @@ function analyze() {
   const push = (line, id, x) => R.issues.push({ line, id, field: x.field || '', value: x.value ?? '', lvl: x.lvl, rule: x.rule, msg: x.msg });
   const okRecs = [];
   recs.forEach((rec, i) => {
-    const line = i + 2, id = String(rec[key] ?? '');
+    const line = i + 2, id = String(rec[key] ?? '').trim(); rec[key] = id;
     let errs = 0; const P = x => { if (x.lvl === 'err') errs++; push(line, id, x); };
     if (seen.has(id)) P({ lvl: 'err', rule: 'ID en double dans le fichier', msg: `déjà présent ligne ${seen.get(id)}`, field: key, value: id });
     else seen.set(id, line);
@@ -1071,7 +1299,7 @@ function analyze() {
       const old = byId.get(id); const merged = { ...old }; const changes = {}; let refused = 0;
       fields.forEach(f => {
         if (f === key) return;
-        if (IM.ignoreEmpty && isEmpty(rec[f])) return;
+        if (IM.ignoreEmpty && isEmpty(rec[f])) { if (!isEmpty(old[f])) R.ignoredEmpty = (R.ignoredEmpty || 0) + 1; return; }
         const r = checkField(k, f, rec[f]);
         r.iss.forEach(x => push(line, id, { ...x, field: f, value: rec[f], msg: x.msg + (x.lvl === 'err' ? ' · champ non importé' : '') }));
         if (r.iss.some(x => x.lvl === 'err')) { refused++; return; }
@@ -1111,6 +1339,7 @@ function analyze() {
 }
 function applyImport() {
   const k = IM.obj, R = IM.report, key = OBJ[k].key; if (!R) return;
+  const before = new Map(D[k].map(r => [r[key], { ...r }]));
   let summary;
   if (IM.mode === 'delete') { const s = new Set(R.del); D[k] = D[k].filter(r => !s.has(r[key])); summary = { supprimes: R.del.length }; }
   else if (IM.mode === 'replace') {
@@ -1122,6 +1351,10 @@ function applyImport() {
     R.create.forEach(n => D[k].push(n));
     summary = { crees: R.create.length, mis_a_jour: R.update.length };
   }
+  const fields = new Set(Object.values(IM.map).filter(Boolean));
+  const fileIds = new Set(IM.rows.map(row => { const i = Object.keys(IM.map).find(j => IM.map[j] === key); return String(row[i] ?? '').trim(); }));
+  Object.entries(propagate(k, before, fields, fileIds)).forEach(([a, b]) => { if (b) summary[a] = b; });
+  Object.keys(ST).forEach(o => { ST[o].f = {}; ST[o].page = 0; }); pipeOwner = '__all';
   const diff = [];
   if (IM.mode === 'update') R.update.forEach(u => Object.keys(u.changes).forEach(f => diff.push({ id: u.id, f, a: u.before[f], b: u.changes[f] })));
   R.create.forEach(n => diff.push({ id: n[key], f: '(nouvelle fiche)', a: '', b: '' }));
@@ -1171,7 +1404,7 @@ function viewImport() {
   if (R) h += viewReport(R, L);
   h += `<div class="grid2" style="margin-top:14px"><div class="card box"><h3>Qualité de la base actuelle</h3><p class="note" style="margin-top:0">${tot ? `<b>${fmtN(tot)} erreur(s)</b> détectée(s) par les contrôles du CRM.` : '✅ Aucune erreur bloquante détectée.'}</p>
    ${Object.keys(OBJ).map(o => `<h4 class="qh">${OBJ[o].label} <span class="muted">(${q[o].recs} fiche(s) concernée(s) sur ${D[o].length})</span></h4>${q[o].rules.length ? `<table class="qt"><tbody>${q[o].rules.map(r => `<tr><td><span class="lv ${r.lvl}">${r.lvl === 'err' ? 'Erreur' : 'Alerte'}</span></td><td>${esc(r.rule)}</td><td class="num">${r.n}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">RAS</p>'}`).join('')}
-  </div><div class="card box"><h3>Historique des imports</h3>${IMPORT_LOG.length ? `<table class="qt"><thead><tr><th>Quand</th><th>Objet</th><th>Mode</th><th>Fichier</th><th>Résultat</th></tr></thead><tbody>${IMPORT_LOG.map(l => `<tr><td>${l.quand}</td><td>${l.objet}</td><td>${l.mode}</td><td>${esc(l.fichier)}</td><td>${['crees', 'mis_a_jour', 'remplaces', 'supprimes', 'rejetes'].filter(x => l[x]).map(x => `${l[x]} ${SUM_L[x]}`).join(', ') || 'aucune modification'}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Aucun import pour l\'instant.</p>'}
+  </div><div class="card box"><h3>Historique des imports</h3>${IMPORT_LOG.length ? `<table class="qt"><thead><tr><th>Quand</th><th>Objet</th><th>Mode</th><th>Fichier</th><th>Résultat</th></tr></thead><tbody>${IMPORT_LOG.map(l => `<tr><td>${l.quand}</td><td>${l.objet}</td><td>${l.mode}</td><td>${esc(l.fichier)}</td><td>${Object.keys(SUM_L).filter(x => l[x]).map(x => `${l[x]} ${SUM_L[x]}`).join(', ') || 'aucune modification'}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Aucun import pour l\'instant.</p>'}
    <div class="bar" style="margin-top:12px"><button id="ireset" class="danger">↺ Réinitialiser la base d'origine</button></div><p class="note">Les modifications sont enregistrées dans ce navigateur uniquement.</p></div></div>`;
   return h;
 }
@@ -1195,6 +1428,7 @@ function viewReport(R, L) {
    <div class="tw" style="max-height:360px"><table><thead><tr><th>Ligne</th><th>ID</th><th>Niveau</th><th>Contrôle</th><th>Champ</th><th>Valeur</th><th>Détail</th></tr></thead><tbody>
    ${list.slice(0, 500).map(x => `<tr><td>${x.line}</td><td>${esc(x.id)}</td><td><span class="lv ${x.lvl}">${x.lvl === 'err' ? 'Erreur' : 'Alerte'}</span></td><td>${esc(x.rule)}</td><td>${esc(x.field)}</td><td>${cell(x.value)}</td><td>${esc(x.msg)}</td></tr>`).join('')}
    </tbody></table></div>${list.length > 500 ? `<p class="note">500 premières lignes affichées sur ${list.length}. Utilisez « Copier le rapport » pour tout récupérer.</p>` : ''}` : '<p>✅ Aucune anomalie détectée.</p>'}
+   ${R.ignoredEmpty ? `<p class="note">ℹ️ <b>${R.ignoredEmpty} cellule(s) vide(s) ignorée(s)</b> alors que la base contient une valeur : l'option « Ignorer les cellules vides » est cochée. Décochez-la pour vider ces champs.</p>` : ''}
    ${IM.mode === 'update' && (R.rejected || R.refusedFields) ? `<p class="note">Les lignes rejetées (ID inconnu ou en double) et les champs refusés ne seront pas importés ; les autres champs valides de chaque ligne le seront.</p>` : ''}
    ${R.rejected && IM.mode === 'delete' ? `<p class="note">Les ${R.rejected} ligne(s) rejetée(s) seront ignorées.</p>` : ''}</div>`;
 }
@@ -1236,11 +1470,12 @@ function render() {
   document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
   const m = document.getElementById('main');
   if (OBJ[v]) { m.innerHTML = viewList(v); bindList(v); }
+  else if (v === 'equipe') { m.innerHTML = viewTeam(); bindTeam(); }
   else if (v === 'pipeline') { m.innerHTML = viewPipeline(); document.getElementById('po').onchange = e => { pipeOwner = e.target.value; render(); }; document.querySelectorAll('.dc').forEach(c => c.onclick = () => openRecord('opportunites', c.dataset.id)); }
   else if (v === 'exports') { m.innerHTML = viewExports(); bindExports(); }
   else if (v === 'import') { m.innerHTML = viewImport(); bindImport(); }
   else if (v === 'aide') m.innerHTML = viewHelp();
-  else m.innerHTML = viewHome();
+  else { m.innerHTML = viewHome(); bindHome(); }
 }
 window.addEventListener('hashchange', () => { closeDrawer(); render(); });
 render();
