@@ -134,6 +134,7 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
   fab.addEventListener('click',open);
   document.getElementById('dlgClose').addEventListener('click',close);
   dlg.addEventListener('click',function(e){if(e.target===dlg)close()});
+  if(location.hash==='#contact')setTimeout(open,300); // arrivée depuis « Me contacter » (page Outils)
   // envoi
   form.addEventListener('submit',function(e){
     e.preventDefault();
@@ -182,3 +183,40 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
   window.addEventListener('resize',upd);window.addEventListener('load',upd);tr.querySelectorAll('img').forEach(function(m){m.addEventListener('load',upd)});upd();
 })();
 
+/* 9. Page Outils : fenêtre de présentation avant d'ouvrir un outil gratuit */
+(function(){
+  if(!document.querySelector('a.card[data-preview]'))return;
+  var SKIP='du_tool_intro_skip',dlg=null;
+  function skip(){try{return sessionStorage.getItem(SKIP)==='1'}catch(e){return false}}
+  function build(){
+    dlg=document.createElement('dialog');dlg.className='dlg dlg-tool';dlg.id='toolDlg';dlg.setAttribute('aria-labelledby','toolDlgTitle');
+    dlg.innerHTML='<div class="dlg-head"><h2 id="toolDlgTitle"></h2><button type="button" class="dlg-x" aria-label="Fermer">×</button></div>'+
+      '<div class="dlg-body">'+
+      '<p><b>Comment il a été créé ?</b> Je l’ai conçu et développé moi-même, Olivier Faure (Data Unchained). Il s’ouvre directement dans ton navigateur, sans installation ni compte, avec des données 100 % fictives.</p>'+
+      '<p><b>Pourquoi ?</b> Pour mes stagiaires, et pour toi : apprendre en pratiquant, à ton rythme, avant, pendant ou après une formation.</p>'+
+      '<div class="tool-custom"><b>Tu veux une version sur mesure ?</b> Je l’adapte à ton thème, avec tes propres questions, tes données métier et ta charte graphique. C’est tout à fait possible, contacte-moi.</div>'+
+      '<div class="btn-row"><a class="btn primary" id="toolGo" target="_blank" rel="noopener noreferrer">Accéder à l’outil</a><a class="btn" href="index.html#contact">Me contacter</a></div>'+
+      '<label class="dlg-check"><input type="checkbox" id="toolSkip"> Ne plus afficher ce message pendant ma visite</label>'+
+      '</div>';
+    document.body.appendChild(dlg);
+    dlg.querySelector('.dlg-x').addEventListener('click',close);
+    dlg.addEventListener('click',function(e){if(e.target===dlg)close()});
+    dlg.querySelector('#toolGo').addEventListener('click',function(){
+      if(dlg.querySelector('#toolSkip').checked){try{sessionStorage.setItem(SKIP,'1')}catch(e){}}
+      close();
+    });
+  }
+  function close(){if(dlg.close)dlg.close();else dlg.removeAttribute('open')}
+  document.addEventListener('click',function(e){
+    var c=e.target.closest('a.card[data-preview]');
+    if(!c||e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||skip())return;
+    e.preventDefault();
+    if(!dlg)build();
+    var tp=document.getElementById('toolPreview');if(tp)tp.classList.remove('show');
+    dlg.querySelector('#toolDlgTitle').textContent=(c.querySelector('h3')||{}).textContent||'Outil gratuit';
+    dlg.querySelector('#toolGo').href=c.href;
+    dlg.querySelector('#toolSkip').checked=false;
+    if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');
+    dlg.querySelector('#toolGo').focus();
+  });
+})();

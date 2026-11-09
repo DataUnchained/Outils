@@ -438,3 +438,9 @@ main.slide-in-right{animation:slide-r .28s ease-out}
 @media (max-width:1000px){.duo-body{grid-template-columns:1fr}}
 @media (max-width:760px){.duo-figs{grid-template-columns:1fr}.duo-arrow{justify-self:center;transform:rotate(90deg)}}
 .todo{background:#FFF1CC;border-radius:6px;padding:0 .35em;font-weight:700}
+/* Fenêtre de présentation des outils gratuits */
+.dlg-tool{width:min(600px,94vw)}
+.dlg-tool .dlg-body p{margin:0;line-height:1.55}
+.tool-custom{background:#FBF3DC;border-left:4px solid var(--gold);border-radius:10px;padding:.9rem 1.1rem;line-height:1.55}
+.dlg-tool .btn-row .btn{justify-content:center}
+@media (max-width:480px){.dlg-tool .btn-row .btn{flex:1 1 100%}}
