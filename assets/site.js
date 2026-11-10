@@ -234,7 +234,7 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
     dlg.addEventListener('click',function(e){if(e.target===dlg)close()});
     dlg.querySelector('#toolGo').addEventListener('click',function(){remember();close()});
     dlg.addEventListener('close',stop);
-    ['pointermove','pointerdown','keydown','wheel','touchstart','scroll'].forEach(function(ev){
+    ['pointerdown','keydown','wheel','touchstart','scroll'].forEach(function(ev){
       dlg.addEventListener(ev,function(){last=performance.now()},{passive:true,capture:true});
     });
     document.addEventListener('visibilitychange',function(){last=performance.now()});
