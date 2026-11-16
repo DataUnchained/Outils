@@ -207,6 +207,7 @@ window.addEventListener('resize',syncHeader);window.addEventListener('load',sync
     'du_cahier_vacances_excel.html':['pour que tu continues à pratiquer les formules après la formation, à ton rythme, exercice après exercice.',['install','fictif',['save','Un code de sauvegarde garde tes médailles'],'demo']],
     'du_exam.html':['pour évaluer de vraies compétences, en limitant l’aide de l’IA pendant l’épreuve.',['install',['chrono','Durée réglable selon ton besoin'],'fictif',['demo','Codes de séance fixés pour la démo']]],
     'du_sql_lab_offline_2.html':['pour que tu pratiques le SQL sur une vraie base de données, sans rien installer ni configurer.',['install','fictif','offline','demo']],
+    'du_tosa_excel.html':['pour que tu t’entraînes au TOSA Excel dans des conditions proches de l’examen et que tu saches quoi revoir grâce à la correction de tes erreurs.',['install',['chrono','60 min, ou 30 min en express'],'local',['demo','Ne remplace pas l’examen officiel']]],
     'du_terracrm.html':['pour que tu t’entraînes sur des données commerciales imparfaites, comme dans la vraie vie, avant de construire ton tableau de bord.',['install','fictif','excel','demo']]
   };
   var DEF=['pour que tu apprennes en pratiquant, à ton rythme.',['install','fictif','local','demo']];
